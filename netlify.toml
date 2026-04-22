@@ -1,0 +1,12 @@
+[build]
+  command   = "npm run build"
+  publish   = "dist/anturi-frontend/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Redirige todas las rutas al index.html para que Angular maneje el routing
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
