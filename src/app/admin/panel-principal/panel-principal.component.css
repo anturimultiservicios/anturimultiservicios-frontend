@@ -1,0 +1,210 @@
+.escritorio {
+  display: grid;
+  grid-template-columns: var(--ancho-barra-lateral) 1fr;
+  min-height: 100vh;
+  background: var(--fondo-pagina);
+  transition: grid-template-columns var(--transicion-normal);
+}
+
+.escritorio.barra-contraida {
+  grid-template-columns: var(--ancho-barra-lateral-mini) 1fr;
+}
+
+/* Contenido principal */
+.escritorio__contenido {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Barra superior */
+.barra-superior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 var(--espacio-6);
+  background: var(--fondo-tarjeta);
+  border-bottom: 1px solid var(--borde-color);
+  box-shadow: var(--sombra-sm);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-elevado);
+}
+
+.barra-superior__menu {
+  font-size: 1.2rem;
+}
+
+.barra-superior__derecha {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+/* Tiempo de sesión */
+.sesion-tiempo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  font-size: var(--tamano-xs);
+  font-weight: 600;
+  color: var(--texto-terciario);
+  font-family: var(--fuente-mono);
+  padding: var(--espacio-2) var(--espacio-3);
+  background: var(--fondo-pagina);
+  border-radius: var(--radio-md);
+  border: 1px solid var(--borde-color);
+}
+
+.sesion-tiempo svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Perfil */
+.perfil-menu {
+  position: relative;
+}
+
+.perfil-menu__boton {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  background: none;
+  border: 1.5px solid var(--borde-color);
+  border-radius: var(--radio-lg);
+  padding: var(--espacio-2) var(--espacio-3);
+  cursor: pointer;
+  transition: all var(--transicion-rapida);
+}
+
+.perfil-menu__boton:hover {
+  border-color: var(--color-primario);
+  background: var(--fondo-tarjeta-hover);
+}
+
+.perfil-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio-redondo);
+  background: linear-gradient(135deg, var(--color-primario), var(--color-primario-claro));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.perfil-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perfil-avatar__inicial {
+  font-weight: 700;
+  font-size: var(--tamano-sm);
+  color: white;
+}
+
+.perfil-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.perfil-nombre {
+  font-size: var(--tamano-sm);
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+.perfil-rol {
+  font-size: var(--tamano-xs);
+  color: var(--texto-terciario);
+}
+
+.perfil-menu__lista {
+  position: absolute;
+  top: calc(100% + var(--espacio-2));
+  right: 0;
+  min-width: 200px;
+  background: var(--fondo-tarjeta);
+  border: 1px solid var(--borde-color);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-lg);
+  overflow: hidden;
+  animation: escalar var(--transicion-rapida) ease;
+  z-index: var(--z-elevado);
+}
+
+.perfil-menu__lista .separador {
+  margin: 0;
+}
+
+.perfil-menu__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  width: 100%;
+  padding: var(--espacio-3) var(--espacio-4);
+  background: none;
+  border: none;
+  font-size: var(--tamano-sm);
+  color: var(--texto-secundario);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transicion-rapida);
+}
+
+.perfil-menu__opcion:hover {
+  background: var(--fondo-tarjeta-hover);
+  color: var(--color-primario);
+}
+
+.perfil-menu__opcion svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.perfil-menu__opcion-cerrar {
+  color: var(--color-error);
+}
+
+.perfil-menu__opcion-cerrar:hover {
+  background: var(--color-error-claro);
+  color: var(--color-error);
+}
+
+/* Área main */
+.escritorio__main {
+  flex: 1;
+  padding: var(--espacio-6);
+  overflow-y: auto;
+}
+
+/* Overlay menús flotantes */
+.escritorio__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-elevado) - 1);
+}
+
+@media (max-width: 768px) {
+  .escritorio {
+    grid-template-columns: 1fr;
+  }
+
+  .sesion-tiempo {
+    display: none;
+  }
+
+  .perfil-info {
+    display: none;
+  }
+}

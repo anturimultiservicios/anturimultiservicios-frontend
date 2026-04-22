@@ -1,0 +1,273 @@
+<anturi-barra-nav></anturi-barra-nav>
+
+<main class="pagina-inicio">
+
+  <!-- SECCIÓN PORTADA / HERO -->
+  <section class="portada" id="inicio">
+    <div class="portada__fondo">
+      <div class="portada__forma portada__forma-1"></div>
+      <div class="portada__forma portada__forma-2"></div>
+      <div class="portada__forma portada__forma-3"></div>
+    </div>
+    <div class="portada__contenido contenedor">
+      <div class="portada__texto">
+        <span class="portada__etiqueta">Quimbaya, Quindío - Colombia</span>
+        <h1 class="portada__titulo">
+          {{ 'portada.titulo' | translate }}
+          <span class="portada__titulo-destacado">{{ 'portada.tituloDestacado' | translate }}</span>
+        </h1>
+        <p class="portada__subtitulo">{{ 'portada.subtitulo' | translate }}</p>
+        <div class="portada__acciones">
+          <button class="boton boton-secundario portada__btn-principal" (click)="irASeccion('servicios')">
+            {{ 'portada.botonServicios' | translate }}
+          </button>
+          <button class="boton boton-contorno portada__btn-secundario" (click)="irASeccion('contacto')">
+            {{ 'portada.botonContacto' | translate }}
+          </button>
+        </div>
+        <div class="portada__estadisticas">
+          <div class="portada__stat">
+            <span class="portada__stat-numero">+2</span>
+            <span class="portada__stat-texto">Años de experiencia</span>
+          </div>
+          <div class="portada__stat-divisor"></div>
+          <div class="portada__stat">
+            <span class="portada__stat-numero">7</span>
+            <span class="portada__stat-texto">Servicios disponibles</span>
+          </div>
+          <div class="portada__stat-divisor"></div>
+          <div class="portada__stat">
+            <span class="portada__stat-numero">100%</span>
+            <span class="portada__stat-texto">Compromiso</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="portada__logo-grande">
+        <div class="portada__logo-contenedor">
+          <img src="/assets/imagenes/logo.png" alt="Anturi Multiservicios" class="portada__logo-img">
+          <div class="portada__logo-anillo portada__logo-anillo-1"></div>
+          <div class="portada__logo-anillo portada__logo-anillo-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="portada__scroll-indicador">
+      <div class="portada__scroll-linea"></div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN SERVICIOS CON CARRUSEL -->
+  <section class="seccion-servicios" id="servicios">
+    <div class="contenedor">
+      <div class="seccion-encabezado texto-central">
+        <span class="seccion-etiqueta">{{ 'nav.servicios' | translate }}</span>
+        <h2>{{ 'servicios.titulo' | translate }}</h2>
+        <p>{{ 'servicios.subtitulo' | translate }}</p>
+      </div>
+
+      <!-- Carrusel -->
+      <div class="carrusel">
+        <button class="carrusel__btn carrusel__btn-anterior" (click)="anterior()" aria-label="Anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <div class="carrusel__pista">
+          <div class="carrusel__tarjeta"
+               *ngFor="let servicio of servicios; let i = index"
+               [class.activa]="i === indiceCarrusel"
+               [class.anterior-slide]="i === (indiceCarrusel - 1 + servicios.length) % servicios.length"
+               [class.siguiente-slide]="i === (indiceCarrusel + 1) % servicios.length">
+            <div class="carrusel__icono" [class]="'icono-' + servicio.icono">
+              <ng-container [ngSwitch]="servicio.icono">
+                <svg *ngSwitchCase="'salud'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+                <svg *ngSwitchCase="'pension'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="8" r="6"></circle>
+                  <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
+                </svg>
+                <svg *ngSwitchCase="'arl'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <svg *ngSwitchCase="'caja'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <svg *ngSwitchCase="'asesoria'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <svg *ngSwitchCase="'catastro'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                </svg>
+                <svg *ngSwitchDefault viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </ng-container>
+            </div>
+            <h3 class="carrusel__titulo">{{ servicio.claveTitulo | translate }}</h3>
+            <p class="carrusel__descripcion">{{ servicio.claveDescripcion | translate }}</p>
+            <button class="boton boton-contorno carrusel__btn-info" (click)="irASeccion('contacto')">
+              Solicitar información
+            </button>
+          </div>
+        </div>
+
+        <button class="carrusel__btn carrusel__btn-siguiente" (click)="siguiente()" aria-label="Siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- Indicadores -->
+        <div class="carrusel__indicadores">
+          <button *ngFor="let i of obtenerIndicadoresCarrusel()"
+                  class="carrusel__punto"
+                  [class.activo]="i === indiceCarrusel"
+                  (click)="irASlide(i)"
+                  [attr.aria-label]="'Servicio ' + (i + 1)">
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN NOSOTROS / MISIÓN Y VISIÓN -->
+  <section class="seccion-nosotros" id="nosotros">
+    <div class="contenedor">
+      <div class="seccion-encabezado texto-central">
+        <span class="seccion-etiqueta">{{ 'nav.nosotros' | translate }}</span>
+        <h2>{{ 'nosotros.titulo' | translate }}</h2>
+        <p>{{ 'nosotros.subtitulo' | translate }}</p>
+      </div>
+
+      <div class="nosotros__tarjetas">
+        <div class="nosotros__tarjeta tarjeta">
+          <div class="nosotros__tarjeta-icono nosotros__icono-mision">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+          </div>
+          <h3 class="nosotros__tarjeta-titulo">{{ 'nosotros.mision.titulo' | translate }}</h3>
+          <p class="nosotros__tarjeta-texto">{{ 'nosotros.mision.texto' | translate }}</p>
+        </div>
+
+        <div class="nosotros__tarjeta tarjeta">
+          <div class="nosotros__tarjeta-icono nosotros__icono-vision">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <h3 class="nosotros__tarjeta-titulo">{{ 'nosotros.vision.titulo' | translate }}</h3>
+          <p class="nosotros__tarjeta-texto">{{ 'nosotros.vision.texto' | translate }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN CONTACTO -->
+  <section class="seccion-contacto" id="contacto">
+    <div class="contenedor">
+      <div class="seccion-encabezado texto-central">
+        <span class="seccion-etiqueta">{{ 'nav.contacto' | translate }}</span>
+        <h2>{{ 'contacto.titulo' | translate }}</h2>
+        <p>{{ 'contacto.subtitulo' | translate }}</p>
+      </div>
+
+      <div class="contacto__grid">
+
+        <!-- Tarjetas de contacto -->
+        <div class="contacto__tarjetas">
+          <div class="contacto__item tarjeta">
+            <div class="contacto__item-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+            <div class="contacto__item-info">
+              <h4>Dirección</h4>
+              <p>{{ 'contacto.direccion' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="contacto__item tarjeta">
+            <div class="contacto__item-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.39 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9A16 16 0 0 0 15 16.09l.9-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <div class="contacto__item-info">
+              <h4>Teléfono / WhatsApp</h4>
+              <p>316 285 2138</p>
+            </div>
+          </div>
+
+          <div class="contacto__item tarjeta">
+            <div class="contacto__item-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </div>
+            <div class="contacto__item-info">
+              <h4>Correo electrónico</h4>
+              <p>anturi3867&#64;hotmail.com</p>
+            </div>
+          </div>
+
+          <div class="contacto__item tarjeta">
+            <div class="contacto__item-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <div class="contacto__item-info">
+              <h4>Horario de atención</h4>
+              <p>{{ 'contacto.horario' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Botón WhatsApp destacado -->
+          <button class="boton contacto__btn-wa" (click)="abrirWhatsApp()">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.097.536 4.07 1.476 5.789L.057 23.25l5.641-1.478A11.958 11.958 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.854 0-3.6-.5-5.11-1.373l-.366-.217-3.348.877.896-3.272-.237-.381A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+            </svg>
+            {{ 'contacto.whatsapp' | translate }}
+          </button>
+        </div>
+
+        <!-- Mapa embed placeholder -->
+        <div class="contacto__mapa">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3974.8!2d-75.7640!3d4.6310!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwMzcnNTEuNiJOIDc1wrA0NSc1MC40Ilc!5e0!3m2!1ses!2sco!4v1"
+            width="100%"
+            height="100%"
+            style="border:0;"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Ubicación Anturi Multiservicios - Quimbaya, Quindío">
+          </iframe>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<anturi-pie-pagina></anturi-pie-pagina>
+<anturi-chatbot-whatsapp></anturi-chatbot-whatsapp>

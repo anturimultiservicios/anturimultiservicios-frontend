@@ -1,0 +1,142 @@
+.barra-lateral {
+  width: var(--ancho-barra-lateral);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: var(--fondo-barra-lateral);
+  border-right: 1px solid var(--borde-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width var(--transicion-normal);
+  flex-shrink: 0;
+}
+
+.barra-lateral.contraida {
+  width: var(--ancho-barra-lateral-mini);
+}
+
+/* Logo */
+.barra-lateral__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-5) var(--espacio-4);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.barra-lateral__logo-img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.barra-lateral__logo-texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.barra-lateral__logo-nombre {
+  font-family: var(--fuente-titulos);
+  font-size: var(--tamano-sm);
+  font-weight: 800;
+  color: var(--color-primario);
+  letter-spacing: 0.05em;
+}
+
+.barra-lateral__logo-sub {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--color-secundario);
+  letter-spacing: 0.1em;
+}
+
+/* Separador */
+.barra-lateral__sep {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Navegación */
+.barra-lateral__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--espacio-3) var(--espacio-3);
+}
+
+.barra-lateral__nav ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.barra-lateral__item {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-3);
+  border-radius: var(--radio-lg);
+  color: var(--texto-terciario);
+  text-decoration: none;
+  font-size: var(--tamano-sm);
+  font-weight: 500;
+  transition: all var(--transicion-rapida);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.barra-lateral__item:hover {
+  background: var(--fondo-tarjeta-hover);
+  color: var(--color-primario);
+}
+
+.barra-lateral__item.activo {
+  background: rgba(27, 50, 112, 0.1);
+  color: var(--color-primario);
+  font-weight: 600;
+  position: relative;
+}
+
+.barra-lateral__item.activo::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 3px;
+  background: var(--color-primario);
+  border-radius: 0 var(--radio-pill) var(--radio-pill) 0;
+}
+
+.barra-lateral__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.barra-lateral__icono svg {
+  width: 20px;
+  height: 20px;
+}
+
+.barra-lateral__etiqueta {
+  white-space: nowrap;
+}
+
+/* Cuando está contraída */
+.barra-lateral.contraida .barra-lateral__item {
+  justify-content: center;
+  padding: var(--espacio-3);
+}
+
+.barra-lateral.contraida .barra-lateral__logo {
+  justify-content: center;
+  padding: var(--espacio-5) var(--espacio-3);
+}

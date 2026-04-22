@@ -1,0 +1,132 @@
+{
+  "nav": {
+    "inicio": "Startseite",
+    "servicios": "Leistungen",
+    "nosotros": "Über uns",
+    "contacto": "Kontakt",
+    "ingresar": "Anmelden"
+  },
+  "portada": {
+    "titulo": "Soziale Sicherheit",
+    "tituloDestacado": "ohne Komplikationen",
+    "subtitulo": "Wir verwalten Ihre Kranken-, Renten-, ARL- und Familienausgleichskassen-Mitgliedschaften professionell und schnell.",
+    "botonServicios": "Unsere Leistungen",
+    "botonContacto": "Kontakt aufnehmen"
+  },
+  "servicios": {
+    "titulo": "Unsere Leistungen",
+    "subtitulo": "Umfassende Lösungen im Bereich soziale Sicherheit für Privatpersonen und Unternehmen",
+    "eps": {
+      "titulo": "Krankenversicherung",
+      "descripcion": "Verwaltung von Krankenkassen-Anmeldungen. Wir bearbeiten Ihre Mitgliedschaft effizient."
+    },
+    "pension": {
+      "titulo": "Rente",
+      "descripcion": "Anmeldung im Rentensystem. Sichern Sie Ihre Zukunft und die Ihrer Familie."
+    },
+    "arl": {
+      "titulo": "Berufsrisiken",
+      "descripcion": "ARL-Mitgliedschaft. Schützen Sie Ihre Mitarbeiter vor Arbeitsunfällen und Berufskrankheiten."
+    },
+    "cajaCompensacion": {
+      "titulo": "Familienausgleich",
+      "descripcion": "Zugang zu Bildungs-, Freizeit-, Wohnungs- und Kreditvorteilen für Sie und Ihre Mitarbeiter."
+    },
+    "asesorias": {
+      "titulo": "Beratung",
+      "descripcion": "Expertenberatung zur sozialen Sicherheit für Privatpersonen und Unternehmen."
+    },
+    "catastro": {
+      "titulo": "Kataster",
+      "descripcion": "Katasterleistungen und Grundstücksverwaltung. Verfahren bei den zuständigen Behörden."
+    },
+    "tramites": {
+      "titulo": "Dokumentenverwaltung",
+      "descripcion": "Umfassendes Management von Dokumenten und Verwaltungsverfahren."
+    }
+  },
+  "nosotros": {
+    "titulo": "Über Uns",
+    "subtitulo": "Mehr als zwei Jahre an der Seite der Unternehmen und Arbeitnehmer in Quindío",
+    "mision": {
+      "titulo": "Mission",
+      "texto": "Wir sind ein Unternehmen, das sich der Bereitstellung umfassender Lösungen im Bereich der sozialen Sicherheit widmet und Einzelpersonen und Unternehmen in Quindío Anmeldungs- und Beratungsleistungen erleichtert."
+    },
+    "vision": {
+      "titulo": "Vision",
+      "texto": "Bis 2030 als führendes Unternehmen im Bereich soziale Sicherheit in der Region Eje Cafetero anerkannt zu werden, durch technologische Innovation und Serviceexzellenz."
+    }
+  },
+  "contacto": {
+    "titulo": "Kontakt",
+    "subtitulo": "Wir sind für Sie da",
+    "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío, Kolumbien",
+    "telefono": "316 285 2138",
+    "correo": "anturi3867@hotmail.com",
+    "horario": "Mo - Fr: 8:00 - 18:00 Uhr",
+    "whatsapp": "Schreiben Sie uns auf WhatsApp"
+  },
+  "chatbot": {
+    "titulo": "Anturi-Assistent",
+    "subtitulo": "Wie können wir Ihnen helfen?",
+    "bienvenida": "Hallo, willkommen bei Anturi Multiservicios. Ich bin Ihr virtueller Assistent. Wie kann ich Ihnen heute helfen?",
+    "preguntas": {
+      "servicios": "Welche Leistungen bieten Sie an?",
+      "afiliacion": "Wie kann ich mich anmelden?",
+      "ubicacion": "Wo sind Sie ansässig?",
+      "horarios": "Was sind Ihre Öffnungszeiten?",
+      "documentos": "Welche Dokumente benötige ich?",
+      "costos": "Was kostet das?",
+      "asesor": "Mit einem Berater sprechen"
+    },
+    "respuestas": {
+      "servicios": "Wir bieten: Kranken-, Renten-, ARL- und Familienausgleichsanmeldungen. Außerdem Beratung zu sozialer Sicherheit und Dokumentenverwaltung.",
+      "afiliacion": "Für die Anmeldung benötigen Sie Ihren Personalausweis, letzte Stromrechnung und bei Unternehmen: RUT und Handelskammerregistrierung.",
+      "ubicacion": "Wir befinden uns in der Carrera 7 # 15-24, Quimbaya, Quindío. Sie können uns auch per WhatsApp kontaktieren.",
+      "horarios": "Wir bedienen von Montag bis Freitag von 8:00 bis 18:00 Uhr. Samstags von 8:00 bis 12:00 Uhr.",
+      "documentos": "Grunddokumente: Nationalausweis. Für Unternehmen: RUT, Handelskammer, Mitarbeiterliste.",
+      "costos": "Die Kosten variieren je nach Leistung. Wir bieten kostenlose Beratung. Kontaktieren Sie uns!",
+      "asesor": "Wir verbinden Sie mit einem Berater über WhatsApp."
+    },
+    "botonWhatsapp": "WhatsApp öffnen",
+    "cerrar": "Schließen"
+  },
+  "pie": {
+    "descripcion": "Umfassende Lösungen im Bereich soziale Sicherheit für Privatpersonen und Unternehmen in Quindío.",
+    "derechos": "Alle Rechte vorbehalten",
+    "marca": "Eingetragene Marke"
+  },
+  "login": {
+    "titulo": "Willkommen",
+    "subtitulo": "Geben Sie Ihre Zugangsdaten ein",
+    "correo": "E-Mail-Adresse",
+    "contrasena": "Passwort",
+    "ingresar": "Anmelden",
+    "olvidoContrasena": "Passwort vergessen?",
+    "recuperar": "Passwort zurücksetzen",
+    "recuperarTexto": "Geben Sie Ihre E-Mail ein und wir senden Ihnen Anweisungen.",
+    "enviar": "Anweisungen senden",
+    "volver": "Zurück zur Anmeldung",
+    "correoEnviado": "Wir haben die Anweisungen an Ihre E-Mail gesendet."
+  },
+  "comun": {
+    "cargando": "Laden...",
+    "guardar": "Speichern",
+    "cancelar": "Abbrechen",
+    "eliminar": "Löschen",
+    "editar": "Bearbeiten",
+    "ver": "Ansehen",
+    "buscar": "Suchen...",
+    "nuevo": "Neu",
+    "cerrar": "Schließen",
+    "confirmar": "Bestätigen",
+    "si": "Ja",
+    "no": "Nein",
+    "activo": "Aktiv",
+    "inactivo": "Inaktiv",
+    "vencido": "Abgelaufen",
+    "pendiente": "Ausstehend",
+    "alDia": "Aktuell",
+    "sinResultados": "Keine Ergebnisse gefunden"
+  }
+}

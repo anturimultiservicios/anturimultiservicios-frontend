@@ -1,0 +1,132 @@
+{
+  "nav": {
+    "inicio": "Home",
+    "servicios": "Services",
+    "nosotros": "About Us",
+    "contacto": "Contact",
+    "ingresar": "Login"
+  },
+  "portada": {
+    "titulo": "Social Security",
+    "tituloDestacado": "made simple",
+    "subtitulo": "We manage your EPS, Pension, ARL and Family Compensation Fund affiliations with professionalism and speed.",
+    "botonServicios": "Our services",
+    "botonContacto": "Contact us"
+  },
+  "servicios": {
+    "titulo": "Our Services",
+    "subtitulo": "Comprehensive social security solutions for individuals and businesses",
+    "eps": {
+      "titulo": "EPS Affiliation",
+      "descripcion": "Health system affiliation management. We process your membership card and your employees' efficiently."
+    },
+    "pension": {
+      "titulo": "Pension",
+      "descripcion": "Pension system affiliation. Secure your future and your family's with the best funds on the market."
+    },
+    "arl": {
+      "titulo": "Professional Risks",
+      "descripcion": "ARL affiliation. Protect your workers against workplace accidents and occupational diseases."
+    },
+    "cajaCompensacion": {
+      "titulo": "Family Compensation",
+      "descripcion": "Access the benefits of education, recreation, housing and credit for you and your employees."
+    },
+    "asesorias": {
+      "titulo": "Consulting",
+      "descripcion": "Expert guidance on social security for individuals and companies. We resolve all your doubts."
+    },
+    "catastro": {
+      "titulo": "Cadastre",
+      "descripcion": "Cadastral services and land information management. Procedures before the corresponding entities."
+    },
+    "tramites": {
+      "titulo": "Document Management",
+      "descripcion": "Comprehensive management of documents and administrative procedures related to social security."
+    }
+  },
+  "nosotros": {
+    "titulo": "About Us",
+    "subtitulo": "More than two years accompanying the companies and workers of Quindío",
+    "mision": {
+      "titulo": "Mission",
+      "texto": "We are a company dedicated to providing comprehensive social security solutions, facilitating affiliation and advisory processes for individuals and companies in Quindío. We are committed to quality, transparency and efficiency in every service, contributing to the well-being and social protection of our community."
+    },
+    "vision": {
+      "titulo": "Vision",
+      "texto": "To be recognized by 2030 as the leading company in social security management in the Eje Cafetero region, standing out for our technological innovation, service excellence and permanent commitment to the well-being of our clients and their employees."
+    }
+  },
+  "contacto": {
+    "titulo": "Contact Us",
+    "subtitulo": "We are here to help you. Get in touch with us",
+    "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío, Colombia",
+    "telefono": "316 285 2138",
+    "correo": "anturi3867@hotmail.com",
+    "horario": "Mon - Fri: 8:00 am - 6:00 pm",
+    "whatsapp": "Write to us on WhatsApp"
+  },
+  "chatbot": {
+    "titulo": "Anturi Assistant",
+    "subtitulo": "How can we help you?",
+    "bienvenida": "Hello, welcome to Anturi Multiservicios. I am your virtual assistant. How can I help you today?",
+    "preguntas": {
+      "servicios": "What services do you offer?",
+      "afiliacion": "How can I enroll?",
+      "ubicacion": "Where are you located?",
+      "horarios": "What are your hours?",
+      "documentos": "What documents do I need?",
+      "costos": "How much does it cost?",
+      "asesor": "Talk to an advisor"
+    },
+    "respuestas": {
+      "servicios": "We offer: EPS, Pension, ARL and Family Compensation Fund affiliations. We also provide social security consulting, cadastre and document management.",
+      "afiliacion": "To enroll you must bring your national ID, latest utility bill, and if a company: RUT and Chamber of Commerce. Our process is fast and personalized.",
+      "ubicacion": "We are located at Carrera 7 # 15-24, Quimbaya, Quindío. You can also contact us via WhatsApp.",
+      "horarios": "We serve Monday to Friday from 8:00 am to 6:00 pm. Saturdays from 8:00 am to 12:00 pm.",
+      "documentos": "Basic documents: National ID card. For companies: RUT, Chamber of Commerce, employee payroll. Additional documents may be required depending on the service.",
+      "costos": "The cost varies depending on the service and number of people. We offer free consultation to guide you. Contact us!",
+      "asesor": "We will connect you with one of our advisors via WhatsApp."
+    },
+    "botonWhatsapp": "Open WhatsApp",
+    "cerrar": "Close"
+  },
+  "pie": {
+    "descripcion": "Comprehensive social security solutions for individuals and businesses in Quindío.",
+    "derechos": "All rights reserved",
+    "marca": "Registered Trademark"
+  },
+  "login": {
+    "titulo": "Welcome",
+    "subtitulo": "Enter your credentials to continue",
+    "correo": "Email address",
+    "contrasena": "Password",
+    "ingresar": "Login",
+    "olvidoContrasena": "Forgot your password?",
+    "recuperar": "Reset password",
+    "recuperarTexto": "Enter your email and we will send you instructions to reset your password.",
+    "enviar": "Send instructions",
+    "volver": "Back to login",
+    "correoEnviado": "We have sent the instructions to your email."
+  },
+  "comun": {
+    "cargando": "Loading...",
+    "guardar": "Save",
+    "cancelar": "Cancel",
+    "eliminar": "Delete",
+    "editar": "Edit",
+    "ver": "View",
+    "buscar": "Search...",
+    "nuevo": "New",
+    "cerrar": "Close",
+    "confirmar": "Confirm",
+    "si": "Yes",
+    "no": "No",
+    "activo": "Active",
+    "inactivo": "Inactive",
+    "vencido": "Expired",
+    "pendiente": "Pending",
+    "alDia": "Up to date",
+    "sinResultados": "No results found"
+  }
+}

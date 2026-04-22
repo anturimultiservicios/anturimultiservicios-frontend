@@ -1,0 +1,132 @@
+{
+  "nav": {
+    "inicio": "Accueil",
+    "servicios": "Services",
+    "nosotros": "À propos",
+    "contacto": "Contact",
+    "ingresar": "Connexion"
+  },
+  "portada": {
+    "titulo": "Sécurité Sociale",
+    "tituloDestacado": "sans complications",
+    "subtitulo": "Nous gérons vos affiliations à l'EPS, la Retraite, l'ARL et la Caisse de Compensation avec professionnalisme et rapidité.",
+    "botonServicios": "Nos services",
+    "botonContacto": "Nous contacter"
+  },
+  "servicios": {
+    "titulo": "Nos Services",
+    "subtitulo": "Solutions intégrales en sécurité sociale pour particuliers et entreprises",
+    "eps": {
+      "titulo": "Affiliation EPS",
+      "descripcion": "Gestion des affiliations au système de santé. Nous traitons votre carte et celle de vos employés efficacement."
+    },
+    "pension": {
+      "titulo": "Retraite",
+      "descripcion": "Affiliation au système de retraite. Sécurisez votre avenir et celui de votre famille."
+    },
+    "arl": {
+      "titulo": "Risques Professionnels",
+      "descripcion": "Affiliation ARL. Protégez vos travailleurs contre les accidents du travail et les maladies professionnelles."
+    },
+    "cajaCompensacion": {
+      "titulo": "Caisse de Compensation",
+      "descripcion": "Accédez aux avantages en éducation, loisirs, logement et crédit pour vous et vos employés."
+    },
+    "asesorias": {
+      "titulo": "Conseil",
+      "descripcion": "Orientation experte en sécurité sociale pour particuliers et entreprises. Nous résolvons tous vos doutes."
+    },
+    "catastro": {
+      "titulo": "Cadastre",
+      "descripcion": "Services cadastraux et gestion d'informations foncières. Démarches auprès des entités compétentes."
+    },
+    "tramites": {
+      "titulo": "Gestion Documentaire",
+      "descripcion": "Gestion intégrale des documents et démarches administratives liées à la sécurité sociale."
+    }
+  },
+  "nosotros": {
+    "titulo": "Qui Sommes-Nous",
+    "subtitulo": "Plus de deux ans d'accompagnement des entreprises et travailleurs du Quindío",
+    "mision": {
+      "titulo": "Mission",
+      "texto": "Nous sommes une entreprise dédiée à fournir des solutions intégrales en sécurité sociale, facilitant les démarches d'affiliation et de conseil pour les particuliers et les entreprises du Quindío."
+    },
+    "vision": {
+      "titulo": "Vision",
+      "texto": "Être reconnus d'ici 2030 comme l'entreprise leader en gestion de sécurité sociale dans la région Eje Cafetero, en nous distinguant par notre innovation technologique et notre excellence de service."
+    }
+  },
+  "contacto": {
+    "titulo": "Contactez-Nous",
+    "subtitulo": "Nous sommes là pour vous aider",
+    "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío, Colombie",
+    "telefono": "316 285 2138",
+    "correo": "anturi3867@hotmail.com",
+    "horario": "Lun - Ven: 8h00 - 18h00",
+    "whatsapp": "Écrivez-nous sur WhatsApp"
+  },
+  "chatbot": {
+    "titulo": "Assistant Anturi",
+    "subtitulo": "Comment pouvons-nous vous aider?",
+    "bienvenida": "Bonjour, bienvenue chez Anturi Multiservicios. Je suis votre assistant virtuel. Comment puis-je vous aider?",
+    "preguntas": {
+      "servicios": "Quels services proposez-vous?",
+      "afiliacion": "Comment s'affilier?",
+      "ubicacion": "Où êtes-vous situés?",
+      "horarios": "Quels sont vos horaires?",
+      "documentos": "Quels documents faut-il?",
+      "costos": "Combien ça coûte?",
+      "asesor": "Parler à un conseiller"
+    },
+    "respuestas": {
+      "servicios": "Nous proposons: affiliations EPS, Retraite, ARL et Caisse de Compensation. Nous fournissons également des conseils en sécurité sociale et gestion documentaire.",
+      "afiliacion": "Pour s'affilier, apportez votre pièce d'identité, dernière facture de services et si entreprise: RUT et Chambre de Commerce.",
+      "ubicacion": "Nous sommes situés Carrera 7 # 15-24, Quimbaya, Quindío. Vous pouvez aussi nous contacter via WhatsApp.",
+      "horarios": "Nous recevons du lundi au vendredi de 8h00 à 18h00. Samedis de 8h00 à 12h00.",
+      "documentos": "Documents de base: Pièce d'identité nationale. Pour les entreprises: RUT, Chambre de Commerce, liste des employés.",
+      "costos": "Le coût varie selon le service. Nous offrons une consultation gratuite pour vous orienter. Contactez-nous!",
+      "asesor": "Nous vous mettrons en contact avec un conseiller via WhatsApp."
+    },
+    "botonWhatsapp": "Ouvrir WhatsApp",
+    "cerrar": "Fermer"
+  },
+  "pie": {
+    "descripcion": "Solutions intégrales en sécurité sociale pour particuliers et entreprises du Quindío.",
+    "derechos": "Tous droits réservés",
+    "marca": "Marque Déposée"
+  },
+  "login": {
+    "titulo": "Bienvenue",
+    "subtitulo": "Entrez vos identifiants pour continuer",
+    "correo": "Adresse e-mail",
+    "contrasena": "Mot de passe",
+    "ingresar": "Se connecter",
+    "olvidoContrasena": "Mot de passe oublié?",
+    "recuperar": "Récupérer le mot de passe",
+    "recuperarTexto": "Entrez votre e-mail et nous vous enverrons les instructions.",
+    "enviar": "Envoyer les instructions",
+    "volver": "Retour à la connexion",
+    "correoEnviado": "Nous avons envoyé les instructions à votre e-mail."
+  },
+  "comun": {
+    "cargando": "Chargement...",
+    "guardar": "Enregistrer",
+    "cancelar": "Annuler",
+    "eliminar": "Supprimer",
+    "editar": "Modifier",
+    "ver": "Voir",
+    "buscar": "Rechercher...",
+    "nuevo": "Nouveau",
+    "cerrar": "Fermer",
+    "confirmar": "Confirmer",
+    "si": "Oui",
+    "no": "Non",
+    "activo": "Actif",
+    "inactivo": "Inactif",
+    "vencido": "Expiré",
+    "pendiente": "En attente",
+    "alDia": "À jour",
+    "sinResultados": "Aucun résultat trouvé"
+  }
+}

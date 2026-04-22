@@ -1,0 +1,96 @@
+<nav class="barra-nav" [class.desplazada]="desplazado">
+  <div class="barra-nav__contenido">
+
+    <!-- Logo -->
+    <a class="barra-nav__logo" routerLink="/" (click)="cerrarMenus()">
+      <img src="/assets/imagenes/logo.png" alt="Anturi Multiservicios" class="barra-nav__logo-imagen">
+      <span class="barra-nav__logo-texto">
+        <span class="barra-nav__logo-nombre">ANTURI</span>
+        <span class="barra-nav__logo-subtitulo">MULTISERVICIOS</span>
+      </span>
+    </a>
+
+    <!-- Navegación escritorio -->
+    <ul class="barra-nav__menu">
+      <li><a class="barra-nav__enlace" (click)="irASeccion('inicio')">{{ 'nav.inicio' | translate }}</a></li>
+      <li><a class="barra-nav__enlace" (click)="irASeccion('servicios')">{{ 'nav.servicios' | translate }}</a></li>
+      <li><a class="barra-nav__enlace" (click)="irASeccion('nosotros')">{{ 'nav.nosotros' | translate }}</a></li>
+      <li><a class="barra-nav__enlace" (click)="irASeccion('contacto')">{{ 'nav.contacto' | translate }}</a></li>
+    </ul>
+
+    <!-- Controles derecha -->
+    <div class="barra-nav__controles">
+
+      <!-- Cambiar idioma -->
+      <div class="selector-idioma" [class.abierto]="menuIdiomaAbierto">
+        <button class="selector-idioma__boton" (click)="alternarMenuIdioma()" [attr.aria-label]="'Idioma: ' + idiomaActual.nombre">
+          <span class="selector-idioma__bandera">{{ idiomaActual.bandera }}</span>
+          <span class="selector-idioma__codigo">{{ idiomaActual.codigo.toUpperCase() }}</span>
+          <svg class="selector-idioma__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <ul class="selector-idioma__lista" *ngIf="menuIdiomaAbierto">
+          <li *ngFor="let idioma of idiomasDisponibles">
+            <button
+              class="selector-idioma__opcion"
+              [class.activo]="idioma.codigo === idiomaActual.codigo"
+              (click)="seleccionarIdioma(idioma.codigo)">
+              <span class="selector-idioma__bandera">{{ idioma.bandera }}</span>
+              <span>{{ idioma.nombre }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Cambiar tema -->
+      <button class="boton-tema" (click)="alternarTema()" [attr.aria-label]="temaServicio.esOscuro ? 'Activar tema claro' : 'Activar tema oscuro'">
+        <svg *ngIf="!temaServicio.esOscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-tema">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg *ngIf="temaServicio.esOscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-tema">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+
+      <!-- Botón ingresar -->
+      <a routerLink="/ingresar" class="boton boton-primario barra-nav__btn-ingresar" (click)="cerrarMenus()">
+        {{ 'nav.ingresar' | translate }}
+      </a>
+
+      <!-- Hamburguesa móvil -->
+      <button class="barra-nav__hamburguesa" [class.activo]="menuAbierto" (click)="alternarMenu()" aria-label="Menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Menú móvil -->
+  <div class="barra-nav__menu-movil" [class.abierto]="menuAbierto">
+    <ul>
+      <li><a (click)="irASeccion('inicio')">{{ 'nav.inicio' | translate }}</a></li>
+      <li><a (click)="irASeccion('servicios')">{{ 'nav.servicios' | translate }}</a></li>
+      <li><a (click)="irASeccion('nosotros')">{{ 'nav.nosotros' | translate }}</a></li>
+      <li><a (click)="irASeccion('contacto')">{{ 'nav.contacto' | translate }}</a></li>
+      <li class="barra-nav__menu-movil-separador"></li>
+      <li>
+        <a routerLink="/ingresar" class="boton boton-primario barra-nav__btn-ingresar-movil" (click)="cerrarMenus()">
+          {{ 'nav.ingresar' | translate }}
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Overlay para cerrar menús -->
+<div class="barra-nav__overlay" *ngIf="menuAbierto || menuIdiomaAbierto" (click)="cerrarMenus()"></div>

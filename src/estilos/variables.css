@@ -1,0 +1,88 @@
+/* Variables globales del sistema de diseño Anturi */
+
+:root {
+  /* Colores de marca */
+  --color-primario: #1B3270;
+  --color-primario-claro: #2A4A9A;
+  --color-primario-oscuro: #112050;
+  --color-secundario: #E8570C;
+  --color-secundario-claro: #FF6B1A;
+  --color-secundario-oscuro: #C44408;
+
+  /* Colores de estado */
+  --color-exito: #2E7D32;
+  --color-exito-claro: #E8F5E9;
+  --color-advertencia: #F57C00;
+  --color-advertencia-claro: #FFF3E0;
+  --color-error: #C62828;
+  --color-error-claro: #FFEBEE;
+  --color-info: #1565C0;
+  --color-info-claro: #E3F2FD;
+
+  /* Tipografía */
+  --fuente-titulos: 'Poppins', 'Segoe UI', sans-serif;
+  --fuente-cuerpo: 'Inter', 'Segoe UI', sans-serif;
+  --fuente-mono: 'Courier New', monospace;
+
+  --tamano-xs: 0.75rem;
+  --tamano-sm: 0.875rem;
+  --tamano-base: 1rem;
+  --tamano-lg: 1.125rem;
+  --tamano-xl: 1.25rem;
+  --tamano-2xl: 1.5rem;
+  --tamano-3xl: 1.875rem;
+  --tamano-4xl: 2.25rem;
+  --tamano-5xl: 3rem;
+
+  /* Espaciado */
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 0.75rem;
+  --espacio-4: 1rem;
+  --espacio-5: 1.25rem;
+  --espacio-6: 1.5rem;
+  --espacio-8: 2rem;
+  --espacio-10: 2.5rem;
+  --espacio-12: 3rem;
+  --espacio-16: 4rem;
+  --espacio-20: 5rem;
+  --espacio-24: 6rem;
+
+  /* Bordes */
+  --radio-sm: 4px;
+  --radio-md: 8px;
+  --radio-lg: 12px;
+  --radio-xl: 16px;
+  --radio-2xl: 24px;
+  --radio-redondo: 50%;
+  --radio-pill: 9999px;
+
+  /* Sombras */
+  --sombra-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+  --sombra-md: 0 4px 6px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.08);
+  --sombra-lg: 0 10px 25px rgba(0,0,0,0.12), 0 4px 10px rgba(0,0,0,0.08);
+  --sombra-xl: 0 20px 40px rgba(0,0,0,0.15), 0 8px 16px rgba(0,0,0,0.10);
+  --sombra-primario: 0 4px 20px rgba(27, 50, 112, 0.35);
+  --sombra-secundario: 0 4px 20px rgba(232, 87, 12, 0.35);
+
+  /* Transiciones */
+  --transicion-rapida: 150ms ease;
+  --transicion-normal: 250ms ease;
+  --transicion-lenta: 400ms ease;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-elevado: 10;
+  --z-flotante: 100;
+  --z-modal: 1000;
+  --z-notificacion: 1100;
+  --z-tooltip: 1200;
+  --z-maximo: 9999;
+
+  /* Barra de navegación */
+  --altura-barra-nav: 72px;
+
+  /* Barra lateral */
+  --ancho-barra-lateral: 260px;
+  --ancho-barra-lateral-mini: 72px;
+}
