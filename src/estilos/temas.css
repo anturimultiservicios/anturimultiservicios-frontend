@@ -1,0 +1,79 @@
+/* Temas claro y oscuro */
+
+/* Tema claro (por defecto) */
+body,
+body.tema-claro {
+  --fondo-pagina: #F5F7FA;
+  --fondo-tarjeta: #FFFFFF;
+  --fondo-tarjeta-hover: #F0F4FF;
+  --fondo-barra-nav: #FFFFFF;
+  --fondo-barra-lateral: #FFFFFF;
+  --fondo-input: #FFFFFF;
+  --fondo-tabla-par: #F8F9FC;
+  --fondo-tabla-impar: #FFFFFF;
+  --fondo-tabla-hover: #EEF2FF;
+  --fondo-overlay: rgba(0, 0, 0, 0.5);
+
+  --texto-principal: #1A2340;
+  --texto-secundario: #4A5568;
+  --texto-terciario: #718096;
+  --texto-deshabilitado: #A0AEC0;
+  --texto-inverso: #FFFFFF;
+  --texto-enlace: #1B3270;
+  --texto-enlace-hover: #E8570C;
+
+  --borde-color: #E2E8F0;
+  --borde-color-fuerte: #CBD5E0;
+  --borde-input: #CBD5E0;
+  --borde-input-foco: #1B3270;
+
+  --separador: #EDF2F7;
+
+  --scrollbar-pista: #EDF2F7;
+  --scrollbar-pulgar: #CBD5E0;
+  --scrollbar-pulgar-hover: #A0AEC0;
+
+  color-scheme: light;
+}
+
+/* Tema oscuro */
+body.tema-oscuro {
+  --fondo-pagina: #0D1B3E;
+  --fondo-tarjeta: #152550;
+  --fondo-tarjeta-hover: #1E3366;
+  --fondo-barra-nav: #0D1B3E;
+  --fondo-barra-lateral: #0A1530;
+  --fondo-input: #1A2B55;
+  --fondo-tabla-par: #122040;
+  --fondo-tabla-impar: #152550;
+  --fondo-tabla-hover: #1E3366;
+  --fondo-overlay: rgba(0, 0, 0, 0.75);
+
+  --texto-principal: #E8EDF5;
+  --texto-secundario: #A8B8D8;
+  --texto-terciario: #7A90B8;
+  --texto-deshabilitado: #4A5D80;
+  --texto-inverso: #0D1B3E;
+  --texto-enlace: #6B90E0;
+  --texto-enlace-hover: #FF7A30;
+
+  --borde-color: #1E3366;
+  --borde-color-fuerte: #2A4A90;
+  --borde-input: #2A4A90;
+  --borde-input-foco: #6B90E0;
+
+  --separador: #1A2B55;
+
+  --scrollbar-pista: #0D1B3E;
+  --scrollbar-pulgar: #2A4A90;
+  --scrollbar-pulgar-hover: #4A6AB0;
+
+  color-scheme: dark;
+}
+
+/* Transición suave entre temas */
+body {
+  transition:
+    background-color var(--transicion-normal),
+    color var(--transicion-normal);
+}

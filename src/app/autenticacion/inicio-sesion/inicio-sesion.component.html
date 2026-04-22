@@ -1,0 +1,209 @@
+<div class="login-pagina">
+
+  <!-- Panel izquierdo decorativo -->
+  <div class="login-lateral">
+    <div class="login-lateral__contenido">
+      <img src="/assets/imagenes/logo.png" alt="Anturi Multiservicios" class="login-lateral__logo">
+      <h2 class="login-lateral__titulo">ANTURI<br>MULTISERVICIOS</h2>
+      <p class="login-lateral__subtitulo">Gestión integral de seguridad social</p>
+
+      <div class="login-lateral__detalles">
+        <div class="login-lateral__detalle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span>Quimbaya, Quindío - Colombia</span>
+        </div>
+        <div class="login-lateral__detalle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.39 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9A16 16 0 0 0 15 16.09l.9-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span>316 285 2138</span>
+        </div>
+      </div>
+    </div>
+    <div class="login-lateral__fondo"></div>
+  </div>
+
+  <!-- Panel derecho - formulario -->
+  <div class="login-formulario-panel">
+
+    <!-- Controles de tema e idioma -->
+    <div class="login-controles">
+      <div class="selector-idioma" [class.abierto]="menuIdioma">
+        <button class="selector-idioma__boton" (click)="menuIdioma = !menuIdioma">
+          <span class="selector-idioma__bandera">{{ idiomaServicio.idiomaActual.bandera }}</span>
+          <span class="selector-idioma__codigo">{{ idiomaServicio.idiomaActual.codigo.toUpperCase() }}</span>
+          <svg class="selector-idioma__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <ul class="selector-idioma__lista" *ngIf="menuIdioma">
+          <li *ngFor="let idioma of idiomaServicio.idiomasDisponibles">
+            <button class="selector-idioma__opcion"
+                    [class.activo]="idioma.codigo === idiomaServicio.idiomaActual.codigo"
+                    (click)="cambiarIdioma(idioma.codigo)">
+              <span class="selector-idioma__bandera">{{ idioma.bandera }}</span>
+              <span>{{ idioma.nombre }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <button class="boton-tema" (click)="alternarTema()">
+        <svg *ngIf="!temaServicio.esOscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-tema">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg *ngIf="temaServicio.esOscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-tema">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ===== LOGIN ===== -->
+    <div class="login-formulario" *ngIf="vista === 'login'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">{{ 'login.titulo' | translate }}</h1>
+        <p class="login-subtitulo">{{ 'login.subtitulo' | translate }}</p>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="correo">
+          {{ 'login.correo' | translate }} <span class="requerido">*</span>
+        </label>
+        <input
+          id="correo"
+          type="email"
+          class="campo-input"
+          [(ngModel)]="correo"
+          placeholder="usuario@ejemplo.com"
+          autocomplete="email"
+          (keyup.enter)="ingresar()">
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="contrasena">
+          {{ 'login.contrasena' | translate }} <span class="requerido">*</span>
+        </label>
+        <div class="campo-contrasena-contenedor">
+          <input
+            id="contrasena"
+            [type]="verContrasena ? 'text' : 'password'"
+            class="campo-input campo-input-contrasena"
+            [(ngModel)]="contrasena"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            (keyup.enter)="ingresar()">
+          <button class="campo-ojo" type="button" (click)="verContrasena = !verContrasena">
+            <svg *ngIf="!verContrasena" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg *ngIf="verContrasena" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <button class="boton boton-primario login-btn-ingresar"
+              (click)="ingresar()"
+              [disabled]="cargando">
+        <svg *ngIf="cargando" class="login-cargando-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        {{ cargando ? ('comun.cargando' | translate) : ('login.ingresar' | translate) }}
+      </button>
+
+      <button class="login-olvidaste" (click)="cambiarVista('recuperar')">
+        {{ 'login.olvidoContrasena' | translate }}
+      </button>
+
+      <a routerLink="/" class="login-volver-inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Volver al sitio web
+      </a>
+    </div>
+
+    <!-- ===== RECUPERAR CONTRASEÑA ===== -->
+    <div class="login-formulario" *ngIf="vista === 'recuperar'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">{{ 'login.recuperar' | translate }}</h1>
+        <p class="login-subtitulo">{{ 'login.recuperarTexto' | translate }}</p>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="correo-recuperar">
+          {{ 'login.correo' | translate }} <span class="requerido">*</span>
+        </label>
+        <input
+          id="correo-recuperar"
+          type="email"
+          class="campo-input"
+          [(ngModel)]="correoRecuperar"
+          placeholder="usuario@ejemplo.com"
+          (keyup.enter)="recuperarContrasena()">
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <button class="boton boton-primario login-btn-ingresar"
+              (click)="recuperarContrasena()"
+              [disabled]="cargando">
+        {{ cargando ? ('comun.cargando' | translate) : ('login.enviar' | translate) }}
+      </button>
+
+      <button class="login-olvidaste" (click)="cambiarVista('login')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
+    <!-- ===== CORREO ENVIADO ===== -->
+    <div class="login-formulario login-enviado" *ngIf="vista === 'enviado'">
+      <div class="login-enviado__icono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+      </div>
+      <h2 class="login-enviado__titulo">Correo enviado</h2>
+      <p class="login-enviado__texto">{{ 'login.correoEnviado' | translate }}</p>
+      <button class="boton boton-primario login-btn-ingresar" (click)="cambiarVista('login')">
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
+  </div>
+</div>

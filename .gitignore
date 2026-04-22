@@ -1,0 +1,37 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+.angular/
+
+# Variables de entorno — NUNCA subir
+.env
+.env.*
+
+# Archivos de entorno de producción con datos reales (mantener solo plantillas)
+src/environments/entorno.produccion.ts
+
+# IDE y herramientas
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude y herramientas de IA
+.claude/
+
+# Logs
+*.log
+
+# Caché
+.cache/
+
+# Coverage
+coverage/

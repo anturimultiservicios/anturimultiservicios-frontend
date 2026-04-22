@@ -1,0 +1,297 @@
+.login-pagina {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+/* Panel lateral decorativo */
+.login-lateral {
+  position: relative;
+  background: linear-gradient(145deg, var(--color-primario-oscuro) 0%, var(--color-primario) 60%, var(--color-primario-claro) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.login-lateral__fondo {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(232, 87, 12, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%);
+}
+
+.login-lateral__contenido {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--espacio-4);
+  padding: var(--espacio-12);
+}
+
+.login-lateral__logo {
+  width: 140px;
+  height: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.95;
+  animation: flotar 4s ease-in-out infinite;
+}
+
+.login-lateral__titulo {
+  font-family: var(--fuente-titulos);
+  font-size: var(--tamano-3xl);
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.login-lateral__subtitulo {
+  font-size: var(--tamano-base);
+  color: rgba(255,255,255,0.75);
+  margin: 0;
+}
+
+.login-lateral__detalles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-6);
+}
+
+.login-lateral__detalle {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  color: rgba(255,255,255,0.8);
+  font-size: var(--tamano-sm);
+}
+
+.login-lateral__detalle svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-secundario-claro);
+}
+
+/* Panel del formulario */
+.login-formulario-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-10);
+  background: var(--fondo-pagina);
+  position: relative;
+}
+
+/* Controles tema/idioma */
+.login-controles {
+  position: absolute;
+  top: var(--espacio-6);
+  right: var(--espacio-6);
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+}
+
+/* Formulario */
+.login-formulario {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-5);
+  animation: deslizarArriba var(--transicion-normal) ease;
+}
+
+.login-encabezado {
+  margin-bottom: var(--espacio-2);
+}
+
+.login-titulo {
+  font-size: var(--tamano-3xl);
+  font-weight: 800;
+  color: var(--texto-principal);
+  margin-bottom: var(--espacio-2);
+}
+
+.login-subtitulo {
+  color: var(--texto-terciario);
+  font-size: var(--tamano-base);
+  margin: 0;
+}
+
+/* Campo contraseña con ojo */
+.campo-contrasena-contenedor {
+  position: relative;
+}
+
+.campo-input-contrasena {
+  padding-right: 48px;
+}
+
+.campo-ojo {
+  position: absolute;
+  right: var(--espacio-3);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--texto-terciario);
+  cursor: pointer;
+  padding: var(--espacio-1);
+  display: flex;
+  align-items: center;
+  transition: color var(--transicion-rapida);
+}
+
+.campo-ojo:hover {
+  color: var(--color-primario);
+}
+
+.campo-ojo svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Error */
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-4);
+  background: var(--color-error-claro);
+  color: var(--color-error);
+  border-radius: var(--radio-md);
+  font-size: var(--tamano-sm);
+  font-weight: 500;
+  animation: deslizarArriba var(--transicion-rapida) ease;
+}
+
+.login-error svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Botón ingresar */
+.login-btn-ingresar {
+  width: 100%;
+  padding: var(--espacio-4);
+  font-size: var(--tamano-base);
+  gap: var(--espacio-2);
+}
+
+/* Icono cargando */
+.login-cargando-icono {
+  width: 18px;
+  height: 18px;
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Olvidé contraseña */
+.login-olvidaste {
+  background: none;
+  border: none;
+  color: var(--color-primario);
+  font-size: var(--tamano-sm);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: color var(--transicion-rapida);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-1);
+}
+
+.login-olvidaste:hover {
+  color: var(--color-secundario);
+}
+
+.login-olvidaste svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Volver al inicio */
+.login-volver-inicio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-1);
+  color: var(--texto-terciario);
+  font-size: var(--tamano-sm);
+  text-decoration: none;
+  transition: color var(--transicion-rapida);
+  margin-top: var(--espacio-2);
+}
+
+.login-volver-inicio:hover {
+  color: var(--color-primario);
+}
+
+.login-volver-inicio svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Estado enviado */
+.login-enviado {
+  align-items: center;
+  text-align: center;
+}
+
+.login-enviado__icono {
+  width: 80px;
+  height: 80px;
+  background: var(--color-exito-claro);
+  border-radius: var(--radio-redondo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-exito);
+  margin-bottom: var(--espacio-4);
+}
+
+.login-enviado__icono svg {
+  width: 40px;
+  height: 40px;
+}
+
+.login-enviado__titulo {
+  font-size: var(--tamano-2xl);
+  font-weight: 700;
+  color: var(--texto-principal);
+}
+
+.login-enviado__texto {
+  color: var(--texto-terciario);
+  font-size: var(--tamano-base);
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+  .login-pagina {
+    grid-template-columns: 1fr;
+  }
+
+  .login-lateral {
+    display: none;
+  }
+
+  .login-formulario-panel {
+    padding: var(--espacio-12) var(--espacio-6);
+    min-height: 100vh;
+  }
+}

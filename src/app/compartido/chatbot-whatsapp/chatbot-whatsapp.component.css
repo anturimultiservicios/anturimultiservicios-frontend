@@ -1,0 +1,217 @@
+.wa-flotante {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: var(--z-flotante);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--espacio-3);
+}
+
+/* Panel de chat */
+.wa-panel {
+  width: 340px;
+  background: var(--fondo-tarjeta);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-xl);
+  border: 1px solid var(--borde-color);
+  overflow: hidden;
+  transform: scale(0.85) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transicion-normal);
+  transform-origin: bottom right;
+}
+
+.wa-panel.abierto {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Encabezado del panel */
+.wa-panel__encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--espacio-4) var(--espacio-5);
+  background: #25D366;
+  color: white;
+}
+
+.wa-panel__info {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+.wa-panel__avatar {
+  width: 42px;
+  height: 42px;
+  background: rgba(255,255,255,0.2);
+  border-radius: var(--radio-redondo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wa-panel__avatar svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+.wa-panel__nombre {
+  font-weight: 700;
+  font-size: var(--tamano-base);
+  color: white;
+  margin: 0;
+}
+
+.wa-panel__estado {
+  font-size: var(--tamano-xs);
+  color: rgba(255,255,255,0.8);
+  margin: 0;
+}
+
+.wa-panel__cerrar {
+  color: rgba(255,255,255,0.9);
+  width: 32px;
+  height: 32px;
+}
+
+.wa-panel__cerrar:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.wa-panel__cerrar svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Mensajes */
+.wa-panel__mensajes {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--espacio-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  background: var(--fondo-pagina);
+}
+
+.wa-mensaje {
+  max-width: 85%;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-lg);
+  font-size: var(--tamano-sm);
+  line-height: 1.5;
+  animation: deslizarArriba var(--transicion-normal) ease;
+}
+
+.wa-mensaje--bot {
+  background: var(--fondo-tarjeta);
+  color: var(--texto-principal);
+  align-self: flex-start;
+  border-bottom-left-radius: var(--radio-sm);
+  box-shadow: var(--sombra-sm);
+}
+
+.wa-mensaje--usuario {
+  background: #DCF8C6;
+  color: #1a1a1a;
+  align-self: flex-end;
+  border-bottom-right-radius: var(--radio-sm);
+}
+
+/* Preguntas rápidas */
+.wa-preguntas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  animation: deslizarArriba var(--transicion-normal) ease;
+}
+
+.wa-pregunta-btn {
+  background: var(--fondo-tarjeta);
+  border: 1.5px solid #25D366;
+  border-radius: var(--radio-lg);
+  padding: var(--espacio-2) var(--espacio-3);
+  font-size: var(--tamano-xs);
+  font-weight: 500;
+  color: #128C7E;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transicion-rapida);
+}
+
+.wa-pregunta-btn:hover {
+  background: #25D366;
+  color: white;
+  border-color: #25D366;
+}
+
+/* Botón acción */
+.wa-panel__accion {
+  padding: var(--espacio-3) var(--espacio-4);
+  background: var(--fondo-tarjeta);
+  border-top: 1px solid var(--borde-color);
+}
+
+.wa-btn-directo {
+  width: 100%;
+  background: #25D366;
+  border-color: #25D366;
+  font-size: var(--tamano-sm);
+}
+
+.wa-btn-directo:hover {
+  background: #1DA851;
+  border-color: #1DA851;
+}
+
+/* Botón principal flotante */
+.wa-boton-flotante {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radio-redondo);
+  background: #25D366;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.5);
+  transition: all var(--transicion-normal);
+  flex-shrink: 0;
+}
+
+.wa-boton-flotante:hover {
+  background: #1DA851;
+  transform: scale(1.08);
+  box-shadow: 0 8px 28px rgba(37, 211, 102, 0.6);
+}
+
+.wa-boton-flotante svg {
+  width: 32px;
+  height: 32px;
+  fill: white;
+  transition: all var(--transicion-normal);
+}
+
+.wa-boton-flotante:hover svg {
+  transform: scale(1.05);
+}
+
+@media (max-width: 480px) {
+  .wa-flotante {
+    right: 16px;
+    bottom: 20px;
+  }
+
+  .wa-panel {
+    width: calc(100vw - 32px);
+  }
+}

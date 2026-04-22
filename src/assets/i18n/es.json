@@ -1,0 +1,132 @@
+{
+  "nav": {
+    "inicio": "Inicio",
+    "servicios": "Servicios",
+    "nosotros": "Nosotros",
+    "contacto": "Contacto",
+    "ingresar": "Ingresar"
+  },
+  "portada": {
+    "titulo": "Seguridad Social",
+    "tituloDestacado": "sin complicaciones",
+    "subtitulo": "Gestionamos sus afiliaciones a EPS, Pensión, ARL y Caja de Compensación con profesionalismo y rapidez.",
+    "botonServicios": "Ver servicios",
+    "botonContacto": "Contáctenos"
+  },
+  "servicios": {
+    "titulo": "Nuestros Servicios",
+    "subtitulo": "Soluciones integrales en seguridad social para personas naturales y empresas",
+    "eps": {
+      "titulo": "Afiliación EPS",
+      "descripcion": "Gestión de afiliaciones al sistema de salud. Tramitamos su carné y el de sus trabajadores de manera eficiente."
+    },
+    "pension": {
+      "titulo": "Pensión",
+      "descripcion": "Afiliación al sistema pensional. Asegure su futuro y el de su familia con los mejores fondos del mercado."
+    },
+    "arl": {
+      "titulo": "Riesgos Profesionales",
+      "descripcion": "Afiliación a ARL. Proteja a sus trabajadores ante accidentes laborales y enfermedades profesionales."
+    },
+    "cajaCompensacion": {
+      "titulo": "Caja de Compensación",
+      "descripcion": "Acceda a los beneficios de educación, recreación, vivienda y crédito para usted y sus empleados."
+    },
+    "asesorias": {
+      "titulo": "Asesorías",
+      "descripcion": "Orientación experta en seguridad social para personas naturales y jurídicas. Resolvemos todas sus dudas."
+    },
+    "catastro": {
+      "titulo": "Catastro",
+      "descripcion": "Servicios catastrales y gestión de información predial. Trámites ante las entidades correspondientes."
+    },
+    "tramites": {
+      "titulo": "Trámites Documentales",
+      "descripcion": "Gestión integral de documentos y trámites administrativos relacionados con la seguridad social."
+    }
+  },
+  "nosotros": {
+    "titulo": "Conózcanos",
+    "subtitulo": "Más de dos años acompañando a las empresas y trabajadores del Quindío",
+    "mision": {
+      "titulo": "Misión",
+      "texto": "Somos una empresa dedicada a brindar soluciones integrales en seguridad social, facilitando los trámites de afiliación y asesoría a personas naturales y jurídicas del Quindío. Nos comprometemos con la calidad, la transparencia y la eficiencia en cada servicio, contribuyendo al bienestar y la protección social de nuestra comunidad."
+    },
+    "vision": {
+      "titulo": "Visión",
+      "texto": "Ser reconocidos para el año 2030 como la empresa líder en gestión de seguridad social del Eje Cafetero, destacándonos por nuestra innovación tecnológica, excelencia en el servicio y el compromiso permanente con el bienestar de nuestros clientes y sus colaboradores."
+    }
+  },
+  "contacto": {
+    "titulo": "Contáctenos",
+    "subtitulo": "Estamos aquí para ayudarle. Comuníquese con nosotros",
+    "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío",
+    "telefono": "316 285 2138",
+    "correo": "anturi3867@hotmail.com",
+    "horario": "Lun - Vie: 8:00 am - 6:00 pm",
+    "whatsapp": "Escríbanos por WhatsApp"
+  },
+  "chatbot": {
+    "titulo": "Asistente Anturi",
+    "subtitulo": "¿En qué podemos ayudarle?",
+    "bienvenida": "Hola, bienvenido a Anturi Multiservicios. Soy su asistente virtual. ¿En qué puedo ayudarle hoy?",
+    "preguntas": {
+      "servicios": "¿Qué servicios ofrecen?",
+      "afiliacion": "¿Cómo me puedo afiliar?",
+      "ubicacion": "¿Dónde están ubicados?",
+      "horarios": "¿Cuáles son los horarios?",
+      "documentos": "¿Qué documentos necesito?",
+      "costos": "¿Cuánto cuesta?",
+      "asesor": "Hablar con un asesor"
+    },
+    "respuestas": {
+      "servicios": "Ofrecemos: Afiliaciones a EPS, Pensión, ARL y Caja de Compensación familiar. También brindamos asesorías en seguridad social, catastro y gestión documental.",
+      "afiliacion": "Para afiliarse debe traer su cédula de ciudadanía, último recibo de servicios y en caso de empresa: RUT y Cámara de Comercio. Nuestro proceso es rápido y personalizado.",
+      "ubicacion": "Estamos ubicados en la Carrera 7 # 15-24, Quimbaya, Quindío. También puede comunicarse vía WhatsApp.",
+      "horarios": "Atendemos de Lunes a Viernes de 8:00 am a 6:00 pm. Sábados de 8:00 am a 12:00 pm.",
+      "documentos": "Documentos básicos: Cédula de ciudadanía. Para empresa: RUT, Cámara de Comercio, planilla de trabajadores. Según el servicio pueden requerirse documentos adicionales.",
+      "costos": "El costo varía según el servicio y el número de personas. Le ofrecemos asesoría gratuita para orientarle sobre la mejor opción. ¡Contáctenos!",
+      "asesor": "Le comunicaremos con uno de nuestros asesores vía WhatsApp."
+    },
+    "botonWhatsapp": "Abrir WhatsApp",
+    "cerrar": "Cerrar"
+  },
+  "pie": {
+    "descripcion": "Soluciones integrales en seguridad social para personas y empresas del Quindío.",
+    "derechos": "Todos los derechos reservados",
+    "marca": "Marca Registrada"
+  },
+  "login": {
+    "titulo": "Bienvenido",
+    "subtitulo": "Ingrese sus credenciales para continuar",
+    "correo": "Correo electrónico",
+    "contrasena": "Contraseña",
+    "ingresar": "Ingresar",
+    "olvidoContrasena": "¿Olvidó su contraseña?",
+    "recuperar": "Recuperar contraseña",
+    "recuperarTexto": "Ingrese su correo y le enviaremos las instrucciones para restablecer su contraseña.",
+    "enviar": "Enviar instrucciones",
+    "volver": "Volver al login",
+    "correoEnviado": "Hemos enviado las instrucciones a su correo."
+  },
+  "comun": {
+    "cargando": "Cargando...",
+    "guardar": "Guardar",
+    "cancelar": "Cancelar",
+    "eliminar": "Eliminar",
+    "editar": "Editar",
+    "ver": "Ver",
+    "buscar": "Buscar...",
+    "nuevo": "Nuevo",
+    "cerrar": "Cerrar",
+    "confirmar": "Confirmar",
+    "si": "Sí",
+    "no": "No",
+    "activo": "Activo",
+    "inactivo": "Inactivo",
+    "vencido": "Vencido",
+    "pendiente": "Pendiente",
+    "alDia": "Al día",
+    "sinResultados": "No se encontraron resultados"
+  }
+}
