@@ -19,6 +19,7 @@
     "module": "ES2022",
     "useDefineForClassFields": false,
     "lib": ["ES2022", "dom"],
+    "baseUrl": "./",
     "paths": {
       "@nucleo/*": ["src/app/nucleo/*"],
       "@compartido/*": ["src/app/compartido/*"],
