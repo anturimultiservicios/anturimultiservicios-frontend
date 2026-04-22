@@ -1,9 +1,10 @@
 [build]
-  command   = "npm run build"
+  command   = "npm ci && npm run build"
   publish   = "dist/anturi-frontend/browser"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION  = "20"
+  NODE_OPTIONS  = "--max_old_space_size=4096"
 
 # Redirige todas las rutas al index.html para que Angular maneje el routing
 [[redirects]]
