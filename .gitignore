@@ -11,9 +11,6 @@ dist/
 .env
 .env.*
 
-# Archivos de entorno de producción con datos reales (mantener solo plantillas)
-src/environments/entorno.produccion.ts
-
 # IDE y herramientas
 .vscode/
 .idea/
