@@ -4,63 +4,53 @@ export const rutasAdmin: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./panel-principal/panel-principal.component').then(
-        (m) => m.PanelPrincipalComponent
-      ),
+      import('./panel-principal/panel-principal.component').then((m) => m.PanelPrincipalComponent),
     children: [
-      {
-        path: '',
-        redirectTo: 'resumen',
-        pathMatch: 'full',
-      },
+      { path: '', redirectTo: 'resumen', pathMatch: 'full' },
       {
         path: 'resumen',
         loadComponent: () =>
-          import('./panel-principal/resumen/resumen.component').then(
-            (m) => m.ResumenComponent
-          ),
-      },
-      {
-        path: 'empresas',
-        loadComponent: () =>
-          import('./empresas/lista-empresas/lista-empresas.component').then(
-            (m) => m.ListaEmpresasComponent
-          ),
-      },
-      {
-        path: 'empresas/:id',
-        loadComponent: () =>
-          import('./empresas/detalle-empresa/detalle-empresa.component').then(
-            (m) => m.DetalleEmpresaComponent
-          ),
+          import('./panel-principal/resumen/resumen.component').then((m) => m.ResumenComponent),
       },
       {
         path: 'afiliados',
         loadComponent: () =>
-          import('./afiliados/lista-afiliados/lista-afiliados.component').then(
-            (m) => m.ListaAfiliadosComponent
-          ),
+          import('./afiliados/lista-afiliados/lista-afiliados.component').then((m) => m.ListaAfiliadosComponent),
+      },
+      {
+        path: 'afiliados/nuevo',
+        loadComponent: () =>
+          import('./afiliados/formulario-afiliado/formulario-afiliado.component').then((m) => m.FormularioAfiliadoComponent),
       },
       {
         path: 'afiliados/:id',
         loadComponent: () =>
-          import('./afiliados/detalle-afiliado/detalle-afiliado.component').then(
-            (m) => m.DetalleAfiliadoComponent
-          ),
+          import('./afiliados/detalle-afiliado/detalle-afiliado.component').then((m) => m.DetalleAfiliadoComponent),
+      },
+      {
+        path: 'empresas',
+        loadComponent: () =>
+          import('./empresas/lista-empresas/lista-empresas.component').then((m) => m.ListaEmpresasComponent),
+      },
+      {
+        path: 'empresas/:id',
+        loadComponent: () =>
+          import('./empresas/detalle-empresa/detalle-empresa.component').then((m) => m.DetalleEmpresaComponent),
       },
       {
         path: 'usuarios',
         loadComponent: () =>
-          import('./usuarios-sistema/usuarios-sistema.component').then(
-            (m) => m.UsuariosSistemaComponent
-          ),
+          import('./usuarios-sistema/usuarios-sistema.component').then((m) => m.UsuariosSistemaComponent),
+      },
+      {
+        path: 'solicitudes',
+        loadComponent: () =>
+          import('./solicitudes/solicitudes-admin.component').then((m) => m.SolicitudesAdminComponent),
       },
       {
         path: 'configuracion',
         loadComponent: () =>
-          import('./configuracion/configuracion.component').then(
-            (m) => m.ConfiguracionComponent
-          ),
+          import('./configuracion/configuracion.component').then((m) => m.ConfiguracionComponent),
       },
     ],
   },
