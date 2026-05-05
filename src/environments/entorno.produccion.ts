@@ -1,5 +1,5 @@
 export const entorno = {
   produccion: true,
-  urlApi: '/api',
-  urlWebSocket: '',
+  urlApi: 'https://api.anturimultiservicios.com/api',
+  urlWebSocket: 'https://api.anturimultiservicios.com',
 };
