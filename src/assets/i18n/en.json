@@ -11,7 +11,10 @@
     "tituloDestacado": "made simple",
     "subtitulo": "We manage your EPS, Pension, ARL and Family Compensation Fund affiliations with professionalism and speed.",
     "botonServicios": "Our services",
-    "botonContacto": "Contact us"
+    "botonContacto": "Contact us",
+    "aniosExp": "Years of experience",
+    "serviciosDisp": "Available services",
+    "compromiso": "Commitment"
   },
   "servicios": {
     "titulo": "Our Services",
@@ -43,7 +46,8 @@
     "tramites": {
       "titulo": "Document Management",
       "descripcion": "Comprehensive management of documents and administrative procedures related to social security."
-    }
+    },
+    "solicitarInfo": "Request information"
   },
   "nosotros": {
     "titulo": "About Us",
@@ -62,12 +66,16 @@
     "subtitulo": "We are here to help you. Get in touch with us",
     "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío, Colombia",
     "telefono": "316 285 2138",
-    "correo": "anturi3867@hotmail.com",
-    "horario": "Mon - Fri: 8:00 am - 6:00 pm",
-    "whatsapp": "Write to us on WhatsApp"
+    "correo": "anturimultiservicios@gmail.com",
+    "horario": "Mon - Fri: 8:00 am - 12:00 pm | 1:00 pm - 5:00 pm",
+    "whatsapp": "Write to us on WhatsApp",
+    "labelDireccion": "Address",
+    "labelTelefono": "Phone / WhatsApp",
+    "labelCorreo": "Email address",
+    "labelHorario": "Business hours"
   },
   "chatbot": {
-    "titulo": "Anturi Assistant",
+    "titulo": "Anturi Bot",
     "subtitulo": "How can we help you?",
     "bienvenida": "Hello, welcome to Anturi Multiservicios. I am your virtual assistant. How can I help you today?",
     "preguntas": {
@@ -82,8 +90,8 @@
     "respuestas": {
       "servicios": "We offer: EPS, Pension, ARL and Family Compensation Fund affiliations. We also provide social security consulting, cadastre and document management.",
       "afiliacion": "To enroll you must bring your national ID, latest utility bill, and if a company: RUT and Chamber of Commerce. Our process is fast and personalized.",
-      "ubicacion": "We are located at Carrera 7 # 15-24, Quimbaya, Quindío. You can also contact us via WhatsApp.",
-      "horarios": "We serve Monday to Friday from 8:00 am to 6:00 pm. Saturdays from 8:00 am to 12:00 pm.",
+      "ubicacion": "We are located at Carrera 7 # 15-24, Quimbaya, Quindío, Colombia. You can also reach us via WhatsApp at 316 285 2138.",
+      "horarios": "We serve Monday to Friday: 8:00 am - 12:00 pm and 1:00 pm - 5:00 pm.",
       "documentos": "Basic documents: National ID card. For companies: RUT, Chamber of Commerce, employee payroll. Additional documents may be required depending on the service.",
       "costos": "The cost varies depending on the service and number of people. We offer free consultation to guide you. Contact us!",
       "asesor": "We will connect you with one of our advisors via WhatsApp."

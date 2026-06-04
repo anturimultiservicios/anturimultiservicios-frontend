@@ -14,13 +14,36 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
       <!-- Encabezado -->
       <div class="pagina-encabezado">
         <h2 class="pagina-titulo">Afiliados</h2>
-        <a routerLink="/admin/afiliados/nuevo" class="boton boton-primario">
+        <a [routerLink]="[prefijo, 'afiliados', 'nuevo']" class="boton boton-primario">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
           Nuevo afiliado
         </a>
+      </div>
+
+      <!-- Chips de estadísticas -->
+      <div class="estadisticas-chips">
+        <button class="chip" [class.chip--activo]="estadoSeleccionado === ''" (click)="filtrarPorEstado('')">
+          <span class="chip__label">Todos</span>
+          <span class="chip__count">{{ stats.total }}</span>
+        </button>
+        <button class="chip chip--verde" [class.chip--activo]="estadoSeleccionado === 'ACTIVO'" (click)="filtrarPorEstado('ACTIVO')">
+          <span class="chip__dot"></span>
+          <span class="chip__label">Activos</span>
+          <span class="chip__count">{{ stats.activos }}</span>
+        </button>
+        <button class="chip chip--naranja" [class.chip--activo]="estadoSeleccionado === 'RETIRADO'" (click)="filtrarPorEstado('RETIRADO')">
+          <span class="chip__dot"></span>
+          <span class="chip__label">Retirados</span>
+          <span class="chip__count">{{ stats.retirados }}</span>
+        </button>
+        <button class="chip chip--rojo" [class.chip--activo]="estadoSeleccionado === 'SUSPENDIDO'" (click)="filtrarPorEstado('SUSPENDIDO')">
+          <span class="chip__dot"></span>
+          <span class="chip__label">Suspendidos</span>
+          <span class="chip__count">{{ stats.suspendidos }}</span>
+        </button>
       </div>
 
       <!-- Filtros -->
@@ -40,7 +63,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
         </div>
         <div class="filtro-estado">
           <label class="campo-etiqueta">Estado</label>
-          <select class="campo-input" [(ngModel)]="estadoSeleccionado" (change)="cargarAfiliados()">
+          <select class="campo-input" [(ngModel)]="estadoSeleccionado" (change)="pagina = 1; cargarAfiliados()">
             <option value="">Todos</option>
             <option value="ACTIVO">Activo</option>
             <option value="RETIRADO">Retirado</option>
@@ -77,7 +100,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
         <p style="color: var(--texto-terciario); font-size: var(--tamano-lg);">
           {{ terminoBusqueda ? 'No se encontraron afiliados con "' + terminoBusqueda + '"' : 'No hay afiliados registrados' }}
         </p>
-        <a *ngIf="!terminoBusqueda" routerLink="/admin/afiliados/nuevo" class="boton boton-primario">Registrar primer afiliado</a>
+        <a *ngIf="!terminoBusqueda" [routerLink]="[prefijo, 'afiliados', 'nuevo']" class="boton boton-primario">Registrar primer afiliado</a>
       </div>
 
       <!-- Tabla -->
@@ -139,7 +162,17 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
           </tbody>
         </table>
         <div class="tabla-pie">
-          <span class="tabla-pie__total">{{ afiliados.length }} afiliado{{ afiliados.length !== 1 ? 's' : '' }}</span>
+          <span class="tabla-pie__total">
+            {{ total }} afiliado{{ total !== 1 ? 's' : '' }}
+            <span *ngIf="estadoSeleccionado" class="tabla-pie__filtro">
+              ({{ estadoSeleccionado | lowercase }})
+            </span>
+          </span>
+          <div *ngIf="totalPaginas > 1" class="paginacion">
+            <button class="paginacion__btn" [disabled]="pagina === 1" (click)="irAPagina(pagina - 1)">‹</button>
+            <span class="paginacion__info">Pág. {{ pagina }} / {{ totalPaginas }}</span>
+            <button class="paginacion__btn" [disabled]="pagina === totalPaginas" (click)="irAPagina(pagina + 1)">›</button>
+          </div>
         </div>
       </div>
     </div>
@@ -148,6 +181,22 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .pagina-encabezado { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--espacio-3); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
+
+    /* Chips de estadísticas */
+    .estadisticas-chips { display: flex; gap: var(--espacio-2); flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio-pill); border: 1.5px solid var(--borde-color); background: var(--fondo-tarjeta); cursor: pointer; font-size: var(--tamano-sm); color: var(--texto-secundario); transition: all var(--transicion-rapida); }
+    .chip:hover { border-color: var(--color-primario); color: var(--color-primario); }
+    .chip--activo { background: var(--color-primario); border-color: var(--color-primario); color: white; }
+    .chip__label { font-weight: 500; }
+    .chip__count { font-weight: 700; font-size: var(--tamano-xs); padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.12); }
+    .chip--activo .chip__count { background: rgba(255,255,255,0.25); }
+    .chip__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .chip--verde { color: #15803d; border-color: rgba(34,197,94,0.3); }
+    .chip--verde:hover, .chip--verde.chip--activo { background: #15803d; border-color: #15803d; color: white; }
+    .chip--naranja { color: #c2410c; border-color: rgba(249,115,22,0.3); }
+    .chip--naranja:hover, .chip--naranja.chip--activo { background: #c2410c; border-color: #c2410c; color: white; }
+    .chip--rojo { color: #b91c1c; border-color: rgba(239,68,68,0.3); }
+    .chip--rojo:hover, .chip--rojo.chip--activo { background: #b91c1c; border-color: #b91c1c; color: white; }
 
     .filtros-contenedor { display: flex; gap: var(--espacio-4); align-items: flex-end; padding: var(--espacio-4); flex-wrap: wrap; }
     .filtro-busqueda { flex: 1; min-width: 240px; position: relative; }
@@ -182,8 +231,14 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
     .badge-retirado { background: rgba(249,115,22,0.12); color: #c2410c; }
     .badge-suspendido { background: rgba(239,68,68,0.12); color: #b91c1c; }
 
-    .tabla-pie { padding: var(--espacio-3) var(--espacio-4); border-top: 1px solid var(--borde-color, #e5e7eb); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.02)); }
+    .tabla-pie { padding: var(--espacio-3) var(--espacio-4); border-top: 1px solid var(--borde-color, #e5e7eb); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.02)); display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-4); flex-wrap: wrap; }
     .tabla-pie__total { font-size: var(--tamano-sm); color: var(--texto-terciario); }
+    .tabla-pie__filtro { font-weight: 600; color: var(--color-primario); text-transform: capitalize; }
+    .paginacion { display: flex; align-items: center; gap: var(--espacio-2); }
+    .paginacion__btn { width: 28px; height: 28px; border-radius: var(--radio-sm); border: 1px solid var(--borde-color); background: var(--fondo-tarjeta); color: var(--texto-principal); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all var(--transicion-rapida); }
+    .paginacion__btn:hover:not([disabled]) { background: var(--color-primario); color: white; border-color: var(--color-primario); }
+    .paginacion__btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+    .paginacion__info { font-size: var(--tamano-sm); color: var(--texto-secundario); white-space: nowrap; }
   `]
 })
 export class ListaAfiliadosComponent implements OnInit, OnDestroy {
@@ -192,6 +247,12 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   estadoSeleccionado = '';
   cargando = false;
   error = '';
+  total = 0;
+  pagina = 1;
+  totalPaginas = 1;
+  readonly porPagina = 50;
+
+  stats = { total: 0, activos: 0, retirados: 0, suspendidos: 0 };
 
   private busqueda$ = new Subject<string>();
   private destruir$ = new Subject<void>();
@@ -201,28 +262,37 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
     private router: Router
   ) {}
 
+  protected get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
+
   ngOnInit(): void {
-    // Debounce para búsqueda en tiempo real
+    this.afiliadosServicio.estadisticas().pipe(
+      catchError(() => of({ total: 0, activos: 0, retirados: 0, suspendidos: 0 }))
+    ).subscribe(s => { this.stats = s; });
+
     this.busqueda$.pipe(
       debounceTime(400),
       distinctUntilChanged(),
       switchMap(termino => {
         this.cargando = true;
         this.error = '';
-        return this.afiliadosServicio.listar(termino || undefined, this.estadoSeleccionado || undefined).pipe(
-          catchError(err => {
+        this.pagina = 1;
+        return this.afiliadosServicio.listar(termino || undefined, this.estadoSeleccionado || undefined, undefined, 1, this.porPagina).pipe(
+          catchError(() => {
             this.error = 'Error al cargar afiliados. Verifique la conexión.';
-            return of([]);
+            return of({ datos: [], total: 0, pagina: 1, porPagina: this.porPagina, totalPaginas: 0 });
           })
         );
       }),
       takeUntil(this.destruir$)
-    ).subscribe(lista => {
-      this.afiliados = lista;
+    ).subscribe(resp => {
+      this.afiliados = resp.datos;
+      this.total = resp.total;
+      this.totalPaginas = resp.totalPaginas;
       this.cargando = false;
     });
 
-    // Carga inicial
     this.cargarAfiliados();
   }
 
@@ -240,20 +310,37 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
     this.error = '';
     this.afiliadosServicio.listar(
       this.terminoBusqueda || undefined,
-      this.estadoSeleccionado || undefined
+      this.estadoSeleccionado || undefined,
+      undefined,
+      this.pagina,
+      this.porPagina
     ).pipe(
-      catchError(err => {
+      catchError(() => {
         this.error = 'Error al cargar afiliados. Verifique la conexión.';
-        return of([]);
+        return of({ datos: [], total: 0, pagina: 1, porPagina: this.porPagina, totalPaginas: 0 });
       })
-    ).subscribe(lista => {
-      this.afiliados = lista;
+    ).subscribe(resp => {
+      this.afiliados = resp.datos;
+      this.total = resp.total;
+      this.totalPaginas = resp.totalPaginas;
       this.cargando = false;
     });
   }
 
+  filtrarPorEstado(estado: string): void {
+    this.estadoSeleccionado = estado;
+    this.pagina = 1;
+    this.cargarAfiliados();
+  }
+
+  irAPagina(p: number): void {
+    if (p < 1 || p > this.totalPaginas) return;
+    this.pagina = p;
+    this.cargarAfiliados();
+  }
+
   irADetalle(id: number): void {
-    this.router.navigate(['/admin/afiliados', id]);
+    this.router.navigate([this.prefijo, 'afiliados', id]);
   }
 
   claseBadge(estado: string): string {

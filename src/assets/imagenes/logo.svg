@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" width="120" height="100">
+  <!-- Letra A en azul marino -->
+  <polygon points="45,90 60,20 75,90" fill="#1B3270"/>
+  <rect x="47" y="60" width="26" height="9" fill="#1B3270"/>
+  <!-- Hueco del centro de la A -->
+  <polygon points="60,28 67,58 53,58" fill="white"/>
+
+  <!-- Semicírculo naranja (lado derecho) -->
+  <path d="M 76 30 A 32 32 0 0 1 76 90" stroke="#E8570C" stroke-width="10" fill="none" stroke-linecap="round"/>
+</svg>

@@ -11,7 +11,10 @@
     "tituloDestacado": "sin complicaciones",
     "subtitulo": "Gestionamos sus afiliaciones a EPS, Pensión, ARL y Caja de Compensación con profesionalismo y rapidez.",
     "botonServicios": "Ver servicios",
-    "botonContacto": "Contáctenos"
+    "botonContacto": "Contáctenos",
+    "aniosExp": "Años de experiencia",
+    "serviciosDisp": "Servicios disponibles",
+    "compromiso": "Compromiso"
   },
   "servicios": {
     "titulo": "Nuestros Servicios",
@@ -43,7 +46,8 @@
     "tramites": {
       "titulo": "Trámites Documentales",
       "descripcion": "Gestión integral de documentos y trámites administrativos relacionados con la seguridad social."
-    }
+    },
+    "solicitarInfo": "Solicitar información"
   },
   "nosotros": {
     "titulo": "Conózcanos",
@@ -62,12 +66,16 @@
     "subtitulo": "Estamos aquí para ayudarle. Comuníquese con nosotros",
     "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío",
     "telefono": "316 285 2138",
-    "correo": "anturi3867@hotmail.com",
-    "horario": "Lun - Vie: 8:00 am - 6:00 pm",
-    "whatsapp": "Escríbanos por WhatsApp"
+    "correo": "anturimultiservicios@gmail.com",
+    "horario": "Lun - Vie: 8:00 am - 12:00 pm | 1:00 pm - 5:00 pm",
+    "whatsapp": "Escríbanos por WhatsApp",
+    "labelDireccion": "Dirección",
+    "labelTelefono": "Teléfono / WhatsApp",
+    "labelCorreo": "Correo electrónico",
+    "labelHorario": "Horario de atención"
   },
   "chatbot": {
-    "titulo": "Asistente Anturi",
+    "titulo": "Anturi Bot",
     "subtitulo": "¿En qué podemos ayudarle?",
     "bienvenida": "Hola, bienvenido a Anturi Multiservicios. Soy su asistente virtual. ¿En qué puedo ayudarle hoy?",
     "preguntas": {
@@ -82,8 +90,8 @@
     "respuestas": {
       "servicios": "Ofrecemos: Afiliaciones a EPS, Pensión, ARL y Caja de Compensación familiar. También brindamos asesorías en seguridad social, catastro y gestión documental.",
       "afiliacion": "Para afiliarse debe traer su cédula de ciudadanía, último recibo de servicios y en caso de empresa: RUT y Cámara de Comercio. Nuestro proceso es rápido y personalizado.",
-      "ubicacion": "Estamos ubicados en la Carrera 7 # 15-24, Quimbaya, Quindío. También puede comunicarse vía WhatsApp.",
-      "horarios": "Atendemos de Lunes a Viernes de 8:00 am a 6:00 pm. Sábados de 8:00 am a 12:00 pm.",
+      "ubicacion": "Estamos ubicados en la Carrera 7 # 15-24, Quimbaya, Quindío. También puede comunicarse vía WhatsApp al 316 285 2138.",
+      "horarios": "Atendemos de Lunes a Viernes: 8:00 am - 12:00 pm y 1:00 pm - 5:00 pm.",
       "documentos": "Documentos básicos: Cédula de ciudadanía. Para empresa: RUT, Cámara de Comercio, planilla de trabajadores. Según el servicio pueden requerirse documentos adicionales.",
       "costos": "El costo varía según el servicio y el número de personas. Le ofrecemos asesoría gratuita para orientarle sobre la mejor opción. ¡Contáctenos!",
       "asesor": "Le comunicaremos con uno de nuestros asesores vía WhatsApp."

@@ -52,7 +52,8 @@ export class ChatbotWhatsappComponent {
       setTimeout(() => {
         this.agregarMensajeBot(this.translate.instant(`chatbot.respuestas.${clave}`));
         setTimeout(() => {
-          this.abrirWhatsApp('');
+          this.abrirWhatsAppConTranscript();
+          this.mostrarPreguntas = true;
         }, 800);
       }, 400);
       return;
@@ -70,6 +71,16 @@ export class ChatbotWhatsappComponent {
     const texto = mensaje
       ? encodeURIComponent(mensaje)
       : encodeURIComponent('Hola, me comunico desde el sitio web de Anturi Multiservicios. Quisiera más información sobre sus servicios.');
+    window.open(`https://wa.me/${this.NUMERO_WA}?text=${texto}`, '_blank');
+  }
+
+  abrirWhatsAppConTranscript(): void {
+    const transcript = this.mensajes
+      .map(m => `${m.tipo === 'bot' ? 'Anturi Bot' : 'Usuario'}: ${m.texto}`)
+      .join('\n');
+    const texto = encodeURIComponent(
+      `Hola, me contacto desde el sitio web de Anturi Multiservicios.\n\nConversación con el bot:\n${transcript}\n\nNecesito hablar con un asesor.`
+    );
     window.open(`https://wa.me/${this.NUMERO_WA}?text=${texto}`, '_blank');
   }
 

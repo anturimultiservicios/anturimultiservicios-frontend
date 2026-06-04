@@ -39,6 +39,11 @@
   height: 44px;
   width: auto;
   object-fit: contain;
+  transition: filter var(--transicion-normal);
+}
+
+:host-context(body.tema-oscuro) .barra-nav__logo-imagen {
+  filter: brightness(0) invert(1);
 }
 
 .barra-nav__logo-texto {
@@ -172,7 +177,7 @@
   min-width: 160px;
   overflow: hidden;
   animation: escalar var(--transicion-rapida) ease forwards;
-  z-index: var(--z-elevado);
+  z-index: calc(var(--z-flotante) + 10);
 }
 
 .selector-idioma__opcion {
@@ -219,6 +224,22 @@
   border-color: var(--color-primario);
   color: var(--color-primario);
   background-color: var(--fondo-tarjeta-hover);
+}
+
+:host-context(body.tema-oscuro) .boton-tema {
+  border-color: rgba(255,255,255,0.15);
+  color: var(--texto-principal);
+}
+
+:host-context(body.tema-oscuro) .boton-tema:hover {
+  border-color: var(--color-secundario);
+  color: var(--color-secundario);
+  background-color: rgba(232,87,12,0.1);
+}
+
+:host-context(body.tema-oscuro) .selector-idioma__boton {
+  border-color: rgba(255,255,255,0.15);
+  color: var(--texto-principal);
 }
 
 .icono-tema {
