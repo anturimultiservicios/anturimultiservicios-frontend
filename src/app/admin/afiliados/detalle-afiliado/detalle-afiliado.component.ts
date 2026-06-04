@@ -561,6 +561,10 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     private auth: AutenticacionServicio
   ) {}
 
+  private get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
+
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -717,7 +721,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         finalize(() => { this.eliminando = false; this.modalEliminar = false; })
       ).subscribe(res => {
         if (res !== null) {
-          this.router.navigate(['/admin/afiliados']);
+          this.router.navigate([this.prefijo, 'afiliados']);
         }
       });
     }

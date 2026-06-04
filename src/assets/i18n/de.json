@@ -11,7 +11,10 @@
     "tituloDestacado": "ohne Komplikationen",
     "subtitulo": "Wir verwalten Ihre Kranken-, Renten-, ARL- und Familienausgleichskassen-Mitgliedschaften professionell und schnell.",
     "botonServicios": "Unsere Leistungen",
-    "botonContacto": "Kontakt aufnehmen"
+    "botonContacto": "Kontakt aufnehmen",
+    "aniosExp": "Jahre Erfahrung",
+    "serviciosDisp": "Verfügbare Dienste",
+    "compromiso": "Verpflichtung"
   },
   "servicios": {
     "titulo": "Unsere Leistungen",
@@ -43,7 +46,8 @@
     "tramites": {
       "titulo": "Dokumentenverwaltung",
       "descripcion": "Umfassendes Management von Dokumenten und Verwaltungsverfahren."
-    }
+    },
+    "solicitarInfo": "Information anfordern"
   },
   "nosotros": {
     "titulo": "Über Uns",
@@ -62,12 +66,16 @@
     "subtitulo": "Wir sind für Sie da",
     "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío, Kolumbien",
     "telefono": "316 285 2138",
-    "correo": "anturi3867@hotmail.com",
-    "horario": "Mo - Fr: 8:00 - 18:00 Uhr",
-    "whatsapp": "Schreiben Sie uns auf WhatsApp"
+    "correo": "anturimultiservicios@gmail.com",
+    "horario": "Mo - Fr: 8:00 - 12:00 Uhr | 13:00 - 17:00 Uhr",
+    "whatsapp": "Schreiben Sie uns auf WhatsApp",
+    "labelDireccion": "Adresse",
+    "labelTelefono": "Telefon / WhatsApp",
+    "labelCorreo": "E-Mail-Adresse",
+    "labelHorario": "Öffnungszeiten"
   },
   "chatbot": {
-    "titulo": "Anturi-Assistent",
+    "titulo": "Anturi Bot",
     "subtitulo": "Wie können wir Ihnen helfen?",
     "bienvenida": "Hallo, willkommen bei Anturi Multiservicios. Ich bin Ihr virtueller Assistent. Wie kann ich Ihnen heute helfen?",
     "preguntas": {
@@ -82,8 +90,8 @@
     "respuestas": {
       "servicios": "Wir bieten: Kranken-, Renten-, ARL- und Familienausgleichsanmeldungen. Außerdem Beratung zu sozialer Sicherheit und Dokumentenverwaltung.",
       "afiliacion": "Für die Anmeldung benötigen Sie Ihren Personalausweis, letzte Stromrechnung und bei Unternehmen: RUT und Handelskammerregistrierung.",
-      "ubicacion": "Wir befinden uns in der Carrera 7 # 15-24, Quimbaya, Quindío. Sie können uns auch per WhatsApp kontaktieren.",
-      "horarios": "Wir bedienen von Montag bis Freitag von 8:00 bis 18:00 Uhr. Samstags von 8:00 bis 12:00 Uhr.",
+      "ubicacion": "Wir befinden uns in der Carrera 7 # 15-24, Quimbaya, Quindío, Kolumbien. Sie können uns auch per WhatsApp unter 316 285 2138 erreichen.",
+      "horarios": "Wir sind Montag bis Freitag geöffnet: 8:00 - 12:00 Uhr und 13:00 - 17:00 Uhr.",
       "documentos": "Grunddokumente: Nationalausweis. Für Unternehmen: RUT, Handelskammer, Mitarbeiterliste.",
       "costos": "Die Kosten variieren je nach Leistung. Wir bieten kostenlose Beratung. Kontaktieren Sie uns!",
       "asesor": "Wir verbinden Sie mit einem Berater über WhatsApp."

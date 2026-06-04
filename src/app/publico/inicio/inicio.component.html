@@ -28,24 +28,24 @@
         <div class="portada__estadisticas">
           <div class="portada__stat">
             <span class="portada__stat-numero">+2</span>
-            <span class="portada__stat-texto">Años de experiencia</span>
+            <span class="portada__stat-texto">{{ 'portada.aniosExp' | translate }}</span>
           </div>
           <div class="portada__stat-divisor"></div>
           <div class="portada__stat">
             <span class="portada__stat-numero">7</span>
-            <span class="portada__stat-texto">Servicios disponibles</span>
+            <span class="portada__stat-texto">{{ 'portada.serviciosDisp' | translate }}</span>
           </div>
           <div class="portada__stat-divisor"></div>
           <div class="portada__stat">
             <span class="portada__stat-numero">100%</span>
-            <span class="portada__stat-texto">Compromiso</span>
+            <span class="portada__stat-texto">{{ 'portada.compromiso' | translate }}</span>
           </div>
         </div>
       </div>
 
       <div class="portada__logo-grande">
         <div class="portada__logo-contenedor">
-          <img src="/assets/imagenes/logo.png" alt="Anturi Multiservicios" class="portada__logo-img">
+          <img src="/assets/imagenes/logo.svg" alt="Anturi Multiservicios" class="portada__logo-img">
           <div class="portada__logo-anillo portada__logo-anillo-1"></div>
           <div class="portada__logo-anillo portada__logo-anillo-2"></div>
         </div>
@@ -69,63 +69,65 @@
 
       <!-- Carrusel -->
       <div class="carrusel">
-        <button class="carrusel__btn carrusel__btn-anterior" (click)="anterior()" aria-label="Anterior">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
+        <div class="carrusel__fila">
+          <button class="carrusel__btn carrusel__btn-anterior" (click)="anterior()" aria-label="Anterior">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
 
-        <div class="carrusel__pista">
-          <div class="carrusel__tarjeta"
-               *ngFor="let servicio of servicios; let i = index"
-               [class.activa]="i === indiceCarrusel"
-               [class.anterior-slide]="i === (indiceCarrusel - 1 + servicios.length) % servicios.length"
-               [class.siguiente-slide]="i === (indiceCarrusel + 1) % servicios.length">
-            <div class="carrusel__icono" [class]="'icono-' + servicio.icono">
-              <ng-container [ngSwitch]="servicio.icono">
-                <svg *ngSwitchCase="'salud'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                </svg>
-                <svg *ngSwitchCase="'pension'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="8" r="6"></circle>
-                  <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
-                </svg>
-                <svg *ngSwitchCase="'arl'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                <svg *ngSwitchCase="'caja'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                <svg *ngSwitchCase="'asesoria'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-                <svg *ngSwitchCase="'catastro'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-                </svg>
-                <svg *ngSwitchDefault viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-              </ng-container>
+          <div class="carrusel__pista">
+            <div class="carrusel__tarjeta"
+                 *ngFor="let servicio of servicios; let i = index"
+                 [class.activa]="i === indiceCarrusel"
+                 [class.anterior-slide]="i === (indiceCarrusel - 1 + servicios.length) % servicios.length"
+                 [class.siguiente-slide]="i === (indiceCarrusel + 1) % servicios.length">
+              <div class="carrusel__icono" [class]="'icono-' + servicio.icono">
+                <ng-container [ngSwitch]="servicio.icono">
+                  <svg *ngSwitchCase="'salud'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'pension'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="8" r="6"></circle>
+                    <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'arl'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'caja'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'asesoria'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  <svg *ngSwitchCase="'catastro'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                  </svg>
+                  <svg *ngSwitchDefault viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                </ng-container>
+              </div>
+              <h3 class="carrusel__titulo">{{ servicio.claveTitulo | translate }}</h3>
+              <p class="carrusel__descripcion">{{ servicio.claveDescripcion | translate }}</p>
+              <button class="boton boton-contorno carrusel__btn-info" (click)="irASeccion('contacto')">
+                {{ 'servicios.solicitarInfo' | translate }}
+              </button>
             </div>
-            <h3 class="carrusel__titulo">{{ servicio.claveTitulo | translate }}</h3>
-            <p class="carrusel__descripcion">{{ servicio.claveDescripcion | translate }}</p>
-            <button class="boton boton-contorno carrusel__btn-info" (click)="irASeccion('contacto')">
-              Solicitar información
-            </button>
           </div>
-        </div>
 
-        <button class="carrusel__btn carrusel__btn-siguiente" (click)="siguiente()" aria-label="Siguiente">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+          <button class="carrusel__btn carrusel__btn-siguiente" (click)="siguiente()" aria-label="Siguiente">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
 
         <!-- Indicadores -->
         <div class="carrusel__indicadores">
@@ -197,7 +199,7 @@
               </svg>
             </div>
             <div class="contacto__item-info">
-              <h4>Dirección</h4>
+              <h4>{{ 'contacto.labelDireccion' | translate }}</h4>
               <p>{{ 'contacto.direccion' | translate }}</p>
             </div>
           </div>
@@ -209,7 +211,7 @@
               </svg>
             </div>
             <div class="contacto__item-info">
-              <h4>Teléfono / WhatsApp</h4>
+              <h4>{{ 'contacto.labelTelefono' | translate }}</h4>
               <p>316 285 2138</p>
             </div>
           </div>
@@ -222,8 +224,8 @@
               </svg>
             </div>
             <div class="contacto__item-info">
-              <h4>Correo electrónico</h4>
-              <p>anturi3867&#64;hotmail.com</p>
+              <h4>{{ 'contacto.labelCorreo' | translate }}</h4>
+              <p>anturimultiservicios&#64;gmail.com</p>
             </div>
           </div>
 
@@ -235,7 +237,7 @@
               </svg>
             </div>
             <div class="contacto__item-info">
-              <h4>Horario de atención</h4>
+              <h4>{{ 'contacto.labelHorario' | translate }}</h4>
               <p>{{ 'contacto.horario' | translate }}</p>
             </div>
           </div>
@@ -249,18 +251,34 @@
           </button>
         </div>
 
-        <!-- Mapa embed placeholder -->
-        <div class="contacto__mapa">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3974.8!2d-75.7640!3d4.6310!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwMzcnNTEuNiJOIDc1wrA0NSc1MC40Ilc!5e0!3m2!1ses!2sco!4v1"
-            width="100%"
-            height="100%"
-            style="border:0;"
-            allowfullscreen
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            title="Ubicación Anturi Multiservicios - Quimbaya, Quindío">
-          </iframe>
+        <!-- Mapa con navegación -->
+        <div class="contacto__mapa-contenedor">
+          <div class="contacto__mapa">
+            <iframe
+              src="https://maps.google.com/maps?q=4.623660,-75.763046&output=embed&hl=es&z=18"
+              width="100%"
+              height="100%"
+              style="border:0;"
+              allowfullscreen
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Ubicación Anturi Multiservicios - Quimbaya, Quindío">
+            </iframe>
+            <a href="https://maps.google.com/?q=4.623660,-75.763046"
+               target="_blank" rel="noopener"
+               class="contacto__mapa-overlay"
+               aria-label="Abrir en Google Maps"></a>
+          </div>
+          <div class="contacto__mapa-botones">
+            <a href="https://maps.google.com/?q=4.623660,-75.763046" target="_blank" rel="noopener" class="boton contacto__btn-nav contacto__btn-gmaps">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Abrir en Google Maps
+            </a>
+            <a href="https://waze.com/ul?ll=4.623660,-75.763046&navigate=yes" target="_blank" rel="noopener" class="boton contacto__btn-nav contacto__btn-waze">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M20.54 6.63C19.29 4.1 16.84 2.27 14 2.03V2c0-.55-.45-1-1-1s-1 .45-1 1v.03C8.23 2.46 5 5.94 5 10.2c0 2.67 1.29 4.73 2.35 6.27.48.7.92 1.33 1.19 1.9.36.75.44 1.37.46 2.07V22h6v-1.57c0-.69.08-1.31.44-2.05.27-.57.71-1.2 1.19-1.9 1.06-1.54 2.35-3.6 2.35-6.27 0-1.28-.28-2.5-.44-3.58zM15 17H9v-1h6v1zm.5-3h-7C7.58 13.2 7 11.77 7 10.2 7 6.79 9.7 4.12 13 4.03V4c0-.55.45-1 1-1s1 .45 1 1v.03c2.09.2 3.87 1.39 4.87 3.09.14.9.13 1.93.13 3.08 0 1.57-.58 3-1.5 3.8z"/></svg>
+              Abrir en Waze
+            </a>
+          </div>
         </div>
 
       </div>

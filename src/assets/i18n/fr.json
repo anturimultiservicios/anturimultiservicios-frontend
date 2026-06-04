@@ -11,7 +11,10 @@
     "tituloDestacado": "sans complications",
     "subtitulo": "Nous gérons vos affiliations à l'EPS, la Retraite, l'ARL et la Caisse de Compensation avec professionnalisme et rapidité.",
     "botonServicios": "Nos services",
-    "botonContacto": "Nous contacter"
+    "botonContacto": "Nous contacter",
+    "aniosExp": "Années d'expérience",
+    "serviciosDisp": "Services disponibles",
+    "compromiso": "Engagement"
   },
   "servicios": {
     "titulo": "Nos Services",
@@ -43,7 +46,8 @@
     "tramites": {
       "titulo": "Gestion Documentaire",
       "descripcion": "Gestion intégrale des documents et démarches administratives liées à la sécurité sociale."
-    }
+    },
+    "solicitarInfo": "Demander des informations"
   },
   "nosotros": {
     "titulo": "Qui Sommes-Nous",
@@ -62,12 +66,16 @@
     "subtitulo": "Nous sommes là pour vous aider",
     "direccion": "Carrera 7 # 15-24, Quimbaya, Quindío, Colombie",
     "telefono": "316 285 2138",
-    "correo": "anturi3867@hotmail.com",
-    "horario": "Lun - Ven: 8h00 - 18h00",
-    "whatsapp": "Écrivez-nous sur WhatsApp"
+    "correo": "anturimultiservicios@gmail.com",
+    "horario": "Lun - Ven: 8h00 - 12h00 | 13h00 - 17h00",
+    "whatsapp": "Écrivez-nous sur WhatsApp",
+    "labelDireccion": "Adresse",
+    "labelTelefono": "Téléphone / WhatsApp",
+    "labelCorreo": "Adresse e-mail",
+    "labelHorario": "Heures d'ouverture"
   },
   "chatbot": {
-    "titulo": "Assistant Anturi",
+    "titulo": "Anturi Bot",
     "subtitulo": "Comment pouvons-nous vous aider?",
     "bienvenida": "Bonjour, bienvenue chez Anturi Multiservicios. Je suis votre assistant virtuel. Comment puis-je vous aider?",
     "preguntas": {
@@ -82,8 +90,8 @@
     "respuestas": {
       "servicios": "Nous proposons: affiliations EPS, Retraite, ARL et Caisse de Compensation. Nous fournissons également des conseils en sécurité sociale et gestion documentaire.",
       "afiliacion": "Pour s'affilier, apportez votre pièce d'identité, dernière facture de services et si entreprise: RUT et Chambre de Commerce.",
-      "ubicacion": "Nous sommes situés Carrera 7 # 15-24, Quimbaya, Quindío. Vous pouvez aussi nous contacter via WhatsApp.",
-      "horarios": "Nous recevons du lundi au vendredi de 8h00 à 18h00. Samedis de 8h00 à 12h00.",
+      "ubicacion": "Nous sommes situés au Carrera 7 # 15-24, Quimbaya, Quindío, Colombie. Vous pouvez nous contacter via WhatsApp au 316 285 2138.",
+      "horarios": "Nous sommes ouverts du lundi au vendredi: 8h00 - 12h00 et 13h00 - 17h00.",
       "documentos": "Documents de base: Pièce d'identité nationale. Pour les entreprises: RUT, Chambre de Commerce, liste des employés.",
       "costos": "Le coût varie selon le service. Nous offrons une consultation gratuite pour vous orienter. Contactez-nous!",
       "asesor": "Nous vous mettrons en contact avec un conseiller via WhatsApp."
