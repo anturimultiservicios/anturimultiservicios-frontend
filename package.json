@@ -21,7 +21,6 @@
     "@ngx-translate/core": "^15.0.0",
     "@ngx-translate/http-loader": "^8.0.0",
     "rxjs": "~7.8.0",
-    "socket.io-client": "^4.7.0",
     "tslib": "^2.6.0",
     "zone.js": "~0.14.4"
   },
