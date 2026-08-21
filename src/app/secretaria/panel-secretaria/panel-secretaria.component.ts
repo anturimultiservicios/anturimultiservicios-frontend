@@ -5,8 +5,7 @@ import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.c
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
-import { SolicitudesServicio } from '../../nucleo/servicios/solicitudes.servicio';
-import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'anturi-panel-secretaria',
@@ -61,18 +60,14 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/mis-solicitudes" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis solicitudes' : ''">
-                <span class="barra-lateral__icono" style="position: relative;">
+              <a routerLink="/secretaria/empresas" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Empresas' : ''">
+                <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                   </svg>
-                  <span *ngIf="solicitudesPendientes > 0" class="badge-nav">{{ solicitudesPendientes }}</span>
                 </span>
-                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">
-                  Mis solicitudes
-                  <span *ngIf="solicitudesPendientes > 0" class="badge-nav-texto">{{ solicitudesPendientes }}</span>
-                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Empresas</span>
               </a>
             </li>
             <li>
@@ -84,6 +79,17 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
                   </svg>
                 </span>
                 <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Configuración</span>
+              </a>
+            </li>
+            <li>
+              <a routerLink="/secretaria/mis-dispositivos" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis dispositivos' : ''">
+                <span class="barra-lateral__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Mis dispositivos</span>
               </a>
             </li>
           </ul>
@@ -252,7 +258,6 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
   barraExpandida = true;
   menuPerfil = false;
   tiempoSesion = '';
-  solicitudesPendientes = 0;
 
   private timerSesion: ReturnType<typeof setInterval> | null = null;
   private inicioSesion = new Date();
@@ -262,7 +267,6 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
     public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio,
     public auth: AutenticacionServicio,
-    private solicitudesServicio: SolicitudesServicio
   ) {}
 
   ngOnInit(): void {
@@ -273,24 +277,12 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
       const s = Math.floor((diff % 60000) / 1000);
       this.tiempoSesion = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }, 1000);
-
-    // Cargar conteo de solicitudes propias pendientes
-    this.cargarSolicitudesPropias();
   }
 
   ngOnDestroy(): void {
     if (this.timerSesion) clearInterval(this.timerSesion);
     this.destruir$.next();
     this.destruir$.complete();
-  }
-
-  private cargarSolicitudesPropias(): void {
-    this.solicitudesServicio.listar(undefined, true).pipe(
-      catchError(() => of([])),
-      takeUntil(this.destruir$)
-    ).subscribe(lista => {
-      this.solicitudesPendientes = lista.filter(s => s.estado === 'PENDIENTE').length;
-    });
   }
 
   cerrarSesion(): void {
