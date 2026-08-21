@@ -39,10 +39,17 @@ export const rutasSecretaria: Routes = [
           ),
       },
       {
-        path: 'mis-solicitudes',
+        path: 'empresas',
         loadComponent: () =>
-          import('./mis-solicitudes/mis-solicitudes.component').then(
-            (m) => m.MisSolicitudesComponent
+          import('../admin/empresas/lista-empresas/lista-empresas.component').then(
+            (m) => m.ListaEmpresasComponent
+          ),
+      },
+      {
+        path: 'empresas/:id',
+        loadComponent: () =>
+          import('../admin/empresas/detalle-empresa/detalle-empresa.component').then(
+            (m) => m.DetalleEmpresaComponent
           ),
       },
       {
@@ -50,6 +57,13 @@ export const rutasSecretaria: Routes = [
         loadComponent: () =>
           import('../admin/configuracion/configuracion.component').then(
             (m) => m.ConfiguracionComponent
+          ),
+      },
+      {
+        path: 'mis-dispositivos',
+        loadComponent: () =>
+          import('../compartido/mis-dispositivos/mis-dispositivos.component').then(
+            (m) => m.MisDispositivosComponent
           ),
       },
     ],

@@ -52,6 +52,16 @@ export const rutasAdmin: Routes = [
         loadComponent: () =>
           import('./configuracion/configuracion.component').then((m) => m.ConfiguracionComponent),
       },
+      {
+        path: 'mis-dispositivos',
+        loadComponent: () =>
+          import('../compartido/mis-dispositivos/mis-dispositivos.component').then((m) => m.MisDispositivosComponent),
+      },
+      {
+        path: 'dispositivos',
+        loadComponent: () =>
+          import('./dispositivos/administrar-dispositivos.component').then((m) => m.AdministrarDispositivosComponent),
+      },
     ],
   },
 ];
