@@ -486,7 +486,25 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   guardarPermisos(): void {
     if (!this.usuarioEditando) return;
     this.guardandoPermisos = true;
-    this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, this.formPermisos).pipe(
+    // HALLAZGO 2026-08-22: this.formPermisos se arma con `...(u.permisos || {})`,
+    // que trae el registro completo de PermisoSecretaria desde el backend
+    // (incluye id/usuarioId/actualizadoEn). El backend valida con
+    // forbidNonWhitelisted:true - enviar esos campos de más rechaza el
+    // request entero. Se arma acá un payload explícito con solo los 10
+    // campos reales del DTO.
+    const payload = {
+      puedeCrearAfiliados: this.formPermisos.puedeCrearAfiliados,
+      puedeEditarAfiliados: this.formPermisos.puedeEditarAfiliados,
+      puedeEliminarAfiliados: this.formPermisos.puedeEliminarAfiliados,
+      puedeCrearEmpresas: this.formPermisos.puedeCrearEmpresas,
+      puedeEditarEmpresas: this.formPermisos.puedeEditarEmpresas,
+      puedeEliminarEmpresas: this.formPermisos.puedeEliminarEmpresas,
+      puedeSubirDocumentos: this.formPermisos.puedeSubirDocumentos,
+      puedeEliminarDocumentos: this.formPermisos.puedeEliminarDocumentos,
+      puedeVerPagos: this.formPermisos.puedeVerPagos,
+      puedeRegistrarPagos: this.formPermisos.puedeRegistrarPagos,
+    };
+    this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload).pipe(
       catchError(err => {
         this.mensajeError = err?.error?.mensaje || 'Error al guardar los permisos.';
         return of(null);
