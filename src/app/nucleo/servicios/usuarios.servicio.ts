@@ -61,7 +61,11 @@ export class UsuariosServicio {
     return this.http.patch<UsuarioSistema>(`${this.URL}/perfil/mi-perfil`, datos);
   }
 
+  // HALLAZGO 2026-08-22: apuntaba a /usuarios/perfil/cambiar-contrasena, que
+  // nunca existió en el backend, y enviaba el campo como `nuevaContrasena`
+  // cuando el DTO real (CambiarPropiaContrasenaDto) espera `contrasenaNueva`.
+  // Corregido para usar la ruta ya existente y probada (me/contrasena).
   cambiarContrasena(contrasenaActual: string, nuevaContrasena: string): Observable<any> {
-    return this.http.patch(`${this.URL}/perfil/cambiar-contrasena`, { contrasenaActual, nuevaContrasena });
+    return this.http.patch(`${this.URL}/me/contrasena`, { contrasenaActual, contrasenaNueva: nuevaContrasena });
   }
 }
