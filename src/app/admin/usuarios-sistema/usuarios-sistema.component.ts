@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
+import { Subject, takeUntil, catchError, of, finalize, forkJoin } from 'rxjs';
 import { UsuariosServicio, UsuarioSistema, CrearUsuarioDto } from '../../nucleo/servicios/usuarios.servicio';
 import { PermisoSecretaria } from '../../nucleo/modelos/usuario.modelo';
+import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
+import { AlcanceServicio, AlcanceUsuario } from '../../nucleo/servicios/alcance.servicio';
 
 interface FormUsuario {
   nombre: string;
@@ -111,6 +113,20 @@ interface FormUsuario {
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="u.rol === 'SECRETARIA'"
+                  class="boton boton-icono"
+                  title="Gestionar alcance (empresas/sucursales)"
+                  (click)="abrirModalAlcance(u)"
+                  style="color: var(--color-info);"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
                   </svg>
                 </button>
                 <button
@@ -227,6 +243,66 @@ interface FormUsuario {
       </div>
     </div>
 
+    <!-- MODAL: Alcance (D01-C) -->
+    <div *ngIf="modalAlcance" class="modal-overlay" (click)="cerrarModalAlcance()">
+      <div class="modal-form" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-titulo">Alcance de {{ usuarioEditando?.nombre }} {{ usuarioEditando?.apellido }}</h3>
+          <button class="boton boton-icono" (click)="cerrarModalAlcance()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-cuerpo">
+          <p class="alcance-explicacion">
+            Marcá una <strong>empresa completa</strong> para que vea todas sus sucursales, o solo
+            alguna <strong>sucursal suelta</strong> dentro de una empresa. Sin ninguna marca, esta
+            cuenta no verá ninguna empresa/sucursal/afiliado (los independientes siguen siendo
+            visibles para cualquier cuenta, eso todavía no tiene una regla de alcance propia).
+          </p>
+          <div *ngIf="errorAlcance" class="alerta-error" style="margin-bottom: var(--espacio-4);">{{ errorAlcance }}</div>
+          <div *ngIf="cargandoAlcance" class="estado-carga" style="padding: var(--espacio-6);">
+            <div class="spinner"></div>
+          </div>
+          <div *ngIf="!cargandoAlcance" class="alcance-lista">
+            <div *ngFor="let emp of empresasDisponibles" class="alcance-empresa">
+              <label class="permiso-check alcance-empresa__etiqueta">
+                <input
+                  type="checkbox"
+                  [checked]="empresaAsignada(emp.id) !== undefined"
+                  [disabled]="procesando(clavesEmpresa(emp.id))"
+                  (change)="toggleEmpresa(emp)"
+                >
+                <strong>{{ emp.razonSocial }}</strong>
+                <span class="alcance-nit">NIT {{ emp.nit }}</span>
+              </label>
+              <div class="alcance-sucursales" *ngIf="emp.sucursales?.length">
+                <label
+                  *ngFor="let suc of emp.sucursales"
+                  class="permiso-check alcance-sucursal__etiqueta"
+                  [class.alcance-sucursal--incluida]="empresaAsignada(emp.id) !== undefined"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="empresaAsignada(emp.id) !== undefined || sucursalAsignada(suc.id) !== undefined"
+                    [disabled]="empresaAsignada(emp.id) !== undefined || procesando(clavesSucursal(suc.id))"
+                    (change)="toggleSucursal(suc)"
+                  >
+                  {{ suc.nombre }}
+                  <span *ngIf="empresaAsignada(emp.id) !== undefined" class="alcance-nota">(incluida por empresa completa)</span>
+                </label>
+              </div>
+            </div>
+            <p *ngIf="empresasDisponibles.length === 0" class="alcance-vacio">No hay empresas registradas todavía.</p>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button class="boton boton-primario" (click)="cerrarModalAlcance()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL: Confirmar cambio de estado -->
     <div *ngIf="modalConfirmEstado" class="modal-overlay" (click)="modalConfirmEstado = false">
       <div class="modal-confirm" (click)="$event.stopPropagation()">
@@ -306,6 +382,18 @@ interface FormUsuario {
     .permiso-check { display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); color: var(--texto-principal); margin-bottom: var(--espacio-2); cursor: pointer; }
     .permiso-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-primario); }
 
+    /* Alcance (D01-C) */
+    .alcance-explicacion { font-size: var(--tamano-sm); color: var(--texto-secundario); margin: 0 0 var(--espacio-4); }
+    .alcance-lista { display: flex; flex-direction: column; gap: var(--espacio-3); max-height: 50vh; overflow-y: auto; }
+    .alcance-empresa { border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-md); padding: var(--espacio-3); }
+    .alcance-empresa__etiqueta { margin-bottom: 0; }
+    .alcance-nit { color: var(--texto-terciario); font-size: var(--tamano-xs, 0.75rem); margin-left: var(--espacio-2); }
+    .alcance-sucursales { display: flex; flex-direction: column; gap: var(--espacio-1); margin: var(--espacio-2) 0 0 var(--espacio-6); padding-left: var(--espacio-3); border-left: 2px solid var(--borde-color, #e5e7eb); }
+    .alcance-sucursal__etiqueta { margin-bottom: 0; font-weight: 400; }
+    .alcance-sucursal--incluida { color: var(--texto-terciario); }
+    .alcance-nota { color: var(--texto-terciario); font-size: var(--tamano-xs, 0.75rem); margin-left: var(--espacio-1); }
+    .alcance-vacio { color: var(--texto-terciario); text-align: center; padding: var(--espacio-4); }
+
     /* Confirm modal */
     .modal-confirm { background: var(--fondo-tarjeta, #fff); border-radius: var(--radio-xl); padding: var(--espacio-6); width: 100%; max-width: 420px; box-shadow: var(--sombra-md); }
     .modal-confirm__titulo { font-size: var(--tamano-xl); font-weight: 700; color: var(--texto-principal); margin: 0 0 var(--espacio-3); }
@@ -337,6 +425,14 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   guardandoPermisos = false;
   formPermisos: Partial<PermisoSecretaria> = this.permisosVacios();
 
+  // Modal alcance (D01-C)
+  modalAlcance = false;
+  cargandoAlcance = false;
+  errorAlcance = '';
+  empresasDisponibles: Empresa[] = [];
+  alcanceActual: AlcanceUsuario = { empresas: [], sucursales: [] };
+  private procesandoClaves = new Set<string>();
+
   // Modal estado
   modalConfirmEstado = false;
   usuarioEstado: UsuarioSistema | null = null;
@@ -344,7 +440,11 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
 
   private destruir$ = new Subject<void>();
 
-  constructor(private usuariosServicio: UsuariosServicio) {}
+  constructor(
+    private usuariosServicio: UsuariosServicio,
+    private empresasServicio: EmpresasServicio,
+    private alcanceServicio: AlcanceServicio,
+  ) {}
 
   ngOnInit(): void {
     this.cargarUsuarios();
@@ -546,6 +646,94 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
         this.cargarUsuarios();
         setTimeout(() => { this.mensajeExito = ''; }, 4000);
       }
+    });
+  }
+
+  // ── ALCANCE (D01-C) ───────────────────────────────────────
+  abrirModalAlcance(u: UsuarioSistema): void {
+    this.usuarioEditando = u;
+    this.errorAlcance = '';
+    this.modalAlcance = true;
+    this.cargarAlcance(u.id);
+  }
+
+  cerrarModalAlcance(): void {
+    this.modalAlcance = false;
+  }
+
+  private cargarAlcance(usuarioId: number): void {
+    this.cargandoAlcance = true;
+    forkJoin({
+      empresas: this.empresasServicio.listar(undefined, false),
+      alcance: this.alcanceServicio.listarPorUsuario(usuarioId),
+    }).pipe(
+      catchError(() => {
+        this.errorAlcance = 'No se pudo cargar el alcance actual. Verifique la conexión.';
+        return of(null);
+      }),
+      finalize(() => { this.cargandoAlcance = false; }),
+    ).subscribe((res) => {
+      if (!res) return;
+      this.empresasDisponibles = res.empresas;
+      this.alcanceActual = res.alcance;
+    });
+  }
+
+  empresaAsignada(empresaId: number) {
+    return this.alcanceActual.empresas.find((a) => a.empresaId === empresaId);
+  }
+
+  sucursalAsignada(sucursalId: number) {
+    return this.alcanceActual.sucursales.find((a) => a.sucursalId === sucursalId);
+  }
+
+  clavesEmpresa(empresaId: number): string { return `empresa-${empresaId}`; }
+  clavesSucursal(sucursalId: number): string { return `sucursal-${sucursalId}`; }
+  procesando(clave: string): boolean { return this.procesandoClaves.has(clave); }
+
+  toggleEmpresa(empresa: Empresa): void {
+    if (!this.usuarioEditando) return;
+    const usuarioId = this.usuarioEditando.id;
+    const clave = this.clavesEmpresa(empresa.id);
+    const asignacion = this.empresaAsignada(empresa.id);
+    this.procesandoClaves.add(clave);
+    this.errorAlcance = '';
+
+    const operacion = asignacion
+      ? this.alcanceServicio.revocarEmpresa(asignacion.id)
+      : this.alcanceServicio.asignarEmpresa(usuarioId, empresa.id);
+
+    operacion.pipe(
+      catchError((err) => {
+        this.errorAlcance = err?.error?.mensaje || 'No se pudo actualizar el alcance de esa empresa.';
+        return of(null);
+      }),
+      finalize(() => { this.procesandoClaves.delete(clave); }),
+    ).subscribe((res) => {
+      if (res !== null) this.cargarAlcance(usuarioId);
+    });
+  }
+
+  toggleSucursal(sucursal: { id: number; empresaId: number }): void {
+    if (!this.usuarioEditando) return;
+    const usuarioId = this.usuarioEditando.id;
+    const clave = this.clavesSucursal(sucursal.id);
+    const asignacion = this.sucursalAsignada(sucursal.id);
+    this.procesandoClaves.add(clave);
+    this.errorAlcance = '';
+
+    const operacion = asignacion
+      ? this.alcanceServicio.revocarSucursal(asignacion.id)
+      : this.alcanceServicio.asignarSucursal(usuarioId, sucursal.id);
+
+    operacion.pipe(
+      catchError((err) => {
+        this.errorAlcance = err?.error?.mensaje || 'No se pudo actualizar el alcance de esa sucursal.';
+        return of(null);
+      }),
+      finalize(() => { this.procesandoClaves.delete(clave); }),
+    ).subscribe((res) => {
+      if (res !== null) this.cargarAlcance(usuarioId);
     });
   }
 
