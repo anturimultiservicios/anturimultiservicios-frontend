@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
 import { SucursalesServicio, Sucursal, CrearSucursalDto } from '../../nucleo/servicios/sucursales.servicio';
@@ -22,7 +23,7 @@ interface FormSucursal {
 @Component({
   selector: 'anturi-sucursales',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="pagina-lista">
       <div class="pagina-encabezado">
@@ -88,7 +89,11 @@ interface FormSucursal {
                 <td>{{ suc.ciudad || '—' }}</td>
                 <td>{{ suc.direccion || '—' }}</td>
                 <td>{{ suc.telefono || '—' }}</td>
-                <td>{{ suc._count?.afiliados ?? 0 }}</td>
+                <td>
+                  <a [routerLink]="[prefijo, 'afiliados']" [queryParams]="{ sucursalId: suc.id, sucursalNombre: suc.nombre }" class="enlace-afiliados">
+                    {{ suc._count?.afiliados ?? 0 }} ver
+                  </a>
+                </td>
                 <td><span class="badge-estado" [class.badge-activo]="suc.activa" [class.badge-inactivo]="!suc.activa">{{ suc.activa ? 'Activa' : 'Inactiva' }}</span></td>
                 <td>
                   <button class="boton boton-icono" title="Editar" (click)="abrirModalEditar(emp, suc)">
@@ -175,6 +180,8 @@ interface FormSucursal {
     .tabla { width: 100%; border-collapse: collapse; }
     .tabla thead th { padding: var(--espacio-2) var(--espacio-3); text-align: left; font-size: 0.72rem; font-weight: 600; color: var(--texto-secundario); text-transform: uppercase; border-bottom: 1px solid var(--borde-color, #e5e7eb); }
     .tabla tbody td { padding: var(--espacio-2) var(--espacio-3); border-bottom: 1px solid var(--borde-color, #e5e7eb); font-size: var(--tamano-sm); }
+    .enlace-afiliados { color: var(--color-primario); text-decoration: none; font-weight: 500; }
+    .enlace-afiliados:hover { text-decoration: underline; }
     .tabla tbody tr:last-child td { border-bottom: none; }
 
     .badge-estado { display: inline-flex; padding: 2px var(--espacio-2); border-radius: var(--radio-sm); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
@@ -219,7 +226,12 @@ export class SucursalesComponent implements OnInit, OnDestroy {
   constructor(
     private empresasServicio: EmpresasServicio,
     private sucursalesServicio: SucursalesServicio,
+    private router: Router,
   ) {}
+
+  protected get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
 
   ngOnInit(): void { this.cargar(); }
   ngOnDestroy(): void { this.destruir$.next(); this.destruir$.complete(); }
