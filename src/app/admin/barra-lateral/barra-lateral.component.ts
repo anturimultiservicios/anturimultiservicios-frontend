@@ -24,10 +24,16 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
   @Input() expandida = true;
   @Output() alternarExpansion = new EventEmitter<void>();
 
+  // HALLAZGO (29/08, revisión "día normal de trabajo"): la pantalla de
+  // Sucursales ya existe y funciona (commit e1aa488), pero no había ningún
+  // ítem de menú para llegar a ella - un ADMIN no tenía forma de
+  // encontrarla salvo escribiendo la URL a mano. Exactamente el patrón
+  // "la función existe pero nadie la encuentra" que se pidió detectar.
   items: ItemMenu[] = [
     { icono: 'resumen', etiqueta: 'Resumen', ruta: '/admin/resumen' },
     { icono: 'afiliados', etiqueta: 'Afiliados', ruta: '/admin/afiliados' },
     { icono: 'empresas', etiqueta: 'Empresas', ruta: '/admin/empresas' },
+    { icono: 'sucursales', etiqueta: 'Sucursales', ruta: '/admin/sucursales' },
     { icono: 'solicitudes', etiqueta: 'Solicitudes', ruta: '/admin/solicitudes', soloAdmin: true },
     { icono: 'usuarios', etiqueta: 'Usuarios del sistema', ruta: '/admin/usuarios', soloAdmin: true },
     { icono: 'configuracion', etiqueta: 'Configuración', ruta: '/admin/configuracion' },
