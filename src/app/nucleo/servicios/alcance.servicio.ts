@@ -34,6 +34,13 @@ export class AlcanceServicio {
     return this.http.get<AlcanceUsuario>(`${this.URL}/usuario/${usuarioId}`);
   }
 
+  // HALLAZGO (29/08): faltaba un camino de autoservicio - una cuenta
+  // Asistente no podía saber si tenía o no alcance asignado. Cualquier rol
+  // puede llamarlo, pero el backend solo devuelve SU PROPIO alcance.
+  miAlcance(): Observable<AlcanceUsuario> {
+    return this.http.get<AlcanceUsuario>(`${this.URL}/mi-alcance`);
+  }
+
   // motivo obligatorio (29/08): asignar/revocar alcance es una acción
   // sensible que ya exige y audita un motivo real del lado del backend.
   asignarEmpresa(usuarioId: number, empresaId: number, motivo: string): Observable<AsignacionEmpresa> {
