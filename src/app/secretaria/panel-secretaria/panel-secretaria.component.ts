@@ -6,6 +6,7 @@ import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 import { SolicitudesServicio } from '../../nucleo/servicios/solicitudes.servicio';
+import { AlcanceServicio } from '../../nucleo/servicios/alcance.servicio';
 import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
 
 @Component({
@@ -186,6 +187,18 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
 
         <!-- Área de contenido principal -->
         <main class="escritorio__main">
+          <!-- HALLAZGO (29/08, "día normal de trabajo" de Asistente): sin
+               esto, una cuenta sin empresa/sucursal asignada veía listas
+               vacías en todos lados sin ninguna explicación - indistinguible
+               de "Anturi no tiene datos todavía". -->
+          <div *ngIf="sinAlcanceAsignado" class="aviso-sin-alcance">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Tu cuenta todavía no tiene ninguna empresa o sucursal asignada. Vas a ver los afiliados independientes, pero no vas a ver información de ninguna empresa hasta que un administrador te asigne alcance.</span>
+          </div>
           <router-outlet></router-outlet>
         </main>
       </div>
@@ -202,6 +215,8 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
     .escritorio { display: flex; height: 100vh; overflow: hidden; background: var(--fondo-principal, #f1f5f9); }
     .escritorio__contenido { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
     .escritorio__main { flex: 1; overflow-y: auto; padding: var(--espacio-6); }
+    .aviso-sin-alcance { display: flex; align-items: flex-start; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); margin-bottom: var(--espacio-4); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: var(--radio-md); color: #92400e; font-size: var(--tamano-sm); }
+    .aviso-sin-alcance svg { flex-shrink: 0; margin-top: 1px; }
     .escritorio__overlay { position: fixed; inset: 0; z-index: 99; }
 
     /* Barra lateral */
@@ -265,6 +280,7 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
   menuPerfil = false;
   tiempoSesion = '';
   solicitudesPendientes = 0;
+  sinAlcanceAsignado = false;
 
   private timerSesion: ReturnType<typeof setInterval> | null = null;
   private inicioSesion = new Date();
@@ -274,7 +290,8 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
     public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio,
     public auth: AutenticacionServicio,
-    private solicitudesServicio: SolicitudesServicio
+    private solicitudesServicio: SolicitudesServicio,
+    private alcanceServicio: AlcanceServicio,
   ) {}
 
   ngOnInit(): void {
@@ -288,6 +305,16 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
 
     // Cargar conteo de solicitudes propias pendientes
     this.cargarSolicitudesPropias();
+
+    // Aviso de alcance vacío (29/08) - ver hallazgo arriba en el template.
+    this.alcanceServicio.miAlcance().pipe(
+      catchError(() => of(null)),
+      takeUntil(this.destruir$),
+    ).subscribe((alcance) => {
+      if (alcance) {
+        this.sinAlcanceAsignado = alcance.empresas.length === 0 && alcance.sucursales.length === 0;
+      }
+    });
   }
 
   ngOnDestroy(): void {
