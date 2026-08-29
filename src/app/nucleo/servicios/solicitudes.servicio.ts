@@ -5,7 +5,7 @@ import { entorno } from '../../../environments/entorno';
 
 export interface SolicitudCambio {
   id: number;
-  tipo: 'EDICION' | 'ELIMINACION' | 'CREACION';
+  tipo: 'EDICION' | 'ELIMINACION' | 'CREACION' | 'RESTAURACION';
   tabla: string;
   registroId?: number;
   motivo: string;
@@ -26,7 +26,7 @@ export class SolicitudesServicio {
   constructor(private http: HttpClient) {}
 
   crear(datos: {
-    tipo: 'EDICION' | 'ELIMINACION' | 'CREACION';
+    tipo: 'EDICION' | 'ELIMINACION' | 'CREACION' | 'RESTAURACION';
     tabla: string;
     registroId?: number;
     motivo: string;
