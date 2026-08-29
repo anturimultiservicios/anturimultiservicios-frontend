@@ -21,6 +21,11 @@ export interface SesionLog {
   navegador?: string;
 }
 
+// HALLAZGO (29/08): faltaban puedeCrearSucursales/puedeEditarSucursales/
+// puedeVerDocumentos - existen en el backend (ActualizarPermisosDto,
+// PermisoSecretaria del schema) y ya los aplican guards reales
+// (SucursalesControlador, DocumentosControlador), pero esta interfaz ni
+// siquiera los declaraba. Se agregan, sin tocar los que ya estaban.
 export interface PermisoSecretaria {
   id: number;
   usuarioId: number;
@@ -30,8 +35,11 @@ export interface PermisoSecretaria {
   puedeCrearEmpresas: boolean;
   puedeEditarEmpresas: boolean;
   puedeEliminarEmpresas: boolean;
+  puedeCrearSucursales: boolean;
+  puedeEditarSucursales: boolean;
   puedeSubirDocumentos: boolean;
   puedeEliminarDocumentos: boolean;
+  puedeVerDocumentos: boolean;
   puedeVerPagos: boolean;
   puedeRegistrarPagos: boolean;
 }
