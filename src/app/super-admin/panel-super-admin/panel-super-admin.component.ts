@@ -28,16 +28,20 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
       <main style="flex: 1; padding: var(--espacio-8) var(--espacio-6); max-width: 1280px; margin: 0 auto; width: 100%;">
         <h2 style="font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin-bottom: var(--espacio-6);">Panel Super Administrador</h2>
         <div class="tarjeta" style="padding: var(--espacio-8); color: var(--texto-terciario);">
-          <p>Desde aquí puede gestionar todo el sistema incluyendo:</p>
-          <ul style="margin-top: var(--espacio-4); padding-left: var(--espacio-6); display: flex; flex-direction: column; gap: var(--espacio-2);">
+          <!-- HALLAZGO (29/08): decía "Conecte el backend para habilitar todas
+               las funcionalidades" - texto de cuando el backend todavía no
+               existía. El backend ya funciona; lo que falta acá es una
+               pantalla propia de Super Admin (auditoría, correo, etc.), no
+               una conexión. Se corrige el texto para no confundir a quien
+               entre a probar el sistema hoy. -->
+          <p>Como Super Admin tenés acceso global a todo lo que ya existe en el panel de Admin (empresas, sucursales, afiliados, documentos, usuarios, solicitudes) usando el botón "Ir a Admin".</p>
+          <p style="margin-top: var(--espacio-4);">Todavía no hay pantallas exclusivas de Super Admin construidas para:</p>
+          <ul style="margin-top: var(--espacio-2); padding-left: var(--espacio-6); display: flex; flex-direction: column; gap: var(--espacio-2);">
             <li>Configuración global del sistema</li>
-            <li>Gestión de todos los usuarios (admin, secretarias)</li>
-            <li>Acceso completo a todas las empresas y afiliados</li>
-            <li>Modificación de estructuras de datos</li>
             <li>Logs de auditoría completos</li>
             <li>Configuración del servidor de correo</li>
           </ul>
-          <p style="margin-top: var(--espacio-6);">Conecte el backend para habilitar todas las funcionalidades.</p>
+          <p style="margin-top: var(--espacio-6);">Esto queda pendiente de diseño — no se construye hasta decidir qué necesita ser exclusivo de Super Admin.</p>
         </div>
       </main>
     </div>
