@@ -34,21 +34,23 @@ export class AlcanceServicio {
     return this.http.get<AlcanceUsuario>(`${this.URL}/usuario/${usuarioId}`);
   }
 
-  asignarEmpresa(usuarioId: number, empresaId: number): Observable<AsignacionEmpresa> {
-    return this.http.post<AsignacionEmpresa>(`${this.URL}/empresa`, { usuarioId, empresaId });
+  // motivo obligatorio (29/08): asignar/revocar alcance es una acción
+  // sensible que ya exige y audita un motivo real del lado del backend.
+  asignarEmpresa(usuarioId: number, empresaId: number, motivo: string): Observable<AsignacionEmpresa> {
+    return this.http.post<AsignacionEmpresa>(`${this.URL}/empresa`, { usuarioId, empresaId, motivo });
   }
 
   // id acá es el id de la asignación (UsuarioEmpresa.id), no el de la empresa.
-  revocarEmpresa(id: number): Observable<any> {
-    return this.http.delete(`${this.URL}/empresa/${id}`);
+  revocarEmpresa(id: number, motivo: string): Observable<any> {
+    return this.http.delete(`${this.URL}/empresa/${id}`, { body: { motivo } });
   }
 
-  asignarSucursal(usuarioId: number, sucursalId: number): Observable<AsignacionSucursal> {
-    return this.http.post<AsignacionSucursal>(`${this.URL}/sucursal`, { usuarioId, sucursalId });
+  asignarSucursal(usuarioId: number, sucursalId: number, motivo: string): Observable<AsignacionSucursal> {
+    return this.http.post<AsignacionSucursal>(`${this.URL}/sucursal`, { usuarioId, sucursalId, motivo });
   }
 
   // id acá es el id de la asignación (UsuarioSucursal.id), no el de la sucursal.
-  revocarSucursal(id: number): Observable<any> {
-    return this.http.delete(`${this.URL}/sucursal/${id}`);
+  revocarSucursal(id: number, motivo: string): Observable<any> {
+    return this.http.delete(`${this.URL}/sucursal/${id}`, { body: { motivo } });
   }
 }

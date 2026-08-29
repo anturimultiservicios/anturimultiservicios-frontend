@@ -45,8 +45,10 @@ export class UsuariosServicio {
     return this.http.patch<UsuarioSistema>(`${this.URL}/${id}`, dto);
   }
 
-  actualizarPermisos(id: number, permisos: any): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}/permisos`, permisos);
+  // motivo obligatorio (29/08): cambiar permisos es una acción sensible
+  // que ya exige y audita un motivo real del lado del backend.
+  actualizarPermisos(id: number, permisos: any, motivo: string): Observable<any> {
+    return this.http.patch(`${this.URL}/${id}/permisos`, { ...permisos, motivo });
   }
 
   // HALLAZGO (29/08): antes mandaban `{ activo }` a PATCH /usuarios/:id
@@ -54,12 +56,27 @@ export class UsuariosServicio {
   // porque ActualizarUsuarioDto excluye `activo` a propósito (protección
   // contra mass-assignment, mismo criterio que rol/contraseña). Ahora
   // existe el endpoint dedicado que el propio backend ya daba por hecho.
-  desactivar(id: number): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}/estado`, { activo: false });
+  // motivo obligatorio: activar/desactivar es una acción sensible que ya
+  // exige y audita un motivo real del lado del backend.
+  desactivar(id: number, motivo: string): Observable<any> {
+    return this.http.patch(`${this.URL}/${id}/estado`, { activo: false, motivo });
   }
 
-  activar(id: number): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}/estado`, { activo: true });
+  activar(id: number, motivo: string): Observable<any> {
+    return this.http.patch(`${this.URL}/${id}/estado`, { activo: true, motivo });
+  }
+
+  // Cambio de rol (29/08): backend ya lo auditaba, ahora exige motivo real.
+  // SUPER_ADMIN-only, nunca sobre uno mismo - ambas cosas ya las exige el
+  // backend, acá solo se cablea la llamada.
+  cambiarRol(id: number, nuevoRol: 'SUPER_ADMIN' | 'ADMIN' | 'SECRETARIA', motivo: string): Observable<UsuarioSistema> {
+    return this.http.patch<UsuarioSistema>(`${this.URL}/${id}/rol`, { nuevoRol, motivo });
+  }
+
+  // Reset administrativo (29/08): nunca fija ni revela una contraseña -
+  // dispara el flujo de recuperación por correo ya existente.
+  forzarReset(id: number): Observable<any> {
+    return this.http.post(`${this.URL}/${id}/forzar-reset`, {});
   }
 
   actualizarPerfil(datos: { nombre?: string; apellido?: string; fotoPerfil?: string }): Observable<UsuarioSistema> {
