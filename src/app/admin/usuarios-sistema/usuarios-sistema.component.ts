@@ -225,10 +225,22 @@ interface FormUsuario {
             <h4 class="permisos-grupo__titulo">Empresas</h4>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeCrearEmpresas"> Puede crear empresas</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEditarEmpresas"> Puede editar empresas</label>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEliminarEmpresas"> Puede eliminar empresas</label>
+          </div>
+          <!-- HALLAZGO (29/08): faltaba este grupo entero - Sucursal ya tiene
+               permisos granulares reales en el backend (puedeCrearSucursales/
+               puedeEditarSucursales, aplicados en SucursalesControlador), pero
+               ningún admin podía activarlos/desactivarlos desde acá. -->
+          <div class="permisos-grupo">
+            <h4 class="permisos-grupo__titulo">Sucursales</h4>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeCrearSucursales"> Puede crear sucursales</label>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEditarSucursales"> Puede editar sucursales</label>
           </div>
           <div class="permisos-grupo">
             <h4 class="permisos-grupo__titulo">Documentos y pagos</h4>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeVerDocumentos"> Puede ver documentos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeSubirDocumentos"> Puede subir documentos</label>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEliminarDocumentos"> Puede eliminar documentos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeVerPagos"> Puede ver pagos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeRegistrarPagos"> Puede registrar pagos</label>
           </div>
@@ -599,6 +611,9 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeCrearEmpresas: this.formPermisos.puedeCrearEmpresas,
       puedeEditarEmpresas: this.formPermisos.puedeEditarEmpresas,
       puedeEliminarEmpresas: this.formPermisos.puedeEliminarEmpresas,
+      puedeCrearSucursales: this.formPermisos.puedeCrearSucursales,
+      puedeEditarSucursales: this.formPermisos.puedeEditarSucursales,
+      puedeVerDocumentos: this.formPermisos.puedeVerDocumentos,
       puedeSubirDocumentos: this.formPermisos.puedeSubirDocumentos,
       puedeEliminarDocumentos: this.formPermisos.puedeEliminarDocumentos,
       puedeVerPagos: this.formPermisos.puedeVerPagos,
@@ -748,7 +763,12 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeEliminarAfiliados: false,
       puedeCrearEmpresas: false,
       puedeEditarEmpresas: false,
+      puedeEliminarEmpresas: false,
+      puedeCrearSucursales: false,
+      puedeEditarSucursales: false,
+      puedeVerDocumentos: false,
       puedeSubirDocumentos: false,
+      puedeEliminarDocumentos: false,
       puedeVerPagos: false,
       puedeRegistrarPagos: false,
     };
