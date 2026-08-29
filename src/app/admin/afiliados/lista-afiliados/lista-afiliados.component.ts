@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
 
@@ -21,6 +21,12 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
           </svg>
           Nuevo afiliado
         </a>
+      </div>
+
+      <!-- Filtro por sucursal (llegado desde Sucursales -> Ver afiliados) -->
+      <div *ngIf="sucursalIdFiltro" class="filtro-sucursal-activo">
+        Mostrando solo afiliados de <strong>{{ nombreSucursalFiltro }}</strong>
+        <button class="filtro-sucursal-activo__quitar" (click)="quitarFiltroSucursal()">Quitar filtro ✕</button>
       </div>
 
       <!-- Chips de estadísticas -->
@@ -261,6 +267,9 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
     .boton-exito:disabled { opacity: 0.6; cursor: not-allowed; }
     .spinner-inline { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; margin-right: var(--espacio-1); }
 
+    .filtro-sucursal-activo { display: flex; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.25); border-radius: var(--radio-md); font-size: var(--tamano-sm); color: var(--texto-principal); }
+    .filtro-sucursal-activo__quitar { margin-left: auto; background: none; border: none; color: var(--color-primario); cursor: pointer; font-size: var(--tamano-sm); font-weight: 600; }
+
     .filtros-contenedor { display: flex; gap: var(--espacio-4); align-items: flex-end; padding: var(--espacio-4); flex-wrap: wrap; }
     .filtro-busqueda { flex: 1; min-width: 240px; position: relative; }
     .filtro-busqueda__icono { position: absolute; left: var(--espacio-3); top: 50%; transform: translateY(-50%); color: var(--texto-terciario); pointer-events: none; }
@@ -322,12 +331,20 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   afiliadosPapelera: (Afiliado & { eliminadoPor: { id: number; nombre: string; apellido: string } | null; motivoEliminacion: string | null })[] = [];
   restaurandoId: number | null = null;
 
+  // HALLAZGO (29/08): "Sucursales -> Afiliados relacionados" no existía -
+  // el backend ya soporta filtrar por sucursalId en listar(), solo faltaba
+  // leer el query param y usarlo. Llega desde el link "Ver afiliados" de
+  // la pantalla de Sucursales.
+  sucursalIdFiltro?: number;
+  nombreSucursalFiltro = '';
+
   private busqueda$ = new Subject<string>();
   private destruir$ = new Subject<void>();
 
   constructor(
     private afiliadosServicio: AfiliadosServicio,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   protected get prefijo(): string {
@@ -335,6 +352,13 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const sucursalId = this.route.snapshot.queryParamMap.get('sucursalId');
+    const nombreSucursal = this.route.snapshot.queryParamMap.get('sucursalNombre');
+    if (sucursalId) {
+      this.sucursalIdFiltro = parseInt(sucursalId, 10);
+      this.nombreSucursalFiltro = nombreSucursal || `sucursal #${sucursalId}`;
+    }
+
     this.afiliadosServicio.estadisticas().pipe(
       catchError(() => of({ total: 0, activos: 0, retirados: 0, suspendidos: 0 }))
     ).subscribe(s => { this.stats = s; });
@@ -346,7 +370,7 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
         this.cargando = true;
         this.error = '';
         this.pagina = 1;
-        return this.afiliadosServicio.listar(termino || undefined, this.estadoSeleccionado || undefined, undefined, 1, this.porPagina).pipe(
+        return this.afiliadosServicio.listar(termino || undefined, this.estadoSeleccionado || undefined, this.sucursalIdFiltro, 1, this.porPagina).pipe(
           catchError(() => {
             this.error = 'Error al cargar afiliados. Verifique la conexión.';
             return of({ datos: [], total: 0, pagina: 1, porPagina: this.porPagina, totalPaginas: 0 });
@@ -361,6 +385,13 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
       this.cargando = false;
     });
 
+    this.cargarAfiliados();
+  }
+
+  quitarFiltroSucursal(): void {
+    this.sucursalIdFiltro = undefined;
+    this.nombreSucursalFiltro = '';
+    this.router.navigate([], { relativeTo: this.route, queryParams: {} });
     this.cargarAfiliados();
   }
 
@@ -379,7 +410,7 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
     this.afiliadosServicio.listar(
       this.terminoBusqueda || undefined,
       this.estadoSeleccionado || undefined,
-      undefined,
+      this.sucursalIdFiltro,
       this.pagina,
       this.porPagina
     ).pipe(
