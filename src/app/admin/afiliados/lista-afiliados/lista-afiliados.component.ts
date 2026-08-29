@@ -52,8 +52,11 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
         </button>
         <!-- HALLAZGO (29/08): no existía ningún camino para ver la papelera
              - restaurar() ya funcionaba en el backend pero era inalcanzable
-             desde la web (ver DISENO-FLUJO-PAPELERA-AFILIADO-2026-08-29.md). -->
-        <button class="chip chip--papelera" [class.chip--activo]="verPapelera" (click)="abrirPapelera()">
+             desde la web (ver DISENO-FLUJO-PAPELERA-AFILIADO-2026-08-29.md).
+             Visible solo para Admin/SuperAdmin (ver esAdmin arriba) - una
+             Asistente ahora solicita la restauración vía SolicitudCambio,
+             no ve la papelera directamente. -->
+        <button *ngIf="esAdmin" class="chip chip--papelera" [class.chip--activo]="verPapelera" (click)="abrirPapelera()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -349,6 +352,18 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
 
   protected get prefijo(): string {
     return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
+
+  // HALLAZGO (29/08, tras el rediseño de archivo/restauración): la ruta
+  // GET /afiliados/papelera y POST /afiliados/:id/restaurar pasaron a ser
+  // ADMIN/SUPER_ADMIN-only en el backend - este componente es compartido
+  // entre /admin/afiliados y /secretaria/afiliados y mostraba el chip
+  // "Papelera"/botón "Restaurar" a cualquiera sin distinción de rol. Sin
+  // este cambio, una Asistente vería el botón pero el backend le
+  // rechazaría la acción - mismo criterio ya usado en `prefijo` (deducido
+  // de la ruta, sin depender de ningún servicio ajeno).
+  protected get esAdmin(): boolean {
+    return this.prefijo === '/admin';
   }
 
   ngOnInit(): void {
