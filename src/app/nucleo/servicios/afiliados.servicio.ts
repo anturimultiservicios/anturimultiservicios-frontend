@@ -48,6 +48,7 @@ export interface Afiliado {
   seguros?: any[];
   documentos?: any[];
   historial?: any[];
+  observaciones?: string;
   creadoEn: string;
 }
 
@@ -63,6 +64,11 @@ export interface CrearAfiliadoDto {
   asopagos?: string;
   diasPago?: number;
   tipoAfiliacion?: TipoAfiliacion;
+  // HALLAZGO (29/08): faltaba en este DTO - el backend ya acepta
+  // sucursalId al crear un afiliado (ver DIAGNOSTICO-MAESTRO-USO-REAL-
+  // 2026-08-29.md), pero el formulario no tenía ningún campo para
+  // vincular un afiliado-empleado con su Empresa/Sucursal.
+  sucursalId?: number;
   claseRiesgoArl?: ClaseRiesgoArl;
   porcentajeArl?: number;
   porcentajeSalud?: number;
@@ -82,6 +88,7 @@ export interface CrearAfiliadoDto {
   caja?: string;
   estado?: 'ACTIVO' | 'RETIRADO' | 'SUSPENDIDO';
   fechaIngreso?: string;
+  observaciones?: string;
 }
 
 @Injectable({ providedIn: 'root' })
