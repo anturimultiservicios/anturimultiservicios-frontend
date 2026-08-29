@@ -49,6 +49,10 @@ export interface Afiliado {
   documentos?: any[];
   historial?: any[];
   observaciones?: string;
+  // HALLAZGO (29/08): faltaban - necesarios para la vista de papelera
+  // (ver GET /afiliados/papelera).
+  eliminadoEn?: string;
+  eliminacionDefinitivaEn?: string;
   creadoEn: string;
 }
 
@@ -125,6 +129,18 @@ export class AfiliadosServicio {
 
   restaurar(id: number): Observable<any> {
     return this.http.post(`${this.URL}/${id}/restaurar`, {});
+  }
+
+  // HALLAZGO (29/08): restaurar() ya existía pero nada en el frontend lo
+  // llamaba - no había ninguna forma de ver qué afiliados estaban en
+  // papelera para poder restaurarlos. GET /afiliados/papelera ya trae,
+  // cuando existe, quién lo eliminó y el motivo real (cruce con
+  // HistorialEdicion del lado del backend).
+  listarPapelera(): Observable<(Afiliado & {
+    eliminadoPor: { id: number; nombre: string; apellido: string } | null;
+    motivoEliminacion: string | null;
+  })[]> {
+    return this.http.get<any>(`${this.URL}/papelera`);
   }
 
   estadisticas(): Observable<any> {

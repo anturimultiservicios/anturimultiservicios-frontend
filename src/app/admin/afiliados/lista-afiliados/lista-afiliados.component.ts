@@ -25,29 +25,39 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
 
       <!-- Chips de estadísticas -->
       <div class="estadisticas-chips">
-        <button class="chip" [class.chip--activo]="estadoSeleccionado === ''" (click)="filtrarPorEstado('')">
+        <button class="chip" [class.chip--activo]="!verPapelera && estadoSeleccionado === ''" (click)="verPapelera = false; filtrarPorEstado('')">
           <span class="chip__label">Todos</span>
           <span class="chip__count">{{ stats.total }}</span>
         </button>
-        <button class="chip chip--verde" [class.chip--activo]="estadoSeleccionado === 'ACTIVO'" (click)="filtrarPorEstado('ACTIVO')">
+        <button class="chip chip--verde" [class.chip--activo]="!verPapelera && estadoSeleccionado === 'ACTIVO'" (click)="verPapelera = false; filtrarPorEstado('ACTIVO')">
           <span class="chip__dot"></span>
           <span class="chip__label">Activos</span>
           <span class="chip__count">{{ stats.activos }}</span>
         </button>
-        <button class="chip chip--naranja" [class.chip--activo]="estadoSeleccionado === 'RETIRADO'" (click)="filtrarPorEstado('RETIRADO')">
+        <button class="chip chip--naranja" [class.chip--activo]="!verPapelera && estadoSeleccionado === 'RETIRADO'" (click)="verPapelera = false; filtrarPorEstado('RETIRADO')">
           <span class="chip__dot"></span>
           <span class="chip__label">Retirados</span>
           <span class="chip__count">{{ stats.retirados }}</span>
         </button>
-        <button class="chip chip--rojo" [class.chip--activo]="estadoSeleccionado === 'SUSPENDIDO'" (click)="filtrarPorEstado('SUSPENDIDO')">
+        <button class="chip chip--rojo" [class.chip--activo]="!verPapelera && estadoSeleccionado === 'SUSPENDIDO'" (click)="verPapelera = false; filtrarPorEstado('SUSPENDIDO')">
           <span class="chip__dot"></span>
           <span class="chip__label">Suspendidos</span>
           <span class="chip__count">{{ stats.suspendidos }}</span>
         </button>
+        <!-- HALLAZGO (29/08): no existía ningún camino para ver la papelera
+             - restaurar() ya funcionaba en el backend pero era inalcanzable
+             desde la web (ver DISENO-FLUJO-PAPELERA-AFILIADO-2026-08-29.md). -->
+        <button class="chip chip--papelera" [class.chip--activo]="verPapelera" (click)="abrirPapelera()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          <span class="chip__label">Papelera</span>
+        </button>
       </div>
 
-      <!-- Filtros -->
-      <div class="tarjeta filtros-contenedor">
+      <!-- Filtros (no aplican en la vista de papelera) -->
+      <div *ngIf="!verPapelera" class="tarjeta filtros-contenedor">
         <div class="filtro-busqueda">
           <svg class="filtro-busqueda__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <circle cx="11" cy="11" r="8"></circle>
@@ -90,7 +100,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
       </div>
 
       <!-- Estado vacío -->
-      <div *ngIf="!cargando && !error && afiliados.length === 0" class="tarjeta estado-vacio">
+      <div *ngIf="!verPapelera && !cargando && !error && afiliados.length === 0" class="tarjeta estado-vacio">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48" style="color: var(--texto-terciario);">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
           <circle cx="9" cy="7" r="4"></circle>
@@ -103,8 +113,53 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
         <a *ngIf="!terminoBusqueda" [routerLink]="[prefijo, 'afiliados', 'nuevo']" class="boton boton-primario">Registrar primer afiliado</a>
       </div>
 
+      <!-- Papelera: vacía -->
+      <div *ngIf="verPapelera && !cargando && !error && afiliadosPapelera.length === 0" class="tarjeta estado-vacio">
+        <p style="color: var(--texto-terciario); font-size: var(--tamano-lg);">La papelera está vacía.</p>
+      </div>
+
+      <!-- Papelera: tabla -->
+      <div *ngIf="verPapelera && !cargando && !error && afiliadosPapelera.length > 0" class="tarjeta tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Nombre completo</th>
+              <th>Cédula</th>
+              <th>Eliminado por</th>
+              <th>Motivo</th>
+              <th>Vence</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let af of afiliadosPapelera" class="fila-tabla">
+              <td>
+                <div class="celda-nombre">
+                  <div class="avatar-inicial">{{ (af.nombres || '?').charAt(0).toUpperCase() }}</div>
+                  <div class="nombre-completo">{{ af.nombres }} {{ af.apellidos }}</div>
+                </div>
+              </td>
+              <td class="celda-cedula">{{ af.cedula }}</td>
+              <td>{{ af.eliminadoPor ? (af.eliminadoPor.nombre + ' ' + af.eliminadoPor.apellido) : '—' }}</td>
+              <td>{{ af.motivoEliminacion || '—' }}</td>
+              <td>{{ af.eliminacionDefinitivaEn ? (af.eliminacionDefinitivaEn | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="celda-acciones">
+                <button
+                  class="boton boton-sm boton-exito"
+                  [disabled]="restaurandoId === af.id"
+                  (click)="restaurar(af.id)"
+                >
+                  <span *ngIf="restaurandoId === af.id" class="spinner-inline"></span>
+                  {{ restaurandoId === af.id ? 'Restaurando...' : 'Restaurar' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Tabla -->
-      <div *ngIf="!cargando && !error && afiliados.length > 0" class="tarjeta tabla-contenedor">
+      <div *ngIf="!verPapelera && !cargando && !error && afiliados.length > 0" class="tarjeta tabla-contenedor">
         <table class="tabla">
           <thead>
             <tr>
@@ -197,6 +252,14 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
     .chip--naranja:hover, .chip--naranja.chip--activo { background: #c2410c; border-color: #c2410c; color: white; }
     .chip--rojo { color: #b91c1c; border-color: rgba(239,68,68,0.3); }
     .chip--rojo:hover, .chip--rojo.chip--activo { background: #b91c1c; border-color: #b91c1c; color: white; }
+    .chip--papelera { color: var(--texto-terciario); margin-left: auto; }
+    .chip--papelera:hover, .chip--papelera.chip--activo { background: var(--texto-terciario); border-color: var(--texto-terciario); color: white; }
+
+    .boton-sm { font-size: var(--tamano-sm); padding: var(--espacio-1) var(--espacio-3); display: inline-flex; align-items: center; gap: var(--espacio-1); }
+    .boton-exito { background: #15803d; color: white; border: none; border-radius: var(--radio-md); cursor: pointer; font-weight: 600; transition: var(--transicion-base); }
+    .boton-exito:hover:not([disabled]) { background: #166534; }
+    .boton-exito:disabled { opacity: 0.6; cursor: not-allowed; }
+    .spinner-inline { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; margin-right: var(--espacio-1); }
 
     .filtros-contenedor { display: flex; gap: var(--espacio-4); align-items: flex-end; padding: var(--espacio-4); flex-wrap: wrap; }
     .filtro-busqueda { flex: 1; min-width: 240px; position: relative; }
@@ -253,6 +316,11 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   readonly porPagina = 50;
 
   stats = { total: 0, activos: 0, retirados: 0, suspendidos: 0 };
+
+  // Papelera (29/08) - ver hallazgo en DISENO-FLUJO-PAPELERA-AFILIADO-2026-08-29.md
+  verPapelera = false;
+  afiliadosPapelera: (Afiliado & { eliminadoPor: { id: number; nombre: string; apellido: string } | null; motivoEliminacion: string | null })[] = [];
+  restaurandoId: number | null = null;
 
   private busqueda$ = new Subject<string>();
   private destruir$ = new Subject<void>();
@@ -356,5 +424,37 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
     if (!af.seguros) return '';
     const seg = af.seguros.find((s: any) => s.tipo === tipo);
     return seg?.nombre || '';
+  }
+
+  // ── PAPELERA (29/08) ─────────────────────────────────────────
+  abrirPapelera(): void {
+    this.verPapelera = true;
+    this.cargando = true;
+    this.error = '';
+    this.afiliadosServicio.listarPapelera().pipe(
+      catchError(() => {
+        this.error = 'No se pudo cargar la papelera. Verifique la conexión.';
+        return of([]);
+      }),
+      takeUntil(this.destruir$),
+    ).subscribe((lista) => {
+      this.afiliadosPapelera = lista;
+      this.cargando = false;
+    });
+  }
+
+  restaurar(id: number): void {
+    if (!confirm('¿Restaurar este afiliado? Volverá a estar activo y visible en el listado normal.')) return;
+    this.restaurandoId = id;
+    this.afiliadosServicio.restaurar(id).pipe(
+      catchError((err) => {
+        this.error = err?.error?.mensaje || 'No se pudo restaurar el afiliado.';
+        return of(null);
+      }),
+      takeUntil(this.destruir$),
+    ).subscribe((res) => {
+      this.restaurandoId = null;
+      if (res !== null) this.abrirPapelera();
+    });
   }
 }
