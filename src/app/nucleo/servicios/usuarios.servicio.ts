@@ -49,12 +49,17 @@ export class UsuariosServicio {
     return this.http.patch(`${this.URL}/${id}/permisos`, permisos);
   }
 
+  // HALLAZGO (29/08): antes mandaban `{ activo }` a PATCH /usuarios/:id
+  // (la misma ruta de actualizar()) - el backend lo rechazaba siempre,
+  // porque ActualizarUsuarioDto excluye `activo` a propósito (protección
+  // contra mass-assignment, mismo criterio que rol/contraseña). Ahora
+  // existe el endpoint dedicado que el propio backend ya daba por hecho.
   desactivar(id: number): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}`, { activo: false });
+    return this.http.patch(`${this.URL}/${id}/estado`, { activo: false });
   }
 
   activar(id: number): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}`, { activo: true });
+    return this.http.patch(`${this.URL}/${id}/estado`, { activo: true });
   }
 
   actualizarPerfil(datos: { nombre?: string; apellido?: string; fotoPerfil?: string }): Observable<UsuarioSistema> {
