@@ -45,6 +45,18 @@ export const rutasSecretaria: Routes = [
             (m) => m.MisSolicitudesComponent
           ),
       },
+      // HALLAZGO (29/08): puedeCrearSucursales/puedeEditarSucursales ya son
+      // permisos reales asignables a Asistente (PermisoSecretaria), pero no
+      // había ninguna ruta ni pantalla de Sucursal accesible para ese rol.
+      // El propio guard de permisos, en el backend, sigue siendo la
+      // autorización real - esta ruta solo la hace alcanzable.
+      {
+        path: 'sucursales',
+        loadComponent: () =>
+          import('../admin/sucursales/sucursales.component').then(
+            (m) => m.SucursalesComponent
+          ),
+      },
       {
         path: 'configuracion',
         loadComponent: () =>

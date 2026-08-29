@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl } from '../../../nucleo/servicios/afiliados.servicio';
+import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.servicio';
+import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
+import { catchError, of } from 'rxjs';
 
 interface ErroresCampo {
   nombres?: string;
@@ -329,6 +332,30 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Cargo</label>
               <input type="text" class="campo-input" [(ngModel)]="form.cargo" name="cargo" placeholder="Cargo o función">
             </div>
+            <!-- HALLAZGO (29/08): selector Empresa/Sucursal, antes no existía
+                 ningún camino para vincular un afiliado-empleado con su
+                 empleador. Solo aplica a los tipos "Empresa" - un
+                 independiente no tiene empleador. Sucursal queda opcional:
+                 el backend ya trata sucursalId como nullable. -->
+            <ng-container *ngIf="esEmpresa">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta">Empresa</label>
+                <select class="campo-input" [(ngModel)]="empresaSeleccionadaId" name="empresaSeleccionada" (change)="onEmpresaChange()" [disabled]="cargandoEmpresas">
+                  <option [ngValue]="undefined">{{ cargandoEmpresas ? 'Cargando empresas...' : 'Seleccionar empresa...' }}</option>
+                  <option *ngFor="let emp of empresas" [ngValue]="emp.id">{{ emp.razonSocial }}</option>
+                </select>
+                <span *ngIf="!cargandoEmpresas && empresas.length === 0" class="mensaje-error">
+                  No hay empresas registradas todavía - creá una empresa antes de poder vincular este afiliado.
+                </span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta">Sucursal (opcional)</label>
+                <select class="campo-input" [(ngModel)]="form.sucursalId" name="sucursalId" [disabled]="!empresaSeleccionadaId || cargandoSucursales">
+                  <option [ngValue]="undefined">{{ cargandoSucursales ? 'Cargando sucursales...' : 'Sin sucursal específica' }}</option>
+                  <option *ngFor="let suc of sucursales" [ngValue]="suc.id">{{ suc.nombre }}</option>
+                </select>
+              </div>
+            </ng-container>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Clase aportante</label>
               <select class="campo-input" [(ngModel)]="form.claseAportante" name="claseAportante">
@@ -657,8 +684,26 @@ export class FormularioAfiliadoComponent implements OnInit {
   guardando = false;
   totalPago = 0;
 
+  // HALLAZGO (29/08, ver DIAGNOSTICO-MAESTRO-USO-REAL-2026-08-29.md): este
+  // formulario no tenía forma de vincular un afiliado-empleado con su
+  // Empresa/Sucursal - solo se muestra para EMPRESA_EXONERADA/
+  // EMPRESA_NO_EXONERADA (un independiente no tiene empleador). Sucursal
+  // es opcional a propósito: el backend ya trata sucursalId como nullable,
+  // no se inventa una obligatoriedad que no existe hoy.
+  empresas: Empresa[] = [];
+  sucursales: Sucursal[] = [];
+  empresaSeleccionadaId?: number;
+  cargandoEmpresas = false;
+  cargandoSucursales = false;
+
+  get esEmpresa(): boolean {
+    return this.tipoSeleccionado === 'EMPRESA_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_NO_EXONERADA';
+  }
+
   constructor(
     private afiliadosServicio: AfiliadosServicio,
+    private empresasServicio: EmpresasServicio,
+    private sucursalesServicio: SucursalesServicio,
     private router: Router
   ) {}
 
@@ -668,6 +713,20 @@ export class FormularioAfiliadoComponent implements OnInit {
 
   ngOnInit(): void {
     this.form.fechaIngreso = new Date().toISOString().substring(0, 10);
+    this.cargandoEmpresas = true;
+    this.empresasServicio.listar(undefined, false).pipe(
+      catchError(() => { this.cargandoEmpresas = false; return of([]); }),
+    ).subscribe((lista) => { this.empresas = lista; this.cargandoEmpresas = false; });
+  }
+
+  onEmpresaChange(): void {
+    this.form.sucursalId = undefined;
+    this.sucursales = [];
+    if (!this.empresaSeleccionadaId) return;
+    this.cargandoSucursales = true;
+    this.sucursalesServicio.listarPorEmpresa(this.empresaSeleccionadaId).pipe(
+      catchError(() => { this.cargandoSucursales = false; return of([]); }),
+    ).subscribe((lista) => { this.sucursales = lista; this.cargandoSucursales = false; });
   }
 
   seleccionarTipo(tipo: TipoAfiliacion): void {
@@ -749,6 +808,7 @@ export class FormularioAfiliadoComponent implements OnInit {
       asopagos: this.form.asopagos || undefined,
       diasPago: this.form.diasPago || undefined,
       tipoAfiliacion: this.form.tipoAfiliacion,
+      sucursalId: this.esEmpresa ? this.form.sucursalId : undefined,
       claseRiesgoArl: this.form.claseRiesgoArl || undefined,
       porcentajeArl: this.form.porcentajeArl || undefined,
       porcentajeSalud: this.form.porcentajeSalud || undefined,

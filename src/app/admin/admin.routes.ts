@@ -37,6 +37,16 @@ export const rutasAdmin: Routes = [
         loadComponent: () =>
           import('./empresas/detalle-empresa/detalle-empresa.component').then((m) => m.DetalleEmpresaComponent),
       },
+      // HALLAZGO (29/08): no existía ninguna ruta de Sucursal. Pantalla
+      // independiente por ahora (no anidada en Empresa, que tiene cambios
+      // ajenos sin commitear) - falta un enlace de navegación desde
+      // lista-empresas/detalle-empresa hacia acá, pendiente hasta que esos
+      // archivos se separen. Se puede llegar por URL directa mientras tanto.
+      {
+        path: 'sucursales',
+        loadComponent: () =>
+          import('./sucursales/sucursales.component').then((m) => m.SucursalesComponent),
+      },
       {
         path: 'usuarios',
         loadComponent: () =>
