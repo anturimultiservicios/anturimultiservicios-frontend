@@ -6,6 +6,7 @@ import { UsuariosServicio, UsuarioSistema, CrearUsuarioDto } from '../../nucleo/
 import { PermisoSecretaria } from '../../nucleo/modelos/usuario.modelo';
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
 import { AlcanceServicio, AlcanceUsuario } from '../../nucleo/servicios/alcance.servicio';
+import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 interface FormUsuario {
   nombre: string;
@@ -144,6 +145,33 @@ interface FormUsuario {
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
                 </button>
+                <!-- Cambiar rol: SUPER_ADMIN-only y nunca sobre uno mismo -
+                     ambas cosas ya las exige el backend, acá se oculta
+                     además la opción para no invitar a un intento inútil. -->
+                <button
+                  *ngIf="esSuperAdmin && u.id !== miPropioId"
+                  class="boton boton-icono"
+                  title="Cambiar rol"
+                  (click)="abrirModalRol(u)"
+                  style="color: var(--color-advertencia, #b45309);"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                  </svg>
+                </button>
+                <!-- Reset administrativo: no revela ni fija contraseña,
+                     solo dispara el correo de recuperación ya existente. -->
+                <button
+                  class="boton boton-icono"
+                  title="Forzar reset de contraseña"
+                  (click)="abrirModalReset(u)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -244,6 +272,12 @@ interface FormUsuario {
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeVerPagos"> Puede ver pagos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeRegistrarPagos"> Puede registrar pagos</label>
           </div>
+          <!-- Motivo obligatorio (29/08): cambiar permisos es una acción
+               sensible - el backend ya lo exige y audita. -->
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
+            <textarea class="campo-input" rows="2" [(ngModel)]="motivoPermisos" placeholder="Ej: se le asigna la gestión de documentos de la sucursal Norte"></textarea>
+          </div>
         </div>
         <div class="modal-pie">
           <button class="boton boton-secundario" (click)="cerrarModalPermisos()" [disabled]="guardandoPermisos">Cancelar</button>
@@ -273,6 +307,13 @@ interface FormUsuario {
             cuenta no verá ninguna empresa/sucursal/afiliado (los independientes siguen siendo
             visibles para cualquier cuenta, eso todavía no tiene una regla de alcance propia).
           </p>
+          <!-- Motivo obligatorio (29/08): asignar/revocar alcance es una
+               acción sensible - un solo motivo por sesión del modal, para
+               no exigir uno por cada casilla si se marcan varias seguidas. -->
+          <div class="campo-grupo" style="margin-bottom: var(--espacio-4);">
+            <label class="campo-etiqueta">Motivo de esta asignación <span class="requerido">*</span></label>
+            <input type="text" class="campo-input" [(ngModel)]="motivoAlcance" placeholder="Ej: pasa a encargarse de las empresas de Quimbaya">
+          </div>
           <div *ngIf="errorAlcance" class="alerta-error" style="margin-bottom: var(--espacio-4);">{{ errorAlcance }}</div>
           <div *ngIf="cargandoAlcance" class="estado-carga" style="padding: var(--espacio-6);">
             <div class="spinner"></div>
@@ -283,7 +324,7 @@ interface FormUsuario {
                 <input
                   type="checkbox"
                   [checked]="empresaAsignada(emp.id) !== undefined"
-                  [disabled]="procesando(clavesEmpresa(emp.id))"
+                  [disabled]="procesando(clavesEmpresa(emp.id)) || !motivoAlcance.trim()"
                   (change)="toggleEmpresa(emp)"
                 >
                 <strong>{{ emp.razonSocial }}</strong>
@@ -298,7 +339,7 @@ interface FormUsuario {
                   <input
                     type="checkbox"
                     [checked]="empresaAsignada(emp.id) !== undefined || sucursalAsignada(suc.id) !== undefined"
-                    [disabled]="empresaAsignada(emp.id) !== undefined || procesando(clavesSucursal(suc.id))"
+                    [disabled]="empresaAsignada(emp.id) !== undefined || procesando(clavesSucursal(suc.id)) || !motivoAlcance.trim()"
                     (change)="toggleSucursal(suc)"
                   >
                   {{ suc.nombre }}
@@ -325,6 +366,11 @@ interface FormUsuario {
           ¿Está seguro que desea {{ usuarioEstado?.activo ? 'desactivar' : 'activar' }} la cuenta de
           <strong>{{ usuarioEstado?.nombre }} {{ usuarioEstado?.apellido }}</strong>?
         </p>
+        <div class="campo-grupo" style="margin-top: var(--espacio-4);">
+          <label class="campo-etiqueta">Motivo <span class="requerido">*</span></label>
+          <input type="text" class="campo-input" [(ngModel)]="motivoEstado" placeholder="Ej: dejó de trabajar con nosotros">
+        </div>
+        <div *ngIf="mensajeError" class="alerta-error" style="margin-top: var(--espacio-3);">{{ mensajeError }}</div>
         <div class="modal-confirm__acciones">
           <button class="boton boton-secundario" (click)="modalConfirmEstado = false">Cancelar</button>
           <button
@@ -332,9 +378,69 @@ interface FormUsuario {
             [class.boton-peligro]="usuarioEstado?.activo"
             [class.boton-primario]="!usuarioEstado?.activo"
             (click)="confirmarCambioEstado()"
-            [disabled]="cambiandoEstadoId !== null"
+            [disabled]="cambiandoEstadoId !== null || !motivoEstado.trim()"
           >
             {{ usuarioEstado?.activo ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Cambiar rol (29/08) -->
+    <div *ngIf="modalRol" class="modal-overlay" (click)="cerrarModalRol()">
+      <div class="modal-confirm" (click)="$event.stopPropagation()">
+        <h3 class="modal-confirm__titulo">Cambiar rol</h3>
+        <p class="modal-confirm__texto">
+          Cuenta: <strong>{{ usuarioRol?.nombre }} {{ usuarioRol?.apellido }}</strong> — rol actual:
+          <span class="badge-rol" [ngClass]="claseBadgeRol(usuarioRol?.rol || '')">{{ usuarioRol?.rol }}</span>
+        </p>
+        <p class="modal-confirm__texto" style="margin-top: var(--espacio-2); color: var(--color-error); font-weight: 600;">
+          Esto cambia de inmediato qué puede hacer esta cuenta en todo el sistema.
+        </p>
+        <div class="campo-grupo" style="margin-top: var(--espacio-4);">
+          <label class="campo-etiqueta">Nuevo rol <span class="requerido">*</span></label>
+          <select class="campo-input" [(ngModel)]="nuevoRolSeleccionado">
+            <option value="SECRETARIA">Asistente</option>
+            <option value="ADMIN">Administrador</option>
+            <option value="SUPER_ADMIN">Super administrador</option>
+          </select>
+        </div>
+        <div class="campo-grupo" style="margin-top: var(--espacio-3);">
+          <label class="campo-etiqueta">Motivo <span class="requerido">*</span></label>
+          <textarea class="campo-input" rows="2" [(ngModel)]="motivoRol" placeholder="Ej: pasa a encargarse de la administración general"></textarea>
+        </div>
+        <div *ngIf="errorRol" class="alerta-error" style="margin-top: var(--espacio-3);">{{ errorRol }}</div>
+        <div class="modal-confirm__acciones">
+          <button class="boton boton-secundario" (click)="cerrarModalRol()" [disabled]="guardandoRol">Cancelar</button>
+          <button
+            class="boton boton-peligro"
+            (click)="confirmarCambioRol()"
+            [disabled]="guardandoRol || !motivoRol.trim() || nuevoRolSeleccionado === usuarioRol?.rol"
+          >
+            <span *ngIf="guardandoRol" class="spinner-inline"></span>
+            {{ guardandoRol ? 'Cambiando...' : 'Confirmar cambio de rol' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Reset administrativo (29/08) -->
+    <div *ngIf="modalReset" class="modal-overlay" (click)="cerrarModalReset()">
+      <div class="modal-confirm" (click)="$event.stopPropagation()">
+        <h3 class="modal-confirm__titulo">Forzar reset de contraseña</h3>
+        <p class="modal-confirm__texto">
+          Se enviará un correo de recuperación a <strong>{{ usuarioReset?.correo }}</strong>
+          ({{ usuarioReset?.nombre }} {{ usuarioReset?.apellido }}).
+        </p>
+        <p class="modal-confirm__texto" style="margin-top: var(--espacio-2); font-size: var(--tamano-sm); color: var(--texto-terciario);">
+          Esto no revela ni fija ninguna contraseña — la cuenta deberá elegir una nueva desde el enlace del correo.
+        </p>
+        <div *ngIf="errorReset" class="alerta-error" style="margin-top: var(--espacio-3);">{{ errorReset }}</div>
+        <div class="modal-confirm__acciones">
+          <button class="boton boton-secundario" (click)="cerrarModalReset()" [disabled]="enviandoReset">Cancelar</button>
+          <button class="boton boton-primario" (click)="confirmarReset()" [disabled]="enviandoReset">
+            <span *ngIf="enviandoReset" class="spinner-inline"></span>
+            {{ enviandoReset ? 'Enviando...' : 'Enviar correo de recuperación' }}
           </button>
         </div>
       </div>
@@ -436,6 +542,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   modalPermisos = false;
   guardandoPermisos = false;
   formPermisos: Partial<PermisoSecretaria> = this.permisosVacios();
+  motivoPermisos = '';
 
   // Modal alcance (D01-C)
   modalAlcance = false;
@@ -443,12 +550,28 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   errorAlcance = '';
   empresasDisponibles: Empresa[] = [];
   alcanceActual: AlcanceUsuario = { empresas: [], sucursales: [] };
+  motivoAlcance = '';
   private procesandoClaves = new Set<string>();
 
   // Modal estado
   modalConfirmEstado = false;
   usuarioEstado: UsuarioSistema | null = null;
   cambiandoEstadoId: number | null = null;
+  motivoEstado = '';
+
+  // Modal cambiar rol (29/08)
+  modalRol = false;
+  usuarioRol: UsuarioSistema | null = null;
+  nuevoRolSeleccionado: 'SUPER_ADMIN' | 'ADMIN' | 'SECRETARIA' = 'SECRETARIA';
+  motivoRol = '';
+  errorRol = '';
+  guardandoRol = false;
+
+  // Modal reset administrativo (29/08)
+  modalReset = false;
+  usuarioReset: UsuarioSistema | null = null;
+  errorReset = '';
+  enviandoReset = false;
 
   private destruir$ = new Subject<void>();
 
@@ -456,7 +579,16 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     private usuariosServicio: UsuariosServicio,
     private empresasServicio: EmpresasServicio,
     private alcanceServicio: AlcanceServicio,
+    private auth: AutenticacionServicio,
   ) {}
+
+  get esSuperAdmin(): boolean {
+    return this.auth.tieneRol(['SUPER_ADMIN']);
+  }
+
+  get miPropioId(): number | undefined {
+    return this.auth.usuarioActual?.id;
+  }
 
   ngOnInit(): void {
     this.cargarUsuarios();
@@ -588,6 +720,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       ...this.permisosVacios(),
       ...(u.permisos || {}),
     };
+    this.motivoPermisos = '';
     this.modalPermisos = true;
   }
 
@@ -597,6 +730,10 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
 
   guardarPermisos(): void {
     if (!this.usuarioEditando) return;
+    if (!this.motivoPermisos.trim()) {
+      this.mensajeError = 'El motivo es obligatorio para cambiar permisos.';
+      return;
+    }
     this.guardandoPermisos = true;
     // HALLAZGO 2026-08-22: this.formPermisos se arma con `...(u.permisos || {})`,
     // que trae el registro completo de PermisoSecretaria desde el backend
@@ -619,7 +756,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeVerPagos: this.formPermisos.puedeVerPagos,
       puedeRegistrarPagos: this.formPermisos.puedeRegistrarPagos,
     };
-    this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload).pipe(
+    this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload, this.motivoPermisos.trim()).pipe(
       catchError(err => {
         this.mensajeError = err?.error?.mensaje || 'Error al guardar los permisos.';
         return of(null);
@@ -638,15 +775,17 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   // ── ESTADO ────────────────────────────────────────────────
   toggleEstado(u: UsuarioSistema): void {
     this.usuarioEstado = u;
+    this.motivoEstado = '';
+    this.mensajeError = '';
     this.modalConfirmEstado = true;
   }
 
   confirmarCambioEstado(): void {
-    if (!this.usuarioEstado) return;
+    if (!this.usuarioEstado || !this.motivoEstado.trim()) return;
     this.cambiandoEstadoId = this.usuarioEstado.id;
     const operacion = this.usuarioEstado.activo
-      ? this.usuariosServicio.desactivar(this.usuarioEstado.id)
-      : this.usuariosServicio.activar(this.usuarioEstado.id);
+      ? this.usuariosServicio.desactivar(this.usuarioEstado.id, this.motivoEstado.trim())
+      : this.usuariosServicio.activar(this.usuarioEstado.id, this.motivoEstado.trim());
 
     operacion.pipe(
       catchError(err => {
@@ -668,6 +807,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   abrirModalAlcance(u: UsuarioSistema): void {
     this.usuarioEditando = u;
     this.errorAlcance = '';
+    this.motivoAlcance = '';
     this.modalAlcance = true;
     this.cargarAlcance(u.id);
   }
@@ -707,7 +847,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   procesando(clave: string): boolean { return this.procesandoClaves.has(clave); }
 
   toggleEmpresa(empresa: Empresa): void {
-    if (!this.usuarioEditando) return;
+    if (!this.usuarioEditando || !this.motivoAlcance.trim()) return;
     const usuarioId = this.usuarioEditando.id;
     const clave = this.clavesEmpresa(empresa.id);
     const asignacion = this.empresaAsignada(empresa.id);
@@ -715,8 +855,8 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     this.errorAlcance = '';
 
     const operacion = asignacion
-      ? this.alcanceServicio.revocarEmpresa(asignacion.id)
-      : this.alcanceServicio.asignarEmpresa(usuarioId, empresa.id);
+      ? this.alcanceServicio.revocarEmpresa(asignacion.id, this.motivoAlcance.trim())
+      : this.alcanceServicio.asignarEmpresa(usuarioId, empresa.id, this.motivoAlcance.trim());
 
     operacion.pipe(
       catchError((err) => {
@@ -730,7 +870,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   }
 
   toggleSucursal(sucursal: { id: number; empresaId: number }): void {
-    if (!this.usuarioEditando) return;
+    if (!this.usuarioEditando || !this.motivoAlcance.trim()) return;
     const usuarioId = this.usuarioEditando.id;
     const clave = this.clavesSucursal(sucursal.id);
     const asignacion = this.sucursalAsignada(sucursal.id);
@@ -738,8 +878,8 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     this.errorAlcance = '';
 
     const operacion = asignacion
-      ? this.alcanceServicio.revocarSucursal(asignacion.id)
-      : this.alcanceServicio.asignarSucursal(usuarioId, sucursal.id);
+      ? this.alcanceServicio.revocarSucursal(asignacion.id, this.motivoAlcance.trim())
+      : this.alcanceServicio.asignarSucursal(usuarioId, sucursal.id, this.motivoAlcance.trim());
 
     operacion.pipe(
       catchError((err) => {
@@ -749,6 +889,72 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       finalize(() => { this.procesandoClaves.delete(clave); }),
     ).subscribe((res) => {
       if (res !== null) this.cargarAlcance(usuarioId);
+    });
+  }
+
+  // ── CAMBIAR ROL (29/08) ───────────────────────────────────
+  abrirModalRol(u: UsuarioSistema): void {
+    this.usuarioRol = u;
+    this.nuevoRolSeleccionado = u.rol;
+    this.motivoRol = '';
+    this.errorRol = '';
+    this.modalRol = true;
+  }
+
+  cerrarModalRol(): void {
+    this.modalRol = false;
+  }
+
+  confirmarCambioRol(): void {
+    if (!this.usuarioRol || !this.motivoRol.trim()) return;
+    if (this.nuevoRolSeleccionado === this.usuarioRol.rol) return;
+    this.guardandoRol = true;
+    this.errorRol = '';
+
+    this.usuariosServicio.cambiarRol(this.usuarioRol.id, this.nuevoRolSeleccionado, this.motivoRol.trim()).pipe(
+      catchError((err) => {
+        this.errorRol = err?.error?.message || err?.error?.mensaje || 'No se pudo cambiar el rol.';
+        return of(null);
+      }),
+      finalize(() => { this.guardandoRol = false; }),
+    ).subscribe((res) => {
+      if (res) {
+        this.modalRol = false;
+        this.mensajeExito = 'Rol actualizado correctamente.';
+        this.cargarUsuarios();
+        setTimeout(() => { this.mensajeExito = ''; }, 4000);
+      }
+    });
+  }
+
+  // ── RESET ADMINISTRATIVO (29/08) ──────────────────────────
+  abrirModalReset(u: UsuarioSistema): void {
+    this.usuarioReset = u;
+    this.errorReset = '';
+    this.modalReset = true;
+  }
+
+  cerrarModalReset(): void {
+    this.modalReset = false;
+  }
+
+  confirmarReset(): void {
+    if (!this.usuarioReset) return;
+    this.enviandoReset = true;
+    this.errorReset = '';
+
+    this.usuariosServicio.forzarReset(this.usuarioReset.id).pipe(
+      catchError((err) => {
+        this.errorReset = err?.error?.mensaje || 'No se pudo enviar el correo de recuperación.';
+        return of(null);
+      }),
+      finalize(() => { this.enviandoReset = false; }),
+    ).subscribe((res) => {
+      if (res) {
+        this.modalReset = false;
+        this.mensajeExito = `Correo de recuperación enviado a ${this.usuarioReset?.correo}.`;
+        setTimeout(() => { this.mensajeExito = ''; }, 4000);
+      }
     });
   }
 
