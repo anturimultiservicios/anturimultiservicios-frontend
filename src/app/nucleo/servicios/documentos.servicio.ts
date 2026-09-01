@@ -6,7 +6,7 @@ import { entorno } from '../../../environments/entorno';
 export interface Documento {
   id: number;
   afiliadoId: number;
-  tipo: 'CEDULA' | 'AFILIACION' | 'CONTRATO' | 'CERTIFICADO' | 'OTRO';
+  tipo: 'CEDULA' | 'REGISTRO' | 'AFILIACION' | 'FACTURA' | 'OTRO';
   nombre: string;
   nombreOriginal: string;
   rutaArchivo: string;
@@ -14,6 +14,14 @@ export interface Documento {
   tamanoKb?: number;
   estado: 'ACTIVO' | 'ELIMINADO';
   creadoEn: string;
+}
+
+export interface SlotDocumento {
+  tipo: 'CEDULA' | 'REGISTRO' | 'AFILIACION' | 'FACTURA';
+  label: string;
+  obligatorio: boolean;
+  presente: boolean;
+  documentos: Documento[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +34,10 @@ export class DocumentosServicio {
     return this.http.get<Documento[]>(`${this.URL}/afiliado/${afiliadoId}`);
   }
 
+  completitudAfiliado(afiliadoId: number): Observable<SlotDocumento[]> {
+    return this.http.get<SlotDocumento[]>(`${this.URL}/afiliado/${afiliadoId}/completitud`);
+  }
+
   subir(afiliadoId: number, archivo: File, tipo: string, nombre: string): Observable<HttpEvent<any>> {
     const form = new FormData();
     form.append('archivo', archivo, archivo.name);
@@ -33,7 +45,7 @@ export class DocumentosServicio {
     form.append('tipo', tipo);
     form.append('nombre', nombre);
 
-    const req = new HttpRequest('POST', this.URL, form, { reportProgress: true });
+    const req = new HttpRequest('POST', `${this.URL}/subir`, form, { reportProgress: true });
     return this.http.request(req);
   }
 
