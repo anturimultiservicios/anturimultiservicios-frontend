@@ -8,7 +8,12 @@ import { rutas } from './app.routes';
 import { tokenInterceptor } from './nucleo/interceptores/token.interceptor';
 
 export function crearCargadorTraduccion(http: HttpClient) {
-  return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
+  // Se arma a partir de <base href> en vez de hardcodear '/assets/i18n/' -
+  // en producción (base href '/') da exactamente lo mismo que antes; en un
+  // despliegue bajo subruta (ej. entornos de prueba temporales) resuelve
+  // correctamente sin depender de que el path sea la raíz del dominio.
+  const rutaBase = new URL(document.baseURI).pathname;
+  return new TranslateHttpLoader(http, `${rutaBase}assets/i18n/`, '.json');
 }
 
 export const appConfig: ApplicationConfig = {
