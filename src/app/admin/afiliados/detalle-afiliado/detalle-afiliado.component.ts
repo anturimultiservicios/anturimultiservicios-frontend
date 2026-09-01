@@ -5,9 +5,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { HttpEventType } from '@angular/common/http';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
-import { DocumentosServicio, Documento } from '../../../nucleo/servicios/documentos.servicio';
+import { DocumentosServicio, Documento, SlotDocumento } from '../../../nucleo/servicios/documentos.servicio';
 import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
@@ -123,6 +124,10 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
               <span class="dato-etiqueta">Actividad económica</span>
               <span class="dato-valor">{{ afiliado.actividadEconomica || '—' }}</span>
             </div>
+            <div class="dato-item dato-item--ancho" *ngIf="afiliado.observaciones">
+              <span class="dato-etiqueta">Notas internas</span>
+              <span class="dato-valor dato-valor--nota">{{ afiliado.observaciones }}</span>
+            </div>
           </div>
         </div>
 
@@ -204,14 +209,6 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
       <div *ngIf="afiliado && modoEdicion" class="tarjeta seccion-datos">
         <div class="edicion-encabezado">
           <h3 class="seccion-titulo">Editando datos del afiliado</h3>
-          <div *ngIf="esSecretaria" class="aviso-secretaria">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            Como secretaria, su solicitud quedará pendiente de aprobación.
-          </div>
         </div>
 
         <div *ngIf="esSecretaria" class="campo-grupo" style="margin-bottom: var(--espacio-4);">
@@ -265,6 +262,10 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
             <label class="campo-etiqueta">Comisión</label>
             <input type="number" class="campo-input" [(ngModel)]="edicionForm.comision" name="edit-comision">
           </div>
+          <div class="campo-grupo campo-grupo--ancho">
+            <label class="campo-etiqueta">Notas internas</label>
+            <textarea class="campo-input campo-textarea" [(ngModel)]="edicionForm.observaciones" name="edit-observaciones" rows="3" placeholder="Notas internas del gestor (lugar de trabajo, recordatorios, etc.)"></textarea>
+          </div>
         </div>
 
         <div class="form-acciones" style="margin-top: var(--espacio-5);">
@@ -276,46 +277,100 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         </div>
       </div>
 
-      <!-- SECCIÓN DOCUMENTOS -->
+      <!-- SECCIÓN DOCUMENTOS - 4 SLOTS -->
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
         <div class="docs-encabezado">
           <h3 class="seccion-titulo">Documentos</h3>
-          <button class="boton boton-secundario boton-sm" (click)="triggerInputArchivo()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            Seleccionar archivo
-          </button>
+          <span *ngIf="!cargandoDocs && slots.length" class="docs-resumen"
+            [class.docs-resumen--ok]="slotsCompletos === slots.length"
+            [class.docs-resumen--parcial]="slotsCompletos < slots.length">
+            {{ slotsCompletos }}/{{ slots.length }} completados
+          </span>
         </div>
 
-        <!-- Zona Drag & Drop -->
-        <div
-          class="dropzone"
-          [class.dropzone--activa]="arrastrando"
-          (dragover)="onDragOver($event)"
-          (dragleave)="arrastrando = false"
-          (drop)="onDrop($event)"
-          (click)="triggerInputArchivo()"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36" style="color: var(--texto-terciario);">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          <p>Arrastra archivos aquí o haz clic para seleccionar</p>
-          <p class="dropzone__tipos">PDF, JPG, PNG</p>
-          <input
-            type="file"
-            #inputArchivo
-            style="display: none;"
-            accept=".pdf,.jpg,.jpeg,.png"
-            (change)="onArchivoSeleccionado($event)"
+        <!-- Cargando slots -->
+        <div *ngIf="cargandoDocs" class="estado-carga" style="padding: var(--espacio-6);">
+          <div class="spinner"></div>
+        </div>
+
+        <!-- Grid de slots -->
+        <div *ngIf="!cargandoDocs" class="slots-grid">
+          <div
+            *ngFor="let slot of slots"
+            class="slot-doc"
+            [class.slot-doc--ok]="slot.presente"
+            [class.slot-doc--falta]="!slot.presente"
           >
+            <!-- Ícono estado -->
+            <div class="slot-doc__icono">
+              <svg *ngIf="slot.presente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: #16a34a;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <svg *ngIf="!slot.presente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: #dc2626;">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </div>
+
+            <!-- Info del slot -->
+            <div class="slot-doc__info">
+              <span class="slot-doc__label">{{ slot.label }}</span>
+              <span *ngIf="slot.presente && slot.documentos[0]" class="slot-doc__meta slot-doc__meta--ok">
+                Subido el {{ slot.documentos[0].creadoEn | date:'dd/MM/yyyy' }}
+              </span>
+              <span *ngIf="!slot.presente" class="slot-doc__meta slot-doc__meta--falta">
+                Pendiente
+              </span>
+            </div>
+
+            <!-- Acciones -->
+            <div class="slot-doc__acciones">
+              <!-- Slot con documento -->
+              <ng-container *ngIf="slot.presente && slot.documentos[0] as doc">
+                <button class="boton boton-icono" title="Ver documento" (click)="abrirDocumento(doc)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+                <button
+                  class="boton boton-icono boton-peligro-suave"
+                  title="Eliminar documento"
+                  (click)="eliminarDocumentoSlot(doc, slot)"
+                  [disabled]="eliminandoDocId === doc.id"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                  </svg>
+                </button>
+              </ng-container>
+
+              <!-- Slot sin documento -->
+              <ng-container *ngIf="!slot.presente">
+                <button class="boton boton-primario boton-sm" (click)="subirParaSlot(slot)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  Subir
+                </button>
+              </ng-container>
+            </div>
+          </div>
         </div>
 
-        <!-- Progreso de subida -->
+        <!-- Input oculto compartido -->
+        <input
+          type="file"
+          id="inputSlotArchivo"
+          style="display: none;"
+          accept=".pdf,.jpg,.jpeg,.png"
+          (change)="onArchivoSlotSeleccionado($event)"
+        >
+
+        <!-- Progreso subida -->
         <div *ngIf="subiendoArchivo" class="progreso-subida">
           <span>Subiendo: {{ nombreArchivoSubiendo }}</span>
           <div class="barra-progreso">
@@ -324,54 +379,10 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
           <span>{{ progresoSubida }}%</span>
         </div>
 
-        <!-- Error de subida -->
+        <!-- Error subida -->
         <div *ngIf="errorSubida" class="alerta-error" style="margin-top: var(--espacio-3);">
           {{ errorSubida }}
           <button style="margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;" (click)="errorSubida = ''">✕</button>
-        </div>
-
-        <!-- Lista de documentos -->
-        <div *ngIf="cargandoDocs" class="estado-carga" style="padding: var(--espacio-6);">
-          <div class="spinner"></div>
-        </div>
-
-        <div *ngIf="!cargandoDocs && documentos.length === 0" class="docs-vacio">
-          No hay documentos adjuntos para este afiliado.
-        </div>
-
-        <div *ngIf="!cargandoDocs && documentos.length > 0" class="docs-lista">
-          <div *ngFor="let doc of documentos" class="doc-tarjeta">
-            <div class="doc-tarjeta__icono" (click)="abrirDocumento(doc)" style="cursor: pointer;">
-              <svg *ngIf="docServicio.esPdf(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #dc2626;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-              <svg *ngIf="docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #2563eb;">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-              <svg *ngIf="!docServicio.esPdf(doc.extension) && !docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: var(--texto-terciario);">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-            </div>
-            <div class="doc-tarjeta__info" (click)="abrirDocumento(doc)" style="cursor: pointer;">
-              <span class="doc-nombre">{{ doc.nombre || doc.nombreOriginal }}</span>
-              <span class="doc-meta">{{ doc.tipo }} · {{ doc.creadoEn | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <button
-              class="boton boton-icono boton-peligro-suave"
-              title="Eliminar documento"
-              (click)="eliminarDocumento(doc)"
-              [disabled]="eliminandoDocId === doc.id"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-              </svg>
-            </button>
-          </div>
         </div>
       </div>
 
@@ -388,15 +399,16 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
             </button>
           </div>
           <div class="modal-doc__cuerpo">
+            <p *ngIf="errorDocumento" class="alerta-error">{{ errorDocumento }}</p>
             <img
-              *ngIf="docActual && docServicio.esImagen(docActual.extension)"
-              [src]="docServicio.obtenerUrlVisualizacion(docActual.id)"
+              *ngIf="!errorDocumento && urlDocSeguro && docActual && docServicio.esImagen(docActual.extension)"
+              [src]="urlDocSeguro"
               [alt]="docActual.nombre"
               class="modal-doc__imagen"
             >
             <iframe
-              *ngIf="docActual && docServicio.esPdf(docActual.extension)"
-              [src]="urlPdfSeguro"
+              *ngIf="!errorDocumento && urlDocSeguro && docActual && docServicio.esPdf(docActual.extension)"
+              [src]="urlDocSeguro"
               class="modal-doc__iframe"
               frameborder="0"
             ></iframe>
@@ -404,14 +416,14 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         </div>
       </div>
 
-      <!-- MODAL: Confirmar eliminación -->
+      <!-- MODAL: Confirmar eliminación afiliado -->
       <div *ngIf="modalEliminar" class="modal-overlay" (click)="modalEliminar = false">
         <div class="modal-confirm" (click)="$event.stopPropagation()">
           <h3 class="modal-confirm__titulo">Confirmar eliminación</h3>
           <p class="modal-confirm__texto">
             Esta acción eliminará al afiliado <strong>{{ afiliado?.nombres }} {{ afiliado?.apellidos }}</strong>.
           </p>
-          <div class="campo-grupo" style="margin: var(--espacio-4) 0;">
+          <div *ngIf="esSecretaria" class="campo-grupo" style="margin: var(--espacio-4) 0;">
             <label class="campo-etiqueta">Motivo de eliminación <span style="color: var(--color-error);">*</span></label>
             <input
               type="text"
@@ -451,7 +463,7 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .dato-item { display: flex; flex-direction: column; gap: var(--espacio-1); }
     .dato-item--ancho { grid-column: 1 / -1; }
     .dato-etiqueta { font-size: var(--tamano-sm); color: var(--texto-terciario); font-weight: 500; }
-    .dato-valor { font-size: var(--tamano-base); color: var(--texto-principal); font-weight: 500; }
+    .dato-valor { font-size: var(--tamano-base); color: var(--texto-principal); font-weight: 500; word-break: break-word; overflow-wrap: break-word; }
 
     .badge-estado { display: inline-flex; align-items: center; padding: 3px var(--espacio-2); border-radius: var(--radio-sm); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     .badge-activo { background: rgba(34,197,94,0.12); color: #15803d; }
@@ -463,27 +475,37 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .aviso-secretaria { display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); color: var(--color-advertencia); background: rgba(249,115,22,0.08); padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio-sm); }
     .campos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--espacio-4); }
     .campo-grupo { display: flex; flex-direction: column; gap: var(--espacio-1); }
+    .campo-grupo--ancho { grid-column: 1 / -1; }
+    .campo-textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+    .dato-valor--nota { background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.2); border-radius: var(--radio-sm); padding: var(--espacio-2) var(--espacio-3); font-size: var(--tamano-sm); color: var(--texto-secundario); white-space: pre-wrap; }
     .form-acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
-    .boton-sm { font-size: var(--tamano-sm); padding: var(--espacio-1) var(--espacio-3); }
 
-    /* Documentos */
+    /* Documentos - encabezado */
     .docs-encabezado { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--espacio-4); }
-    .dropzone { border: 2px dashed var(--borde-color, #d1d5db); border-radius: var(--radio-lg); padding: var(--espacio-8) var(--espacio-6); display: flex; flex-direction: column; align-items: center; gap: var(--espacio-2); cursor: pointer; transition: var(--transicion-base); text-align: center; color: var(--texto-terciario); }
-    .dropzone:hover, .dropzone--activa { border-color: var(--color-primario); background: rgba(27,50,112,0.04); }
-    .dropzone__tipos { font-size: var(--tamano-sm); }
-    .docs-vacio { text-align: center; color: var(--texto-terciario); padding: var(--espacio-6); font-size: var(--tamano-sm); }
-    .docs-lista { display: flex; flex-direction: column; gap: var(--espacio-2); margin-top: var(--espacio-4); }
-    .doc-tarjeta { display: flex; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-md); transition: var(--transicion-base); }
-    .doc-tarjeta:hover { background: var(--fondo-tarjeta-hover, rgba(0,0,0,0.02)); }
-    .doc-tarjeta__icono { flex-shrink: 0; }
-    .doc-tarjeta__info { flex: 1; min-width: 0; }
-    .doc-nombre { display: block; font-weight: 500; color: var(--texto-principal); font-size: var(--tamano-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .doc-meta { display: block; font-size: 0.72rem; color: var(--texto-terciario); margin-top: 2px; }
+    .docs-resumen { font-size: var(--tamano-sm); font-weight: 600; padding: 3px var(--espacio-3); border-radius: var(--radio-full, 9999px); }
+    .docs-resumen--ok { background: rgba(34,197,94,0.12); color: #15803d; }
+    .docs-resumen--parcial { background: rgba(239,68,68,0.1); color: #b91c1c; }
+
+    /* Slots de documentos */
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--espacio-3); }
+    .slot-doc { display: flex; align-items: center; gap: var(--espacio-3); padding: var(--espacio-4); border: 2px solid; border-radius: var(--radio-md); transition: var(--transicion-base); }
+    .slot-doc--ok { border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.04); }
+    .slot-doc--falta { border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.03); }
+    .slot-doc__icono { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .slot-doc--ok .slot-doc__icono { background: rgba(34,197,94,0.14); }
+    .slot-doc--falta .slot-doc__icono { background: rgba(239,68,68,0.1); }
+    .slot-doc__info { flex: 1; min-width: 0; }
+    .slot-doc__label { display: block; font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-principal); }
+    .slot-doc__meta { display: block; font-size: 0.72rem; margin-top: 3px; }
+    .slot-doc__meta--ok { color: #16a34a; }
+    .slot-doc__meta--falta { color: #dc2626; }
+    .slot-doc__acciones { display: flex; gap: var(--espacio-1); flex-shrink: 0; }
     .boton-peligro-suave { color: var(--color-error); }
     .boton-peligro-suave:hover { background: rgba(239,68,68,0.08); }
+    .boton-sm { font-size: var(--tamano-sm); padding: var(--espacio-1) var(--espacio-3); display: flex; align-items: center; gap: var(--espacio-1); }
 
     /* Progreso subida */
-    .progreso-subida { display: flex; align-items: center; gap: var(--espacio-3); margin-top: var(--espacio-3); font-size: var(--tamano-sm); color: var(--texto-secundario); }
+    .progreso-subida { display: flex; align-items: center; gap: var(--espacio-3); margin-top: var(--espacio-4); font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .barra-progreso { flex: 1; height: 6px; background: var(--borde-color, #e5e7eb); border-radius: 3px; overflow: hidden; }
     .barra-progreso__relleno { height: 100%; background: var(--color-primario); transition: width 0.2s; }
 
@@ -509,7 +531,7 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 })
 export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   afiliado: Afiliado | null = null;
-  documentos: Documento[] = [];
+  slots: SlotDocumento[] = [];
   cargando = false;
   cargandoDocs = false;
   errorCarga = '';
@@ -522,24 +544,28 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   motivoEdicion = '';
   guardandoEdicion = false;
 
-  // Eliminación
+  // Eliminación afiliado
   modalEliminar = false;
   motivoEliminacion = '';
   errorMotivoEliminar = '';
   eliminando = false;
 
   // Documentos
-  arrastrando = false;
+  tipoSlotActual = '';
   subiendoArchivo = false;
   progresoSubida = 0;
   nombreArchivoSubiendo = '';
   errorSubida = '';
   eliminandoDocId: number | null = null;
 
-  // Modal documento
+  // Modal documento - urlDocSeguro sirve tanto a <img> como a <iframe>: se
+  // obtiene el archivo autenticado como Blob (ver abrirDocumento()) y se
+  // sanitiza el object URL resultante, nunca la URL directa del backend.
   modalDoc = false;
   docActual: Documento | null = null;
-  urlPdfSeguro: any = null;
+  urlDocSeguro: SafeResourceUrl | null = null;
+  errorDocumento = '';
+  private objectUrlActual: string | null = null;
 
   private destruir$ = new Subject<void>();
   private afiliadoId!: number;
@@ -552,13 +578,18 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     return this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
   }
 
+  get slotsCompletos(): number {
+    return this.slots.filter(s => s.presente).length;
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private afiliadosServicio: AfiliadosServicio,
     public docServicio: DocumentosServicio,
     private solicitudesServicio: SolicitudesServicio,
-    private auth: AutenticacionServicio
+    private auth: AutenticacionServicio,
+    private sanitizer: DomSanitizer
   ) {}
 
   private get prefijo(): string {
@@ -576,13 +607,14 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destruir$.next();
     this.destruir$.complete();
+    this.liberarUrlDocumento();
   }
 
   cargarAfiliado(): void {
     this.cargando = true;
     this.errorCarga = '';
     this.afiliadosServicio.obtener(this.afiliadoId).pipe(
-      catchError(err => {
+      catchError(() => {
         this.errorCarga = 'No se pudo cargar el afiliado. Verifique la conexión.';
         return of(null);
       }),
@@ -591,18 +623,18 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       this.cargando = false;
       if (af) {
         this.afiliado = af;
-        this.cargarDocumentos();
+        this.cargarCompletitud();
       }
     });
   }
 
-  cargarDocumentos(): void {
+  cargarCompletitud(): void {
     this.cargandoDocs = true;
-    this.docServicio.listarDeAfiliado(this.afiliadoId).pipe(
+    this.docServicio.completitudAfiliado(this.afiliadoId).pipe(
       catchError(() => of([])),
       takeUntil(this.destruir$)
-    ).subscribe(docs => {
-      this.documentos = docs;
+    ).subscribe(slots => {
+      this.slots = slots;
       this.cargandoDocs = false;
     });
   }
@@ -644,7 +676,6 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     this.mensajeError = '';
 
     if (this.esSecretaria) {
-      // Secretaria: crea solicitud de cambio
       this.solicitudesServicio.crear({
         tipo: 'EDICION',
         tabla: 'afiliados',
@@ -653,7 +684,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         datosOriginales: this.afiliado,
         datosNuevos: this.edicionForm,
       }).pipe(
-        catchError(err => {
+        catchError(() => {
           this.mensajeError = 'Error al enviar la solicitud. Intente nuevamente.';
           return of(null);
         }),
@@ -665,10 +696,9 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      // Admin: actualiza directamente
       const motivo = this.motivoEdicion || 'Actualización desde panel de administración';
       this.afiliadosServicio.actualizar(this.afiliadoId, this.edicionForm, motivo).pipe(
-        catchError(err => {
+        catchError((err: any) => {
           this.mensajeError = err?.error?.mensaje || 'Error al guardar los cambios. Intente nuevamente.';
           return of(null);
         }),
@@ -684,9 +714,9 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── ELIMINACIÓN ───────────────────────────────────────────
+  // ── ELIMINACIÓN AFILIADO ──────────────────────────────────
   confirmarEliminar(): void {
-    if (!this.motivoEliminacion.trim()) {
+    if (this.esSecretaria && !this.motivoEliminacion.trim()) {
       this.errorMotivoEliminar = 'El motivo de eliminación es obligatorio.';
       return;
     }
@@ -701,7 +731,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         motivo: this.motivoEliminacion,
         datosOriginales: this.afiliado,
       }).pipe(
-        catchError(err => {
+        catchError(() => {
           this.mensajeError = 'Error al enviar la solicitud. Intente nuevamente.';
           return of(null);
         }),
@@ -714,7 +744,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       });
     } else {
       this.afiliadosServicio.eliminar(this.afiliadoId).pipe(
-        catchError(err => {
+        catchError((err: any) => {
           this.mensajeError = err?.error?.mensaje || 'Error al eliminar el afiliado.';
           return of(null);
         }),
@@ -727,29 +757,16 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── DOCUMENTOS ────────────────────────────────────────────
-  triggerInputArchivo(): void {
-    const el = document.querySelector('input[type="file"]') as HTMLInputElement;
+  // ── DOCUMENTOS - SLOTS ────────────────────────────────────
+  subirParaSlot(slot: SlotDocumento): void {
+    this.tipoSlotActual = slot.tipo;
+    const el = document.getElementById('inputSlotArchivo') as HTMLInputElement;
     if (el) el.click();
   }
 
-  onDragOver(e: DragEvent): void {
-    e.preventDefault();
-    this.arrastrando = true;
-  }
-
-  onDrop(e: DragEvent): void {
-    e.preventDefault();
-    this.arrastrando = false;
-    const files = e.dataTransfer?.files;
-    if (files && files.length > 0) {
-      this.subirArchivo(files[0]);
-    }
-  }
-
-  onArchivoSeleccionado(e: Event): void {
+  onArchivoSlotSeleccionado(e: Event): void {
     const input = e.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
+    if (input.files && input.files.length > 0 && this.tipoSlotActual) {
       this.subirArchivo(input.files[0]);
       input.value = '';
     }
@@ -761,10 +778,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     this.errorSubida = '';
     this.nombreArchivoSubiendo = archivo.name;
 
-    const ext = archivo.name.split('.').pop() || '';
-    const tipo = this.docServicio.esPdf(ext) ? 'OTRO' : (this.docServicio.esImagen(ext) ? 'OTRO' : 'OTRO');
-
-    this.docServicio.subir(this.afiliadoId, archivo, tipo, archivo.name).pipe(
+    this.docServicio.subir(this.afiliadoId, archivo, this.tipoSlotActual, archivo.name).pipe(
       takeUntil(this.destruir$)
     ).subscribe({
       next: (event: any) => {
@@ -772,43 +786,70 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
           this.progresoSubida = Math.round(100 * event.loaded / event.total);
         } else if (event.type === HttpEventType.Response) {
           this.subiendoArchivo = false;
-          this.cargarDocumentos();
+          this.tipoSlotActual = '';
+          this.cargarCompletitud();
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         this.subiendoArchivo = false;
+        this.tipoSlotActual = '';
         this.errorSubida = err?.error?.mensaje || 'Error al subir el archivo. Intente nuevamente.';
       }
     });
   }
 
-  eliminarDocumento(doc: Documento): void {
-    if (!confirm(`¿Eliminar el documento "${doc.nombre || doc.nombreOriginal}"?`)) return;
+  eliminarDocumentoSlot(doc: Documento, slot: SlotDocumento): void {
+    if (!confirm(`¿Eliminar "${slot.label}"?`)) return;
     this.eliminandoDocId = doc.id;
     this.docServicio.eliminar(doc.id).pipe(
       catchError(() => of(null)),
       finalize(() => { this.eliminandoDocId = null; })
     ).subscribe(() => {
-      this.documentos = this.documentos.filter(d => d.id !== doc.id);
+      this.cargarCompletitud();
     });
   }
 
+  // Visor autenticado (Bloque 2): GET /documentos/:id/ver exige JWT por
+  // header, así que un <img>/<iframe> con la URL directa nunca podía
+  // autenticarse - no hay mecanismo alternativo en el backend (investigado
+  // antes de este cambio, ver documentos.controlador.ts). Se pide el
+  // archivo vía HttpClient (con el interceptor de token ya existente) como
+  // Blob, y se muestra desde un object URL local - mismo endpoint, mismas
+  // guardias, mismos permisos, el JWT nunca viaja en ninguna URL.
   abrirDocumento(doc: Documento): void {
     this.docActual = doc;
-    if (this.docServicio.esPdf(doc.extension)) {
-      // Asignamos directamente — el DomSanitizer se puede usar si se necesita bypassSecurity
-      this.urlPdfSeguro = this.docServicio.obtenerUrlVisualizacion(doc.id);
-    }
+    this.errorDocumento = '';
     this.modalDoc = true;
+    this.docServicio.obtenerBlobVisualizacion(doc.id).pipe(
+      takeUntil(this.destruir$)
+    ).subscribe({
+      next: (blob) => {
+        this.liberarUrlDocumento();
+        this.objectUrlActual = URL.createObjectURL(blob);
+        this.urlDocSeguro = this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrlActual);
+      },
+      error: () => {
+        this.errorDocumento = 'No se pudo cargar el documento. Intente nuevamente.';
+      }
+    });
   }
 
   cerrarModalDoc(): void {
     this.modalDoc = false;
     this.docActual = null;
-    this.urlPdfSeguro = null;
+    this.urlDocSeguro = null;
+    this.errorDocumento = '';
+    this.liberarUrlDocumento();
+  }
+
+  private liberarUrlDocumento(): void {
+    if (this.objectUrlActual) {
+      URL.revokeObjectURL(this.objectUrlActual);
+      this.objectUrlActual = null;
+    }
   }
 
   volver(): void {
-    this.router.navigate(['/admin/afiliados']);
+    this.router.navigate([this.prefijo, 'afiliados']);
   }
 }
