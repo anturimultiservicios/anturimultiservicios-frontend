@@ -53,6 +53,17 @@ export class DocumentosServicio {
     return `${entorno.urlApi}/documentos/${id}/ver`;
   }
 
+  // Bloque 2 (ficha de Afiliado): GET /documentos/:id/ver exige JWT por
+  // header Authorization - un <img>/<iframe> con esta URL directa nunca
+  // pudo autenticarse (no hay mecanismo alternativo en el backend, ver
+  // investigación previa). Pasando por HttpClient con responseType 'blob',
+  // el interceptor global (token.interceptor.ts) adjunta el token exactamente
+  // igual que en cualquier otra llamada de la app - mismo endpoint, mismas
+  // guardias, mismos permisos, sin exponer el JWT en ninguna URL.
+  obtenerBlobVisualizacion(id: number): Observable<Blob> {
+    return this.http.get(`${this.URL}/${id}/ver`, { responseType: 'blob' });
+  }
+
   eliminar(id: number): Observable<any> {
     return this.http.delete(`${this.URL}/${id}`);
   }
