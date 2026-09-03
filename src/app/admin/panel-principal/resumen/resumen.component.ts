@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AfiliadosServicio } from '../../../nucleo/servicios/afiliados.servicio';
@@ -56,7 +56,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
           </div>
         </div>
 
-        <div class="resumen-tarjeta tarjeta" [class.resumen-tarjeta--alerta]="stats.solicitudesPendientes > 0">
+        <div *ngIf="esAdmin" class="resumen-tarjeta tarjeta" [class.resumen-tarjeta--alerta]="stats.solicitudesPendientes > 0">
           <div class="resumen-tarjeta__icono icono-solicitudes">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -78,26 +78,26 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
       <div class="accesos-rapidos">
         <h3 class="accesos-rapidos__titulo">Accesos rápidos</h3>
         <div class="accesos-rapidos__grid">
-          <a routerLink="/admin/afiliados/nuevo" class="acceso-rapido tarjeta">
+          <a [routerLink]="prefijo + '/afiliados/nuevo'" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             <span>Nuevo afiliado</span>
           </a>
-          <a routerLink="/admin/afiliados" class="acceso-rapido tarjeta">
+          <a [routerLink]="prefijo + '/afiliados'" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <span>Buscar afiliado</span>
           </a>
-          <a routerLink="/admin/empresas" class="acceso-rapido tarjeta">
+          <a [routerLink]="prefijo + '/empresas'" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <rect x="2" y="7" width="20" height="14" rx="2"/>
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
             </svg>
             <span>Ver empresas</span>
           </a>
-          <a routerLink="/admin/solicitudes" class="acceso-rapido tarjeta">
+          <a *ngIf="esAdmin" routerLink="/admin/solicitudes" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <polyline points="9 11 12 14 22 4"/>
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -132,25 +132,34 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
 export class ResumenComponent implements OnInit {
   cargando = true;
   stats = { afiliadosActivos: 0, afiliadosRetirados: 0, afiliadosTotal: 0, empresasActivas: 0, solicitudesPendientes: 0 };
+  prefijo = '/admin';
+  esAdmin = true;
 
   constructor(
     private afiliados: AfiliadosServicio,
     private empresas: EmpresasServicio,
     private solicitudes: SolicitudesServicio,
-  ) {}
+    private router: Router,
+  ) {
+    this.esAdmin = !this.router.url.startsWith('/secretaria');
+    this.prefijo = this.esAdmin ? '/admin' : '/secretaria';
+  }
 
   ngOnInit(): void {
     forkJoin({
       af: this.afiliados.estadisticas().pipe(catchError(() => of({ activos: 0, retirados: 0, total: 0 }))),
       em: this.empresas.estadisticas().pipe(catchError(() => of({ activas: 0 }))),
       sol: this.solicitudes.contarPendientes().pipe(catchError(() => of(0))),
-    }).subscribe((res) => {
-      this.stats.afiliadosActivos = res.af.activos ?? 0;
-      this.stats.afiliadosRetirados = res.af.retirados ?? 0;
-      this.stats.afiliadosTotal = res.af.total ?? 0;
-      this.stats.empresasActivas = res.em.activas ?? 0;
-      this.stats.solicitudesPendientes = res.sol ?? 0;
-      this.cargando = false;
+    }).subscribe({
+      next: (res) => {
+        this.stats.afiliadosActivos = res.af.activos ?? 0;
+        this.stats.afiliadosRetirados = res.af.retirados ?? 0;
+        this.stats.afiliadosTotal = res.af.total ?? 0;
+        this.stats.empresasActivas = res.em.activas ?? 0;
+        this.stats.solicitudesPendientes = res.sol ?? 0;
+        this.cargando = false;
+      },
+      error: () => { this.cargando = false; },
     });
   }
 }

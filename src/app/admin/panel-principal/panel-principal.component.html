@@ -21,34 +21,13 @@
 
       <div class="barra-superior__derecha">
 
-        <!-- Tiempo de sesión -->
-        <div class="sesion-tiempo" title="Tiempo de sesión activa">
+        <!-- Tiempo de sesión (solo para admin y secretaria) -->
+        <div class="sesion-tiempo" *ngIf="auth.usuarioActual?.rol !== 'SUPER_ADMIN'" title="Tiempo de sesión activa">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
           <span>{{ tiempoSesion }}</span>
-        </div>
-
-        <!-- Selector idioma -->
-        <div class="selector-idioma" [class.abierto]="menuIdioma">
-          <button class="selector-idioma__boton" (click)="menuIdioma = !menuIdioma; menuPerfil = false">
-            <span class="selector-idioma__bandera">{{ idiomaServicio.idiomaActual.bandera }}</span>
-            <span class="selector-idioma__codigo">{{ idiomaServicio.idiomaActual.codigo.toUpperCase() }}</span>
-            <svg class="selector-idioma__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <ul class="selector-idioma__lista" *ngIf="menuIdioma">
-            <li *ngFor="let idioma of idiomaServicio.idiomasDisponibles">
-              <button class="selector-idioma__opcion"
-                      [class.activo]="idioma.codigo === idiomaServicio.idiomaActual.codigo"
-                      (click)="idiomaServicio.cambiar(idioma.codigo); menuIdioma = false">
-                <span class="selector-idioma__bandera">{{ idioma.bandera }}</span>
-                <span>{{ idioma.nombre }}</span>
-              </button>
-            </li>
-          </ul>
         </div>
 
         <!-- Tema -->
@@ -67,7 +46,7 @@
 
         <!-- Perfil -->
         <div class="perfil-menu" [class.abierto]="menuPerfil">
-          <button class="perfil-menu__boton" (click)="menuPerfil = !menuPerfil; menuIdioma = false">
+          <button class="perfil-menu__boton" (click)="menuPerfil = !menuPerfil">
             <div class="perfil-avatar">
               <img *ngIf="auth.usuarioActual?.fotoPerfil"
                    [src]="auth.usuarioActual?.fotoPerfil"
@@ -79,7 +58,7 @@
             </div>
             <div class="perfil-info">
               <span class="perfil-nombre">{{ nombreCompleto }}</span>
-              <span class="perfil-rol">{{ rolTexto }}</span>
+              <span class="perfil-rol" *ngIf="rolTexto">{{ rolTexto }}</span>
             </div>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="selector-idioma__flecha">
               <polyline points="6 9 12 15 18 9"></polyline>
@@ -117,5 +96,5 @@
   <anturi-calculadora></anturi-calculadora>
 
   <!-- Overlay menús -->
-  <div class="escritorio__overlay" *ngIf="menuIdioma || menuPerfil" (click)="menuIdioma = false; menuPerfil = false"></div>
+  <div class="escritorio__overlay" *ngIf="menuPerfil" (click)="menuPerfil = false"></div>
 </div>

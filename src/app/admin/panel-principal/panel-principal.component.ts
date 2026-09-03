@@ -5,7 +5,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import { BarraLateralComponent } from '../barra-lateral/barra-lateral.component';
 import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.component';
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
-import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 @Component({
@@ -23,7 +22,6 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 })
 export class PanelPrincipalComponent implements OnInit, OnDestroy {
   barraLateralExpandida = true;
-  menuIdioma = false;
   menuPerfil = false;
   tiempoSesion = '';
   private timerSesion: ReturnType<typeof setInterval> | null = null;
@@ -31,7 +29,6 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
 
   constructor(
     public temaServicio: TemaServicio,
-    public idiomaServicio: IdiomaServicio,
     public auth: AutenticacionServicio
   ) {}
 
@@ -59,12 +56,13 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
 
   get nombreCompleto(): string {
     const u = this.auth.usuarioActual;
-    return u ? `${u.nombre} ${u.apellido}` : '';
+    if (!u) return '';
+    return u.rol === 'SUPER_ADMIN' ? u.nombre : `${u.nombre} ${u.apellido}`;
   }
 
   get rolTexto(): string {
     const u = this.auth.usuarioActual;
-    if (!u) return '';
-    return u.rol === 'ADMIN' ? 'Administrador' : 'Super Administrador';
+    if (!u || u.rol === 'SUPER_ADMIN') return '';
+    return 'Administrador';
   }
 }
