@@ -16,6 +16,22 @@ export interface Empresa {
   clave?: string;
   diasPago?: number;
   claseAportante?: string;
+  // Valores económicos
+  valor?: number;
+  comision?: number;
+  totalPago?: number;
+  cuatroXMil?: number;
+  porcentajeArl?: number;
+  actividadEconomica?: string;
+  // Seguros de referencia
+  eps?: string;
+  afp?: string;
+  cajaCom?: string;
+  // Fechas
+  fechaIngreso?: string;
+  fechaRetiro?: string;
+  // Notas
+  observaciones?: string;
   activa: boolean;
   sucursales?: any[];
   creadoEn: string;
@@ -42,8 +58,8 @@ export class EmpresasServicio {
     return this.http.post<Empresa>(this.URL, dto);
   }
 
-  actualizar(id: number, dto: Partial<Empresa>): Observable<Empresa> {
-    return this.http.patch<Empresa>(`${this.URL}/${id}`, dto);
+  actualizar(id: number, dto: Partial<Empresa>, motivo = 'Edición desde el panel'): Observable<Empresa> {
+    return this.http.put<Empresa>(`${this.URL}/${id}`, { datos: dto, motivo });
   }
 
   estadisticas(): Observable<{ activas: number; inactivas: number; total: number }> {

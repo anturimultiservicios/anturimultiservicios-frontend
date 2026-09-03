@@ -29,28 +29,8 @@
   <!-- Panel derecho - formulario -->
   <div class="login-formulario-panel">
 
-    <!-- Controles de tema e idioma -->
+    <!-- Controles de tema -->
     <div class="login-controles">
-      <div class="selector-idioma" [class.abierto]="menuIdioma">
-        <button class="selector-idioma__boton" (click)="menuIdioma = !menuIdioma">
-          <span class="selector-idioma__bandera">{{ idiomaServicio.idiomaActual.bandera }}</span>
-          <span class="selector-idioma__codigo">{{ idiomaServicio.idiomaActual.codigo.toUpperCase() }}</span>
-          <svg class="selector-idioma__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <ul class="selector-idioma__lista" *ngIf="menuIdioma">
-          <li *ngFor="let idioma of idiomaServicio.idiomasDisponibles">
-            <button class="selector-idioma__opcion"
-                    [class.activo]="idioma.codigo === idiomaServicio.idiomaActual.codigo"
-                    (click)="cambiarIdioma(idioma.codigo)">
-              <span class="selector-idioma__bandera">{{ idioma.bandera }}</span>
-              <span>{{ idioma.nombre }}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-
       <button class="boton-tema" (click)="alternarTema()">
         <svg *ngIf="!temaServicio.esOscuro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-tema">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -187,6 +167,61 @@
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
         {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
+    <!-- ===== VERIFICAR DISPOSITIVO (D3+D4, segundo factor) ===== -->
+    <div class="login-formulario" *ngIf="vista === 'verificar-dispositivo'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">Verificá tu dispositivo</h1>
+        <p class="login-subtitulo">Contraseña correcta. Verificá tu dispositivo para continuar.</p>
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <p *ngIf="!soportaWebAuthn" class="login-error">
+        Este navegador no soporta verificación de dispositivo. Probá con otro navegador (Chrome, Edge, Safari o Firefox actualizados).
+      </p>
+
+      <button class="boton boton-primario login-btn-ingresar"
+              (click)="completarVerificacionDispositivo()"
+              [disabled]="verificandoDispositivo || !soportaWebAuthn">
+        <svg *ngIf="verificandoDispositivo" class="login-cargando-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        {{ verificandoDispositivo ? 'Verificando...' : 'Verificar dispositivo' }}
+      </button>
+
+      <button class="login-olvidaste" (click)="cancelarVerificacionDispositivo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Volver a ingresar
+      </button>
+    </div>
+
+    <!-- ===== SIN DISPOSITIVO AUTORIZADO (D3+D4) ===== -->
+    <div class="login-formulario" *ngIf="vista === 'sin-dispositivo'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">Registrá tu dispositivo</h1>
+        <p class="login-subtitulo">Contraseña correcta, pero todavía no tenés ningún dispositivo autorizado para entrar.</p>
+      </div>
+
+      <p class="login-subtitulo">Contactá a un administrador para completar el registro de tu dispositivo.</p>
+
+      <button class="login-olvidaste" (click)="cancelarVerificacionDispositivo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Volver a ingresar
       </button>
     </div>
 

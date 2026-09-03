@@ -131,22 +131,29 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
           <div *ngIf="expandidos.has(sol.id)" class="solicitud-detalle">
             <!-- Comentario del admin -->
             <div *ngIf="sol.comentarioAdmin" class="detalle-comentario">
-              <strong>Comentario del administrador:</strong> {{ sol.comentarioAdmin }}
-            </div>
-            <div *ngIf="sol.revisadoPor" class="detalle-meta-revision">
-              Revisado por <strong>{{ sol.revisadoPor.nombre }} {{ sol.revisadoPor.apellido }}</strong>
-              el {{ sol.revisadoEn | date:'dd/MM/yyyy HH:mm' }}
+              <strong>Comentario:</strong> {{ sol.comentarioAdmin }}
             </div>
 
             <!-- Datos originales y nuevos -->
             <div class="detalle-datos-grid">
               <div *ngIf="sol.datosOriginales" class="detalle-bloque">
-                <h4 class="detalle-bloque__titulo">Datos originales</h4>
-                <pre class="json-viewer">{{ parsearJson(sol.datosOriginales) }}</pre>
+                <h4 class="detalle-bloque__titulo">Datos actuales</h4>
+                <div class="datos-vista">
+                  <div *ngFor="let campo of extraerCampos(sol.datosOriginales)" class="datos-vista__fila">
+                    <span class="datos-vista__etiqueta">{{ campo.etiqueta }}</span>
+                    <span class="datos-vista__valor">{{ campo.valor }}</span>
+                  </div>
+                </div>
               </div>
               <div *ngIf="sol.datosNuevos" class="detalle-bloque">
-                <h4 class="detalle-bloque__titulo">Datos nuevos (propuestos)</h4>
-                <pre class="json-viewer json-viewer--nuevo">{{ parsearJson(sol.datosNuevos) }}</pre>
+                <h4 class="detalle-bloque__titulo">Cambios propuestos</h4>
+                <div class="datos-vista datos-vista--nuevo">
+                  <div *ngFor="let campo of extraerCamposDiff(sol.datosOriginales, sol.datosNuevos)" class="datos-vista__fila" [class.datos-vista__fila--cambiado]="campo.cambiado">
+                    <span class="datos-vista__etiqueta">{{ campo.etiqueta }}</span>
+                    <span class="datos-vista__valor">{{ campo.valor }}</span>
+                    <span *ngIf="campo.cambiado" class="datos-vista__anterior">antes: {{ campo.anterior }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -157,17 +164,19 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     <!-- MODAL: Aprobar -->
     <div *ngIf="modalAprobar" class="modal-overlay" (click)="cerrarModales()">
       <div class="modal-confirm" (click)="$event.stopPropagation()">
-        <h3 class="modal-confirm__titulo">Aprobar solicitud</h3>
-        <p class="modal-confirm__texto">Está a punto de aprobar la solicitud de <strong>{{ solicitudActual?.creadoPor?.nombre }}</strong>.</p>
-        <div class="campo-grupo" style="margin: var(--espacio-4) 0;">
-          <label class="campo-etiqueta">Comentario (opcional)</label>
-          <textarea class="campo-input" [(ngModel)]="comentarioModal" rows="3" placeholder="Agregue un comentario opcional..."></textarea>
-        </div>
+        <h3 class="modal-confirm__titulo">Aprobar cambio</h3>
+        <p class="modal-confirm__texto">
+          Solicitud de <strong>{{ solicitudActual?.creadoPor?.nombre }}</strong>:<br>
+          <em style="font-size: var(--tamano-sm); color: var(--texto-secundario);">{{ solicitudActual?.motivo }}</em>
+        </p>
+        <p class="modal-confirm__texto" style="margin-top: var(--espacio-3); font-size: var(--tamano-sm); color: var(--texto-terciario);">
+          Al aprobar, el cambio se aplicará automáticamente.
+        </p>
         <div class="modal-confirm__acciones">
           <button class="boton boton-secundario" (click)="cerrarModales()" [disabled]="procesandoSolicitud">Cancelar</button>
           <button class="boton boton-exito" (click)="confirmarAprobar()" [disabled]="procesandoSolicitud">
             <span *ngIf="procesandoSolicitud" class="spinner-inline"></span>
-            {{ procesandoSolicitud ? 'Aprobando...' : 'Confirmar aprobación' }}
+            {{ procesandoSolicitud ? 'Aprobando...' : 'Aprobar' }}
           </button>
         </div>
       </div>
@@ -176,23 +185,19 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     <!-- MODAL: Rechazar -->
     <div *ngIf="modalRechazar" class="modal-overlay" (click)="cerrarModales()">
       <div class="modal-confirm" (click)="$event.stopPropagation()">
-        <h3 class="modal-confirm__titulo">Rechazar solicitud</h3>
-        <p class="modal-confirm__texto">Está a punto de rechazar la solicitud de <strong>{{ solicitudActual?.creadoPor?.nombre }}</strong>.</p>
-        <div class="campo-grupo" style="margin: var(--espacio-4) 0;">
-          <label class="campo-etiqueta">Motivo del rechazo <span style="color: var(--color-error);">*</span></label>
-          <textarea
-            class="campo-input"
-            [(ngModel)]="comentarioModal"
-            rows="3"
-            placeholder="Explique por qué rechaza esta solicitud..."
-          ></textarea>
-          <span *ngIf="errorComentarioModal" class="mensaje-error">{{ errorComentarioModal }}</span>
-        </div>
+        <h3 class="modal-confirm__titulo">Rechazar cambio</h3>
+        <p class="modal-confirm__texto">
+          Solicitud de <strong>{{ solicitudActual?.creadoPor?.nombre }}</strong>:<br>
+          <em style="font-size: var(--tamano-sm); color: var(--texto-secundario);">{{ solicitudActual?.motivo }}</em>
+        </p>
+        <p class="modal-confirm__texto" style="margin-top: var(--espacio-3); font-size: var(--tamano-sm); color: var(--texto-terciario);">
+          Al rechazar, los datos se mantienen como estaban.
+        </p>
         <div class="modal-confirm__acciones">
           <button class="boton boton-secundario" (click)="cerrarModales()" [disabled]="procesandoSolicitud">Cancelar</button>
           <button class="boton boton-peligro" (click)="confirmarRechazar()" [disabled]="procesandoSolicitud">
             <span *ngIf="procesandoSolicitud" class="spinner-inline"></span>
-            {{ procesandoSolicitud ? 'Rechazando...' : 'Confirmar rechazo' }}
+            {{ procesandoSolicitud ? 'Rechazando...' : 'Rechazar' }}
           </button>
         </div>
       </div>
@@ -241,8 +246,14 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     .detalle-datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-4); }
     .detalle-bloque { display: flex; flex-direction: column; gap: var(--espacio-2); }
     .detalle-bloque__titulo { font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-secundario); margin: 0; text-transform: uppercase; letter-spacing: 0.06em; }
-    .json-viewer { background: var(--fondo-codigo, #1e293b); color: #e2e8f0; border-radius: var(--radio-md); padding: var(--espacio-3); font-size: 0.72rem; line-height: 1.5; overflow: auto; max-height: 300px; margin: 0; white-space: pre-wrap; word-break: break-word; }
-    .json-viewer--nuevo { background: #052e16; color: #bbf7d0; }
+    .datos-vista { display: flex; flex-direction: column; background: var(--fondo-tarjeta, #fff); border-radius: var(--radio-md); border: 1px solid var(--borde-color, #e5e7eb); overflow: hidden; max-height: 320px; overflow-y: auto; }
+    .datos-vista--nuevo { border-color: rgba(37,99,235,0.2); }
+    .datos-vista__fila { display: grid; grid-template-columns: 130px 1fr; gap: var(--espacio-2); align-items: start; padding: var(--espacio-2) var(--espacio-3); font-size: var(--tamano-sm); border-bottom: 1px solid var(--borde-color, #e5e7eb); }
+    .datos-vista__fila:last-child { border-bottom: none; }
+    .datos-vista__fila--cambiado { background: rgba(37,99,235,0.06); }
+    .datos-vista__etiqueta { color: var(--texto-terciario); font-weight: 500; font-size: 0.72rem; padding-top: 1px; }
+    .datos-vista__valor { color: var(--texto-principal); font-weight: 500; word-break: break-word; }
+    .datos-vista__anterior { font-size: 0.68rem; color: var(--texto-terciario); grid-column: 2; font-style: italic; }
 
     /* Badges */
     .badge-tipo { display: inline-flex; align-items: center; padding: 2px var(--espacio-2); border-radius: var(--radio-sm); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
@@ -350,13 +361,59 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  parsearJson(texto: string): string {
-    try {
-      const obj = JSON.parse(texto);
-      return JSON.stringify(obj, null, 2);
-    } catch {
-      return texto;
+  private readonly ETIQUETAS: Record<string, string> = {
+    nombres: 'Nombres', apellidos: 'Apellidos', cedula: 'Cédula',
+    correo: 'Correo electrónico', telefono: 'Teléfono', celular: 'Celular',
+    direccion: 'Dirección', ciudad: 'Ciudad', departamento: 'Departamento',
+    estado: 'Estado', fechaNacimiento: 'Fecha de nacimiento',
+    fechaIngreso: 'Fecha de ingreso', fechaRetiro: 'Fecha de retiro',
+    tipoDocumento: 'Tipo de documento', genero: 'Género',
+    eps: 'EPS', afp: 'AFP / Pensión', arl: 'ARL', cargo: 'Cargo',
+    salario: 'Salario', asopagos: 'Asopagos', observaciones: 'Observaciones',
+    tipoVinculacion: 'Tipo de vinculación', sexo: 'Sexo',
+    nivelRiesgo: 'Nivel de riesgo', clase: 'Clase',
+  };
+
+  private readonly OMITIR = new Set(['id', 'creadoEn', 'actualizadoEn', 'eliminadoEn',
+    'eliminacionDefinitivaEn', 'historial', 'sucursal', 'seguros', 'documentos', 'sucursalId']);
+
+  private etiqueta(campo: string): string {
+    return this.ETIQUETAS[campo] ?? campo.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+  }
+
+  private formatear(v: any): string {
+    if (v === null || v === undefined || v === '') return '—';
+    if (typeof v === 'boolean') return v ? 'Sí' : 'No';
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+      try { return new Date(v).toLocaleDateString('es-CO'); } catch { /* ignore */ }
     }
+    if (typeof v === 'object') return '—';
+    return String(v);
+  }
+
+  extraerCampos(json: string | null | undefined): { etiqueta: string; valor: string }[] {
+    if (!json) return [];
+    try {
+      const obj = JSON.parse(json);
+      return Object.entries(obj)
+        .filter(([k, v]) => !this.OMITIR.has(k) && typeof v !== 'object')
+        .map(([k, v]) => ({ etiqueta: this.etiqueta(k), valor: this.formatear(v) }));
+    } catch { return []; }
+  }
+
+  extraerCamposDiff(originalJson: string | null | undefined, nuevoJson: string | null | undefined): { etiqueta: string; valor: string; cambiado: boolean; anterior: string }[] {
+    if (!nuevoJson) return [];
+    try {
+      const nuevo = JSON.parse(nuevoJson);
+      const orig = originalJson ? JSON.parse(originalJson) : {};
+      return Object.entries(nuevo)
+        .filter(([k, v]) => !this.OMITIR.has(k) && typeof v !== 'object')
+        .map(([k, v]) => {
+          const ant = orig[k];
+          const cambiado = String(ant ?? '') !== String(v ?? '');
+          return { etiqueta: this.etiqueta(k), valor: this.formatear(v), cambiado, anterior: cambiado ? this.formatear(ant) : '' };
+        });
+    } catch { return []; }
   }
 
   claseBadgeTipo(tipo: string): string {
@@ -414,10 +471,6 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
   }
 
   confirmarRechazar(): void {
-    if (!this.comentarioModal.trim()) {
-      this.errorComentarioModal = 'El motivo del rechazo es obligatorio.';
-      return;
-    }
     if (!this.solicitudActual) return;
     this.procesandoSolicitud = true;
     this.mensajeError = '';
