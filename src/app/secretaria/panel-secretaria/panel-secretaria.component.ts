@@ -86,6 +86,17 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
                 <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Configuración</span>
               </a>
             </li>
+            <li>
+              <a routerLink="/secretaria/mis-dispositivos" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis dispositivos' : ''">
+                <span class="barra-lateral__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Mis dispositivos</span>
+              </a>
+            </li>
           </ul>
         </nav>
       </aside>

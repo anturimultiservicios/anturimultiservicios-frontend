@@ -52,6 +52,13 @@ export const rutasSecretaria: Routes = [
             (m) => m.ConfiguracionComponent
           ),
       },
+      {
+        path: 'mis-dispositivos',
+        loadComponent: () =>
+          import('../compartido/mis-dispositivos/mis-dispositivos.component').then(
+            (m) => m.MisDispositivosComponent
+          ),
+      },
     ],
   },
 ];
