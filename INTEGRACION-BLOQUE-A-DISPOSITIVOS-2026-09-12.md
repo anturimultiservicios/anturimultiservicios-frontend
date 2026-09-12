@@ -29,10 +29,33 @@ estaba desactualizada). Commit `2cf001a`. **No mezclado a `main` todavía.**
 - Confirmado en la salida del build que `mis-solicitudes-component` sigue
   presente sin cambios.
 
+## Click-through interactivo (2026-09-12, sesión posterior)
+
+Realizado en navegador real por Cristopher, contra `ng serve` local de esta
+misma rama (`http://localhost:4200`), con una **API falsa temporal**
+(Node puro, sin dependencias, sin base de datos, datos 100% ficticios) para
+no tocar producción ni CORS productivo. La API falsa nunca formó parte del
+repositorio (vivió solo en un archivo temporal de la sesión) y fue borrada
+al terminar — no queda ningún artefacto de prueba en el código del Bloque A.
+
+**Validado:**
+- Login y navegación con los 3 roles (ADMIN, SUPER_ADMIN, SECRETARIA).
+- "Mis dispositivos" visible y cargando donde corresponde para cada rol.
+- "Mis solicitudes" sigue presente y visible para SECRETARIA, sin cambios.
+- Pantallas cargan, navegación básica funciona.
+- No aparecieron elementos de los Bloques C, D o E.
+- Sin errores visibles reportados en esta prueba.
+
+**Limitación conocida, no un defecto:** el registro real de WebAuthn
+(`navigator.credentials.create()`) no se puede validar de punta a punta
+desde `localhost`, porque el `rpId` productivo (`anturimultiservicios.com`)
+no corresponde al origen local — es una restricción de seguridad del propio
+navegador, no del código de este bloque. Queda documentado como pendiente
+de verificar en un entorno con el dominio real (o en producción, cuando se
+decida el paso siguiente).
+
 ## No hecho / pendiente
-- **Click-through interactivo en navegador real** — no se desplegó esta
-  rama a ningún lado; para probarla de verdad hace falta `ng serve` local
-  o un despliegue, cuando se decida.
+- Verificación end-to-end real de WebAuthn (ver limitación de arriba).
 - No hay pruebas automatizadas de Angular en el proyecto (no es un hueco
   nuevo de este bloque — ya no existían antes).
 - Bloques C (alcance/scope Secretaria), D (Afiliados/Empresas/Sucursales)
