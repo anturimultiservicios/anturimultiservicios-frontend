@@ -49,12 +49,19 @@ export class UsuariosServicio {
     return this.http.patch(`${this.URL}/${id}/permisos`, permisos);
   }
 
-  desactivar(id: number): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}`, { activo: false });
+  // HALLAZGO (2026-09-13, auditoria activar/desactivar): antes mandaban
+  // `{ activo }` a PATCH /usuarios/:id (la misma ruta de actualizar()) - el
+  // backend lo rechazaba siempre, porque ActualizarUsuarioDto excluye
+  // `activo` a proposito (forbidNonWhitelisted:true) y el endpoint dedicado
+  // (:id/estado) ya existia y exige motivo. Corregido para usar la ruta
+  // real, con motivo obligatorio (accion sensible ya auditada del lado del
+  // backend en historial_ediciones).
+  desactivar(id: number, motivo: string): Observable<any> {
+    return this.http.patch(`${this.URL}/${id}/estado`, { activo: false, motivo });
   }
 
-  activar(id: number): Observable<any> {
-    return this.http.patch(`${this.URL}/${id}`, { activo: true });
+  activar(id: number, motivo: string): Observable<any> {
+    return this.http.patch(`${this.URL}/${id}/estado`, { activo: true, motivo });
   }
 
   actualizarPerfil(datos: { nombre?: string; apellido?: string; fotoPerfil?: string }): Observable<UsuarioSistema> {

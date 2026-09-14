@@ -320,6 +320,11 @@ interface FormUsuario {
           ¿Está seguro que desea {{ usuarioEstado?.activo ? 'desactivar' : 'activar' }} la cuenta de
           <strong>{{ usuarioEstado?.nombre }} {{ usuarioEstado?.apellido }}</strong>?
         </p>
+        <div class="campo-grupo" style="margin-top: var(--espacio-4);">
+          <label class="campo-etiqueta">Motivo <span class="requerido">*</span></label>
+          <input type="text" class="campo-input" [(ngModel)]="motivoEstado" placeholder="Ej: dejó de trabajar con nosotros">
+        </div>
+        <div *ngIf="mensajeError" class="alerta-error" style="margin-top: var(--espacio-3);">{{ mensajeError }}</div>
         <div class="modal-confirm__acciones">
           <button class="boton boton-secundario" (click)="modalConfirmEstado = false">Cancelar</button>
           <button
@@ -327,7 +332,7 @@ interface FormUsuario {
             [class.boton-peligro]="usuarioEstado?.activo"
             [class.boton-primario]="!usuarioEstado?.activo"
             (click)="confirmarCambioEstado()"
-            [disabled]="cambiandoEstadoId !== null"
+            [disabled]="cambiandoEstadoId !== null || !motivoEstado.trim()"
           >
             {{ usuarioEstado?.activo ? 'Desactivar' : 'Activar' }}
           </button>
@@ -445,6 +450,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   modalConfirmEstado = false;
   usuarioEstado: UsuarioSistema | null = null;
   cambiandoEstadoId: number | null = null;
+  motivoEstado = '';
 
   private destruir$ = new Subject<void>();
 
@@ -720,15 +726,17 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   // ── ESTADO ────────────────────────────────────────────────
   toggleEstado(u: UsuarioSistema): void {
     this.usuarioEstado = u;
+    this.motivoEstado = '';
+    this.mensajeError = '';
     this.modalConfirmEstado = true;
   }
 
   confirmarCambioEstado(): void {
-    if (!this.usuarioEstado) return;
+    if (!this.usuarioEstado || !this.motivoEstado.trim()) return;
     this.cambiandoEstadoId = this.usuarioEstado.id;
     const operacion = this.usuarioEstado.activo
-      ? this.usuariosServicio.desactivar(this.usuarioEstado.id)
-      : this.usuariosServicio.activar(this.usuarioEstado.id);
+      ? this.usuariosServicio.desactivar(this.usuarioEstado.id, this.motivoEstado.trim())
+      : this.usuariosServicio.activar(this.usuarioEstado.id, this.motivoEstado.trim());
 
     operacion.pipe(
       catchError(err => {
