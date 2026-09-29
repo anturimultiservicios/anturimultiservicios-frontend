@@ -777,7 +777,7 @@ export class FormularioAfiliadoComponent implements OnInit {
       },
       error: (err) => {
         this.guardando = false;
-        this.errorGlobal = err?.error?.mensaje || 'Error al crear el afiliado. Verifique los datos e intente nuevamente.';
+        this.errorGlobal = err?.error?.message || 'Error al crear el afiliado. Verifique los datos e intente nuevamente.';
       }
     });
   }

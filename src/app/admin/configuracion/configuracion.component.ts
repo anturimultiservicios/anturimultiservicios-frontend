@@ -256,7 +256,7 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
       apellido: this.formPerfil.apellido.trim(),
     }).pipe(
       catchError(err => {
-        this.errorPerfil = err?.error?.mensaje || 'Error al actualizar el perfil. Intente nuevamente.';
+        this.errorPerfil = err?.error?.message || 'Error al actualizar el perfil. Intente nuevamente.';
         return of(null);
       }),
       finalize(() => { this.guardandoPerfil = false; }),
@@ -292,7 +292,7 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
       this.formContrasena.nueva
     ).pipe(
       catchError(err => {
-        this.errorContrasena = err?.error?.mensaje || 'Error al cambiar la contraseña. Verifique la contraseña actual.';
+        this.errorContrasena = err?.error?.message || 'Error al cambiar la contraseña. Verifique la contraseña actual.';
         return of(null);
       }),
       finalize(() => { this.guardandoContrasena = false; }),
