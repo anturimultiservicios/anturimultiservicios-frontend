@@ -66,6 +66,7 @@ interface FormUsuario {
 
       <!-- Tabla -->
       <div *ngIf="!cargando && usuarios.length > 0" class="tarjeta tabla-contenedor">
+        <div class="tabla-scroll">
         <table class="tabla">
           <thead>
             <tr>
@@ -148,6 +149,7 @@ interface FormUsuario {
             </tr>
           </tbody>
         </table>
+        </div>
         <div class="tabla-pie">
           <span class="tabla-pie__total">{{ usuarios.length }} usuario{{ usuarios.length !== 1 ? 's' : '' }}</span>
         </div>
@@ -232,10 +234,14 @@ interface FormUsuario {
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeVerPagos"> Puede ver pagos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeRegistrarPagos"> Puede registrar pagos</label>
           </div>
+          <div class="campo-grupo" style="margin-top: var(--espacio-2);">
+            <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
+            <input type="text" class="campo-input" [(ngModel)]="motivoPermisos" placeholder="Ej: empieza a encargarse también de las solicitudes de afiliados">
+          </div>
         </div>
         <div class="modal-pie">
           <button class="boton boton-secundario" (click)="cerrarModalPermisos()" [disabled]="guardandoPermisos">Cancelar</button>
-          <button class="boton boton-primario" (click)="guardarPermisos()" [disabled]="guardandoPermisos">
+          <button class="boton boton-primario" (click)="guardarPermisos()" [disabled]="guardandoPermisos || !motivoPermisos.trim()">
             <span *ngIf="guardandoPermisos" class="spinner-inline"></span>
             {{ guardandoPermisos ? 'Guardando...' : 'Guardar permisos' }}
           </button>
@@ -351,6 +357,15 @@ interface FormUsuario {
     @keyframes girar { to { transform: rotate(360deg); } }
 
     .tabla-contenedor { padding: 0; overflow: hidden; }
+    /* 2026-09-29: antes .tabla-contenedor tenía overflow:hidden aplicado
+       directo sobre la tabla (para las esquinas redondeadas de la tarjeta) -
+       en pantallas angostas (tablet) eso RECORTABA los botones de acciones
+       que no entraban, en vez de dejarlos alcanzables con scroll. Reportado
+       por Cristopher: en la tablet solo se veían 1.5 de los 4 botones de la
+       fila, sin ninguna forma de llegar a los demás. Se mueve overflow:hidden
+       a la tarjeta (para las esquinas) y se agrega scroll horizontal propio
+       solo en la tabla. */
+    .tabla-scroll { overflow-x: auto; }
     .tabla { width: 100%; border-collapse: collapse; }
     .tabla thead th { padding: var(--espacio-3) var(--espacio-4); text-align: left; font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-secundario); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.03)); border-bottom: 1px solid var(--borde-color, #e5e7eb); white-space: nowrap; }
     .tabla tbody td { padding: var(--espacio-3) var(--espacio-4); border-bottom: 1px solid var(--borde-color, #e5e7eb); font-size: var(--tamano-sm); color: var(--texto-principal); vertical-align: middle; }
@@ -436,6 +451,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   modalPermisos = false;
   guardandoPermisos = false;
   formPermisos: Partial<PermisoSecretaria> = this.permisosVacios();
+  motivoPermisos = '';
 
   // Modal alcance (D01-C)
   modalAlcance = false;
@@ -546,7 +562,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       }
       this.usuariosServicio.actualizar(this.usuarioEditando.id, dto).pipe(
         catchError(err => {
-          this.errorModal = err?.error?.mensaje || 'Error al actualizar el usuario.';
+          this.errorModal = err?.error?.message || 'Error al actualizar el usuario.';
           return of(null);
         }),
         finalize(() => { this.guardandoUsuario = false; })
@@ -568,7 +584,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       };
       this.usuariosServicio.crear(dto).pipe(
         catchError(err => {
-          this.errorModal = err?.error?.mensaje || 'Error al crear el usuario.';
+          this.errorModal = err?.error?.message || 'Error al crear el usuario.';
           return of(null);
         }),
         finalize(() => { this.guardandoUsuario = false; })
@@ -590,6 +606,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       ...this.permisosVacios(),
       ...(u.permisos || {}),
     };
+    this.motivoPermisos = '';
     this.modalPermisos = true;
   }
 
@@ -597,8 +614,15 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     this.modalPermisos = false;
   }
 
+  // 2026-09-29: HALLAZGO real (reportado por Cristopher: guardar cualquier
+  // permiso, no solo "eliminar afiliados", tiraba siempre "Error al guardar
+  // los permisos" - confirmado con el access log de nginx en producción,
+  // 400 en PATCH /api/usuarios/:id/permisos). Causa raíz: el backend exige
+  // `motivo` desde el 29/08 (ActualizarPermisosDto, @IsNotEmpty) pero este
+  // modal nunca lo pedía ni lo mandaba - cualquier guardado quedaba
+  // rechazado por el ValidationPipe desde esa fecha. Se agrega el campo acá.
   guardarPermisos(): void {
-    if (!this.usuarioEditando) return;
+    if (!this.usuarioEditando || !this.motivoPermisos.trim()) return;
     this.guardandoPermisos = true;
     // HALLAZGO 2026-08-22: this.formPermisos se arma con `...(u.permisos || {})`,
     // que trae el registro completo de PermisoSecretaria desde el backend
@@ -607,6 +631,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     // request entero. Se arma acá un payload explícito con solo los 10
     // campos reales del DTO.
     const payload = {
+      motivo: this.motivoPermisos.trim(),
       puedeCrearAfiliados: this.formPermisos.puedeCrearAfiliados,
       puedeEditarAfiliados: this.formPermisos.puedeEditarAfiliados,
       puedeEliminarAfiliados: this.formPermisos.puedeEliminarAfiliados,
@@ -620,7 +645,14 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     };
     this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload).pipe(
       catchError(err => {
-        this.mensajeError = err?.error?.mensaje || 'Error al guardar los permisos.';
+        // HALLAZGO aparte (2026-09-29): el backend (ValidationPipe/NestJS
+        // default) siempre responde con la clave inglesa `message`, nunca
+        // `mensaje` - err?.error?.message era código muerto, por eso nunca
+        // se veía el motivo real del rechazo, solo el genérico de acá abajo.
+        // `message` puede venir como string o como array (varios campos
+        // fallando a la vez).
+        const msg = err?.error?.message;
+        this.mensajeError = Array.isArray(msg) ? msg.join(' - ') : (msg || 'Error al guardar los permisos.');
         return of(null);
       }),
       finalize(() => { this.guardandoPermisos = false; })
@@ -691,7 +723,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
 
     operacion.pipe(
       catchError((err) => {
-        this.errorAlcance = err?.error?.mensaje || 'No se pudo actualizar el alcance de esa empresa.';
+        this.errorAlcance = err?.error?.message || 'No se pudo actualizar el alcance de esa empresa.';
         return of(null);
       }),
       finalize(() => { this.procesandoClaves.delete(clave); }),
@@ -714,7 +746,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
 
     operacion.pipe(
       catchError((err) => {
-        this.errorAlcance = err?.error?.mensaje || 'No se pudo actualizar el alcance de esa sucursal.';
+        this.errorAlcance = err?.error?.message || 'No se pudo actualizar el alcance de esa sucursal.';
         return of(null);
       }),
       finalize(() => { this.procesandoClaves.delete(clave); }),
@@ -740,7 +772,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
 
     operacion.pipe(
       catchError(err => {
-        this.mensajeError = err?.error?.mensaje || 'Error al cambiar el estado del usuario.';
+        this.mensajeError = err?.error?.message || 'Error al cambiar el estado del usuario.';
         return of(null);
       }),
       finalize(() => { this.cambiandoEstadoId = null; this.modalConfirmEstado = false; })
