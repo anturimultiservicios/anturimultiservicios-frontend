@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AfiliadosServicio } from '../../../nucleo/servicios/afiliados.servicio';
@@ -56,6 +56,24 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
           </div>
         </div>
 
+        <!-- 2026-09-29: agregada a pedido de Cristopher ("si hay empresas
+             activas debería haber empresas retiradas, como con afiliados") -
+             el dato ya lo devolvía EmpresasServicio.estadisticas() como
+             'inactivas', solo que el Resumen nunca lo leía. -->
+        <div class="resumen-tarjeta tarjeta">
+          <div class="resumen-tarjeta__icono icono-retirados">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              <line x1="6" y1="12" x2="12" y2="12"/>
+            </svg>
+          </div>
+          <div>
+            <p class="resumen-tarjeta__numero">{{ cargando ? '...' : stats.empresasInactivas }}</p>
+            <p class="resumen-tarjeta__etiqueta">Empresas inactivas</p>
+          </div>
+        </div>
+
         <div class="resumen-tarjeta tarjeta" [class.resumen-tarjeta--alerta]="stats.solicitudesPendientes > 0">
           <div class="resumen-tarjeta__icono icono-solicitudes">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26">
@@ -68,7 +86,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
             <p class="resumen-tarjeta__numero">{{ cargando ? '...' : stats.solicitudesPendientes }}</p>
             <p class="resumen-tarjeta__etiqueta">Solicitudes pendientes</p>
           </div>
-          <a *ngIf="stats.solicitudesPendientes > 0" routerLink="/admin/solicitudes" class="resumen-tarjeta__link">
+          <a *ngIf="stats.solicitudesPendientes > 0" [routerLink]="[prefijo, esAdmin ? 'solicitudes' : 'mis-solicitudes']" class="resumen-tarjeta__link">
             Ver →
           </a>
         </div>
@@ -78,31 +96,36 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
       <div class="accesos-rapidos">
         <h3 class="accesos-rapidos__titulo">Accesos rápidos</h3>
         <div class="accesos-rapidos__grid">
-          <a routerLink="/admin/afiliados/nuevo" class="acceso-rapido tarjeta">
+          <a [routerLink]="[prefijo, 'afiliados', 'nuevo']" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             <span>Nuevo afiliado</span>
           </a>
-          <a routerLink="/admin/afiliados" class="acceso-rapido tarjeta">
+          <a [routerLink]="[prefijo, 'afiliados']" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <span>Buscar afiliado</span>
           </a>
-          <a routerLink="/admin/empresas" class="acceso-rapido tarjeta">
+          <!-- 'Ver empresas' solo existe bajo /admin - secretaria.routes.ts
+               no tiene ninguna ruta de empresas todavía (punto aparte, no
+               inventado acá: no hay pantalla de empresas para Secretaria). -->
+          <a *ngIf="esAdmin" routerLink="/admin/empresas" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <rect x="2" y="7" width="20" height="14" rx="2"/>
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
             </svg>
             <span>Ver empresas</span>
           </a>
-          <a routerLink="/admin/solicitudes" class="acceso-rapido tarjeta">
+          <!-- Admin revisa solicitudes de otros (cola de aprobación);
+               Secretaria ve las suyas propias - son pantallas distintas. -->
+          <a [routerLink]="[prefijo, esAdmin ? 'solicitudes' : 'mis-solicitudes']" class="acceso-rapido tarjeta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
               <polyline points="9 11 12 14 22 4"/>
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
             </svg>
-            <span>Solicitudes</span>
+            <span>{{ esAdmin ? 'Solicitudes' : 'Mis solicitudes' }}</span>
           </a>
         </div>
       </div>
@@ -131,24 +154,44 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
 })
 export class ResumenComponent implements OnInit {
   cargando = true;
-  stats = { afiliadosActivos: 0, afiliadosRetirados: 0, afiliadosTotal: 0, empresasActivas: 0, solicitudesPendientes: 0 };
+  stats = { afiliadosActivos: 0, afiliadosRetirados: 0, afiliadosTotal: 0, empresasActivas: 0, empresasInactivas: 0, solicitudesPendientes: 0 };
 
   constructor(
     private afiliados: AfiliadosServicio,
     private empresas: EmpresasServicio,
     private solicitudes: SolicitudesServicio,
+    private router: Router,
   ) {}
+
+  // 2026-09-29: HALLAZGO real (reportado por Cristopher, probado en vivo) -
+  // este componente se reutiliza tal cual bajo /admin/resumen Y
+  // /secretaria/resumen (ver secretaria.routes.ts), pero los 4 accesos
+  // rápidos de abajo tenían la ruta /admin/... escrita a mano. Para una
+  // cuenta SECRETARIA (montada en /secretaria/*), el click SÍ navegaba,
+  // pero rolGuardia (data:{roles:['ADMIN','SUPER_ADMIN']}) la rebotaba de
+  // vuelta a /secretaria en el mismo tick - se veía el efecto de click y
+  // nada más, sin ningún error en consola porque no es una excepción, es
+  // una redirección de guardia válida. Mismo patrón `prefijo` que ya usa
+  // ListaAfiliadosComponent.
+  protected get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
+
+  protected get esAdmin(): boolean {
+    return this.prefijo === '/admin';
+  }
 
   ngOnInit(): void {
     forkJoin({
       af: this.afiliados.estadisticas().pipe(catchError(() => of({ activos: 0, retirados: 0, total: 0 }))),
-      em: this.empresas.estadisticas().pipe(catchError(() => of({ activas: 0 }))),
+      em: this.empresas.estadisticas().pipe(catchError(() => of({ activas: 0, inactivas: 0, total: 0 }))),
       sol: this.solicitudes.contarPendientes().pipe(catchError(() => of(0))),
     }).subscribe((res) => {
       this.stats.afiliadosActivos = res.af.activos ?? 0;
       this.stats.afiliadosRetirados = res.af.retirados ?? 0;
       this.stats.afiliadosTotal = res.af.total ?? 0;
       this.stats.empresasActivas = res.em.activas ?? 0;
+      this.stats.empresasInactivas = res.em.inactivas ?? 0;
       this.stats.solicitudesPendientes = res.sol ?? 0;
       this.cargando = false;
     });
