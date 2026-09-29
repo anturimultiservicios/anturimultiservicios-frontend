@@ -669,7 +669,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       const motivo = this.motivoEdicion || 'Actualización desde panel de administración';
       this.afiliadosServicio.actualizar(this.afiliadoId, this.edicionForm, motivo).pipe(
         catchError(err => {
-          this.mensajeError = err?.error?.mensaje || 'Error al guardar los cambios. Intente nuevamente.';
+          this.mensajeError = err?.error?.message || 'Error al guardar los cambios. Intente nuevamente.';
           return of(null);
         }),
         finalize(() => { this.guardandoEdicion = false; })
@@ -715,7 +715,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     } else {
       this.afiliadosServicio.eliminar(this.afiliadoId).pipe(
         catchError(err => {
-          this.mensajeError = err?.error?.mensaje || 'Error al eliminar el afiliado.';
+          this.mensajeError = err?.error?.message || 'Error al eliminar el afiliado.';
           return of(null);
         }),
         finalize(() => { this.eliminando = false; this.modalEliminar = false; })
@@ -777,7 +777,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.subiendoArchivo = false;
-        this.errorSubida = err?.error?.mensaje || 'Error al subir el archivo. Intente nuevamente.';
+        this.errorSubida = err?.error?.message || 'Error al subir el archivo. Intente nuevamente.';
       }
     });
   }

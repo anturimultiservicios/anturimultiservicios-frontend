@@ -392,7 +392,7 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
 
     this.solicitudesServicio.aprobar(this.solicitudActual.id, this.comentarioModal || undefined).pipe(
       catchError(err => {
-        this.mensajeError = err?.error?.mensaje || 'Error al aprobar la solicitud.';
+        this.mensajeError = err?.error?.message || 'Error al aprobar la solicitud.';
         return of(null);
       }),
       finalize(() => { this.procesandoSolicitud = false; this.modalAprobar = false; })
@@ -424,7 +424,7 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
 
     this.solicitudesServicio.rechazar(this.solicitudActual.id, this.comentarioModal).pipe(
       catchError(err => {
-        this.mensajeError = err?.error?.mensaje || 'Error al rechazar la solicitud.';
+        this.mensajeError = err?.error?.message || 'Error al rechazar la solicitud.';
         return of(null);
       }),
       finalize(() => { this.procesandoSolicitud = false; this.modalRechazar = false; })
