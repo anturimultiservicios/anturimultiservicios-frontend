@@ -11,6 +11,13 @@ export type TipoAfiliacion =
 
 export type ClaseRiesgoArl = 'I' | 'II' | 'III' | 'IV' | 'V';
 
+// 2026-09-29: 'INDETERMINADO' es una respuesta válida y explícita (no
+// binario, o prefiere no decirlo) - nunca se adivina desde el nombre. Con
+// M/F el saludo formal usa "Sr./Sra."; con INDETERMINADO (o sin dato
+// todavía, afiliados viejos) usa el nombre completo - ver saludo.util.ts
+// en el backend.
+export type GeneroAfiliado = 'M' | 'F' | 'INDETERMINADO';
+
 export interface Afiliado {
   id: number;
   nombres: string;
@@ -18,6 +25,10 @@ export interface Afiliado {
   cedula: string;
   correo?: string;
   telefono?: string;
+  genero?: GeneroAfiliado;
+  notificarCorreo?: boolean;
+  notificarSms?: boolean;
+  notificarLlamada?: boolean;
   fechaNacimiento?: string;
   cargo?: string;
   claseAportante?: string;
@@ -55,8 +66,12 @@ export interface CrearAfiliadoDto {
   nombres: string;
   apellidos: string;
   cedula: string;
+  genero: GeneroAfiliado;
   correo?: string;
   telefono?: string;
+  notificarCorreo?: boolean;
+  notificarSms?: boolean;
+  notificarLlamada?: boolean;
   fechaNacimiento?: string;
   cargo?: string;
   claseAportante?: string;
