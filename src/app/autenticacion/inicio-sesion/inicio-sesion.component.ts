@@ -5,9 +5,27 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
-import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
+import { AutenticacionServicio, esLoginCompleto } from '../../nucleo/servicios/autenticacion.servicio';
+import { DispositivosServicio } from '../../nucleo/servicios/dispositivos.servicio';
+import {
+  opcionesAutenticacionACredentialOptions,
+  opcionesRegistroACredentialOptions,
+  credencialAutenticacionARespuesta,
+  credencialRegistroARespuesta,
+} from '../../nucleo/utilidades/webauthn.util';
 
-type VistaLogin = 'login' | 'recuperar' | 'enviado';
+// 2026-09-29: 'cambiar-contrasena'/'verificar-dispositivo'/'registrar-
+// dispositivo'/'dispositivo-pendiente' son las cuatro ramas que puede pedir
+// el backend (D3+D4) despues de una contraseña correcta, antes de que haya
+// sesion real - ver `RespuestaLoginParcial` en autenticacion.servicio.ts.
+type VistaLogin =
+  | 'login'
+  | 'recuperar'
+  | 'enviado'
+  | 'cambiar-contrasena'
+  | 'verificar-dispositivo'
+  | 'registrar-dispositivo'
+  | 'dispositivo-pendiente';
 
 @Component({
   selector: 'anturi-inicio-sesion',
@@ -27,10 +45,18 @@ export class InicioSesionComponent {
   contrasena = '';
   correoRecuperar = '';
 
+  // Estado de las ramas D3+D4 (dispositivo/contraseña temporal)
+  mensajePaso = '';
+  opcionesDispositivo: any = null;
+  nuevaContrasena = '';
+  confirmarContrasena = '';
+  nombreDispositivo = '';
+
   constructor(
     public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio,
     private auth: AutenticacionServicio,
+    private dispositivosServicio: DispositivosServicio,
     private router: Router
   ) {}
 
@@ -55,13 +81,26 @@ export class InicioSesionComponent {
     this.auth.iniciarSesion(this.correo, this.contrasena).subscribe({
       next: (res) => {
         this.cargando = false;
-        const rol = res.usuario.rol;
-        if (rol === 'SUPER_ADMIN') {
-          this.router.navigate(['/super-admin']);
-        } else if (rol === 'ADMIN') {
-          this.router.navigate(['/admin']);
+
+        if (esLoginCompleto(res)) {
+          this.auth.guardarSesion(res);
+          this.irSegunRol(res.usuario.rol);
+          return;
+        }
+
+        // Ramas parciales (D3+D4): guardar el tokenTemporal de alcance
+        // acotado y pasar a la vista que corresponda - NUNCA hay sesion
+        // real todavia en ninguna de las tres.
+        this.auth.guardarTokenTemporal(res.tokenTemporal);
+        this.mensajePaso = res.mensaje;
+
+        if (res.alcance === 'debe-cambiar-contrasena') {
+          this.vista = 'cambiar-contrasena';
+        } else if (res.alcance === 'pre-auth') {
+          this.opcionesDispositivo = res.opcionesDispositivo;
+          this.vista = 'verificar-dispositivo';
         } else {
-          this.router.navigate(['/secretaria']);
+          this.vista = 'registrar-dispositivo';
         }
       },
       error: (err) => {
@@ -73,6 +112,104 @@ export class InicioSesionComponent {
         }
       },
     });
+  }
+
+  // 2026-09-29: SUPER_ADMIN entraba a /super-admin, una pantalla nunca
+  // conectada ("Conecte el backend para habilitar todas las
+  // funcionalidades") - Cristopher confirmó que quiere entrar directo al
+  // panel real (mismo que ADMIN, que ya lo permite: rutasAdmin acepta
+  // ['ADMIN', 'SUPER_ADMIN']). La ruta /super-admin se deja tal cual en el
+  // árbol de rutas (no se borra nada), simplemente ya nadie aterriza ahí
+  // por defecto.
+  private irSegunRol(rol: string): void {
+    if (rol === 'SUPER_ADMIN' || rol === 'ADMIN') {
+      this.router.navigate(['/admin']);
+    } else {
+      this.router.navigate(['/secretaria']);
+    }
+  }
+
+  // ===== Paso: contraseña temporal (alcance='debe-cambiar-contrasena') =====
+
+  establecerContrasenaInicial(): void {
+    if (!this.nuevaContrasena || this.nuevaContrasena.length < 8) {
+      this.error = 'La contraseña nueva debe tener al menos 8 caracteres.';
+      return;
+    }
+    if (this.nuevaContrasena !== this.confirmarContrasena) {
+      this.error = 'Las contraseñas no coinciden.';
+      return;
+    }
+
+    this.cargando = true;
+    this.error = '';
+
+    this.auth.establecerContrasenaInicial(this.nuevaContrasena).subscribe({
+      next: () => {
+        this.cargando = false;
+        this.auth.limpiarTokenTemporal();
+        this.contrasena = this.nuevaContrasena;
+        this.nuevaContrasena = '';
+        this.confirmarContrasena = '';
+        // El backend no devuelve sesion en este paso - hay que iniciar
+        // sesion de nuevo con la contraseña ya establecida.
+        this.ingresar();
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.error = err.error?.message || 'No se pudo establecer la contraseña. Intente nuevamente.';
+      },
+    });
+  }
+
+  // ===== Paso: verificar dispositivo autorizado (alcance='pre-auth') =====
+
+  async verificarConEsteDispositivo(): Promise<void> {
+    this.error = '';
+    this.cargando = true;
+    try {
+      const credencial = (await navigator.credentials.get(
+        opcionesAutenticacionACredentialOptions(this.opcionesDispositivo)
+      )) as PublicKeyCredential;
+      const respuesta = credencialAutenticacionARespuesta(credencial);
+      const res = await this.auth.verificarDispositivo(respuesta).toPromise();
+      this.auth.guardarSesion(res!);
+      this.irSegunRol(res!.usuario.rol);
+    } catch (e: any) {
+      this.error = e?.error?.message || e?.message || 'No se pudo verificar el dispositivo.';
+    } finally {
+      this.cargando = false;
+    }
+  }
+
+  // ===== Paso: registrar este dispositivo (alcance='solo-registro-dispositivo') =====
+
+  async registrarEsteDispositivo(): Promise<void> {
+    this.error = '';
+    this.cargando = true;
+    try {
+      const opciones = await this.dispositivosServicio.registrarInicio().toPromise();
+      const credencial = (await navigator.credentials.create(
+        opcionesRegistroACredentialOptions(opciones)
+      )) as PublicKeyCredential;
+      const respuesta = credencialRegistroARespuesta(credencial);
+      await this.dispositivosServicio.registrarCompletar(respuesta, this.nombreDispositivo || undefined).toPromise();
+      this.auth.limpiarTokenTemporal();
+      this.vista = 'dispositivo-pendiente';
+    } catch (e: any) {
+      this.error = e?.error?.message || e?.message || 'No se pudo completar el registro de este dispositivo.';
+    } finally {
+      this.cargando = false;
+    }
+  }
+
+  cancelarPasoDispositivo(): void {
+    this.auth.limpiarTokenTemporal();
+    this.opcionesDispositivo = null;
+    this.mensajePaso = '';
+    this.contrasena = '';
+    this.error = '';
+    this.vista = 'login';
   }
 
   recuperarContrasena(): void {

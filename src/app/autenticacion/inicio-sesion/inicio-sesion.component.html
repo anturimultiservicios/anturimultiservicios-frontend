@@ -205,5 +205,151 @@
       </button>
     </div>
 
+    <!-- ===== CAMBIAR CONTRASEÑA TEMPORAL (alcance: debe-cambiar-contrasena) ===== -->
+    <div class="login-formulario" *ngIf="vista === 'cambiar-contrasena'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">Establecé tu contraseña</h1>
+        <p class="login-subtitulo">{{ mensajePaso }}</p>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="nueva-contrasena">
+          Contraseña nueva <span class="requerido">*</span>
+        </label>
+        <input
+          id="nueva-contrasena"
+          type="password"
+          class="campo-input"
+          [(ngModel)]="nuevaContrasena"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          (keyup.enter)="establecerContrasenaInicial()">
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="confirmar-contrasena">
+          Confirmar contraseña <span class="requerido">*</span>
+        </label>
+        <input
+          id="confirmar-contrasena"
+          type="password"
+          class="campo-input"
+          [(ngModel)]="confirmarContrasena"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          (keyup.enter)="establecerContrasenaInicial()">
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <button class="boton boton-primario login-btn-ingresar"
+              (click)="establecerContrasenaInicial()"
+              [disabled]="cargando">
+        {{ cargando ? ('comun.cargando' | translate) : 'Guardar y continuar' }}
+      </button>
+
+      <button class="login-olvidaste" (click)="cancelarPasoDispositivo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
+    <!-- ===== VERIFICAR DISPOSITIVO AUTORIZADO (alcance: pre-auth) ===== -->
+    <div class="login-formulario" *ngIf="vista === 'verificar-dispositivo'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">Verificá tu dispositivo</h1>
+        <p class="login-subtitulo">{{ mensajePaso }}</p>
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <button class="boton boton-primario login-btn-ingresar"
+              (click)="verificarConEsteDispositivo()"
+              [disabled]="cargando">
+        {{ cargando ? ('comun.cargando' | translate) : 'Verificar con este dispositivo' }}
+      </button>
+
+      <button class="login-olvidaste" (click)="cancelarPasoDispositivo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
+    <!-- ===== REGISTRAR DISPOSITIVO NUEVO (alcance: solo-registro-dispositivo) ===== -->
+    <div class="login-formulario" *ngIf="vista === 'registrar-dispositivo'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">Registrá este dispositivo</h1>
+        <p class="login-subtitulo">{{ mensajePaso }}</p>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="nombre-dispositivo">Nombre (opcional)</label>
+        <input
+          id="nombre-dispositivo"
+          type="text"
+          class="campo-input"
+          [(ngModel)]="nombreDispositivo"
+          placeholder="Ej: PC de la oficina"
+          (keyup.enter)="registrarEsteDispositivo()">
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <button class="boton boton-primario login-btn-ingresar"
+              (click)="registrarEsteDispositivo()"
+              [disabled]="cargando">
+        {{ cargando ? ('comun.cargando' | translate) : 'Registrar este dispositivo' }}
+      </button>
+
+      <button class="login-olvidaste" (click)="cancelarPasoDispositivo()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
+    <!-- ===== DISPOSITIVO PENDIENTE DE APROBACIÓN ===== -->
+    <div class="login-formulario login-enviado" *ngIf="vista === 'dispositivo-pendiente'">
+      <div class="login-enviado__icono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <h2 class="login-enviado__titulo">Dispositivo registrado</h2>
+      <p class="login-enviado__texto">
+        Queda pendiente hasta que un administrador lo apruebe. Vas a poder iniciar sesión desde acá una vez autorizado.
+      </p>
+      <button class="boton boton-primario login-btn-ingresar" (click)="cancelarPasoDispositivo()">
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
   </div>
 </div>
