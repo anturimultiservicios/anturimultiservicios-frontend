@@ -8,6 +8,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
 import { DocumentosServicio, Documento } from '../../../nucleo/servicios/documentos.servicio';
 import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
+import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
@@ -145,6 +146,59 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
             <div class="dato-item">
               <span class="dato-etiqueta">Caja de compensación</span>
               <span class="dato-valor">{{ obtenerSeguroNombre('CAJA') || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagos -->
+        <div class="tarjeta seccion-datos" *ngIf="afiliado.seguros && afiliado.seguros.length">
+          <h3 class="seccion-titulo">Pagos</h3>
+          <div class="tabla-contenedor">
+            <div class="tabla-scroll">
+            <table class="tabla">
+              <thead>
+                <tr><th>Seguro</th><th>Entidad</th><th>Vence</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of afiliado.seguros">
+                  <td>{{ s.tipo }}</td>
+                  <td>{{ s.entidad || '—' }}</td>
+                  <td>{{ s.fechaVencimiento ? (s.fechaVencimiento | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td>
+                    <span class="badge-estado" [ngClass]="s.estadoPago === 'AL_DIA' ? 'badge-activo' : 'badge-inactivo'">
+                      {{ s.estadoPago || '—' }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="boton boton-secundario" style="padding: 4px 12px; font-size: var(--tamano-sm);" (click)="abrirModalPago(s)">
+                      Registrar pago
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
+          </div>
+
+          <h4 class="seccion-titulo" style="font-size: var(--tamano-base); margin-top: var(--espacio-5);">Historial de pagos</h4>
+          <div *ngIf="cargandoPagos" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">Cargando...</div>
+          <div *ngIf="!cargandoPagos && pagos.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">Sin pagos registrados todavía.</div>
+          <div class="tabla-contenedor" *ngIf="!cargandoPagos && pagos.length > 0">
+            <div class="tabla-scroll">
+            <table class="tabla">
+              <thead>
+                <tr><th>Fecha</th><th>Seguro</th><th>Monto</th><th>Meses</th><th>Registró</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of pagos">
+                  <td>{{ p.fechaPago | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ p.seguro?.tipo || '—' }}</td>
+                  <td>{{ '$' + (p.monto | number) }}</td>
+                  <td>{{ p.mesesCubiertos }}</td>
+                  <td>{{ p.registradoPor ? (p.registradoPor.nombre + ' ' + p.registradoPor.apellido) : '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
             </div>
           </div>
         </div>
@@ -458,6 +512,41 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         </div>
       </div>
 
+      <!-- MODAL: Registrar pago -->
+      <div *ngIf="modalPago" class="modal-overlay" (click)="cerrarModalPago()">
+        <div class="modal-confirm" (click)="$event.stopPropagation()">
+          <h3 class="modal-confirm__titulo">Registrar pago - {{ seguroSeleccionado?.tipo }}</h3>
+          <p class="modal-confirm__texto" *ngIf="seguroSeleccionado?.fechaVencimiento">
+            Vencimiento actual: {{ seguroSeleccionado.fechaVencimiento | date:'dd/MM/yyyy' }}
+          </p>
+          <div class="campo-grupo" style="margin: var(--espacio-4) 0;">
+            <label class="campo-etiqueta">Monto pagado <span style="color: var(--color-error);">*</span></label>
+            <input type="number" class="campo-input" [(ngModel)]="formPago.monto" placeholder="Ej: 5020000">
+          </div>
+          <div class="campo-grupo" style="margin-bottom: var(--espacio-4);">
+            <label class="campo-etiqueta">Meses que cubre <span style="color: var(--color-error);">*</span></label>
+            <input type="number" class="campo-input" [(ngModel)]="formPago.mesesCubiertos" min="1" placeholder="Ej: 1">
+            <span class="campo-ayuda">Si paga varios meses de una vez, el vencimiento avanza esa misma cantidad.</span>
+          </div>
+          <div class="campo-grupo" style="margin-bottom: var(--espacio-4);">
+            <label class="campo-etiqueta">Fecha del pago</label>
+            <input type="date" class="campo-input" [(ngModel)]="formPago.fechaPago">
+          </div>
+          <div class="campo-grupo" style="margin-bottom: var(--espacio-4);">
+            <label class="campo-etiqueta">Referencia (opcional)</label>
+            <input type="text" class="campo-input" [(ngModel)]="formPago.referencia" placeholder="N° de comprobante, etc.">
+          </div>
+          <div *ngIf="errorPago" class="mensaje-error" style="margin-bottom: var(--espacio-3);">{{ errorPago }}</div>
+          <div class="modal-confirm__acciones">
+            <button class="boton boton-secundario" (click)="cerrarModalPago()">Cancelar</button>
+            <button class="boton boton-primario" (click)="registrarPago()" [disabled]="guardandoPago">
+              <span *ngIf="guardandoPago" class="spinner-inline"></span>
+              {{ guardandoPago ? 'Guardando...' : 'Registrar pago' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `,
   styles: [`
@@ -484,6 +573,15 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .badge-activo { background: rgba(34,197,94,0.12); color: #15803d; }
     .badge-retirado { background: rgba(249,115,22,0.12); color: #c2410c; }
     .badge-suspendido { background: rgba(239,68,68,0.12); color: #b91c1c; }
+    .badge-inactivo { background: rgba(156,163,175,0.2); color: #6b7280; }
+    .campo-ayuda { display: block; font-size: var(--tamano-sm); color: var(--texto-terciario); margin-top: var(--espacio-1); }
+
+    .tabla-contenedor { padding: 0; overflow: hidden; margin-top: var(--espacio-3); border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-md, 8px); }
+    .tabla-scroll { overflow-x: auto; }
+    .tabla { width: 100%; border-collapse: collapse; }
+    .tabla thead th { padding: var(--espacio-2) var(--espacio-3); text-align: left; font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-secundario); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.03)); border-bottom: 1px solid var(--borde-color, #e5e7eb); white-space: nowrap; }
+    .tabla tbody td { padding: var(--espacio-2) var(--espacio-3); border-bottom: 1px solid var(--borde-color, #e5e7eb); font-size: var(--tamano-sm); color: var(--texto-principal); }
+    .tabla tbody tr:last-child td { border-bottom: none; }
 
     /* Edición */
     .edicion-encabezado { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--espacio-3); margin-bottom: var(--espacio-4); }
@@ -568,6 +666,15 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   docActual: Documento | null = null;
   urlPdfSeguro: any = null;
 
+  // Pagos
+  pagos: Pago[] = [];
+  cargandoPagos = false;
+  modalPago = false;
+  seguroSeleccionado: any = null;
+  formPago: { monto?: number; mesesCubiertos?: number; fechaPago: string; referencia?: string } = { mesesCubiertos: 1, fechaPago: '' };
+  errorPago = '';
+  guardandoPago = false;
+
   private destruir$ = new Subject<void>();
   private afiliadoId!: number;
 
@@ -585,7 +692,8 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     private afiliadosServicio: AfiliadosServicio,
     public docServicio: DocumentosServicio,
     private solicitudesServicio: SolicitudesServicio,
-    private auth: AutenticacionServicio
+    private auth: AutenticacionServicio,
+    private pagosServicio: PagosServicio
   ) {}
 
   private get prefijo(): string {
@@ -619,6 +727,66 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       if (af) {
         this.afiliado = af;
         this.cargarDocumentos();
+        this.cargarPagos();
+      }
+    });
+  }
+
+  // ── PAGOS ──────────────────────────────────────────────────
+  cargarPagos(): void {
+    this.cargandoPagos = true;
+    this.pagosServicio.listarPorAfiliado(this.afiliadoId).pipe(
+      catchError(() => of([])),
+      takeUntil(this.destruir$)
+    ).subscribe(pagos => {
+      this.pagos = pagos;
+      this.cargandoPagos = false;
+    });
+  }
+
+  abrirModalPago(seguro: any): void {
+    this.seguroSeleccionado = seguro;
+    const hoy = new Date().toISOString().slice(0, 10);
+    this.formPago = { mesesCubiertos: 1, fechaPago: hoy };
+    this.errorPago = '';
+    this.modalPago = true;
+  }
+
+  cerrarModalPago(): void {
+    this.modalPago = false;
+    this.seguroSeleccionado = null;
+  }
+
+  registrarPago(): void {
+    if (!this.formPago.monto || this.formPago.monto <= 0) {
+      this.errorPago = 'Ingrese un monto válido.';
+      return;
+    }
+    if (!this.formPago.mesesCubiertos || this.formPago.mesesCubiertos < 1) {
+      this.errorPago = 'Ingrese cuántos meses cubre este pago.';
+      return;
+    }
+
+    this.guardandoPago = true;
+    this.errorPago = '';
+    this.pagosServicio.registrar({
+      seguroId: this.seguroSeleccionado.id,
+      monto: this.formPago.monto,
+      mesesCubiertos: this.formPago.mesesCubiertos,
+      fechaPago: this.formPago.fechaPago || undefined,
+      referencia: this.formPago.referencia || undefined,
+    }).pipe(
+      catchError(err => {
+        this.errorPago = err?.error?.message || 'No se pudo registrar el pago.';
+        return of(null);
+      }),
+      finalize(() => { this.guardandoPago = false; })
+    ).subscribe(res => {
+      if (res) {
+        this.modalPago = false;
+        this.mensajeExito = 'Pago registrado correctamente.';
+        setTimeout(() => { this.mensajeExito = ''; }, 4000);
+        this.cargarAfiliado(); // refresca seguros (nueva fecha de vencimiento) y pagos
       }
     });
   }
