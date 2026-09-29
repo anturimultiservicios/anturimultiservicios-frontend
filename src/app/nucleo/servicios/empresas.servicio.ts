@@ -42,8 +42,21 @@ export class EmpresasServicio {
     return this.http.post<Empresa>(this.URL, dto);
   }
 
-  actualizar(id: number, dto: Partial<Empresa>): Observable<Empresa> {
-    return this.http.patch<Empresa>(`${this.URL}/${id}`, dto);
+  // 2026-09-29: CORREGIDO - antes mandaba PATCH con el objeto plano, pero
+  // el backend real solo tiene @Put(':id') esperando {datos, motivo} (ver
+  // EmpresasControlador.actualizar()) - mismo desajuste ya detectado el
+  // 28-sep y anotado como pendiente en detalle-empresa.component.ts, nunca
+  // corregido porque no había ningún formulario de editar que lo usara
+  // todavía. Se corrige de una vez acá - motivo obligatorio del lado del
+  // backend (acción sensible auditada).
+  actualizar(id: number, datos: Partial<Empresa>, motivo: string): Observable<Empresa> {
+    return this.http.put<Empresa>(`${this.URL}/${id}`, { datos, motivo });
+  }
+
+  // Activar/desactivar - endpoint dedicado nuevo (2026-09-29), mismo patrón
+  // que UsuariosServicio.activar()/desactivar(): motivo obligatorio.
+  cambiarEstado(id: number, activa: boolean, motivo: string): Observable<Empresa> {
+    return this.http.patch<Empresa>(`${this.URL}/${id}/estado`, { activa, motivo });
   }
 
   estadisticas(): Observable<{ activas: number; inactivas: number; total: number }> {
