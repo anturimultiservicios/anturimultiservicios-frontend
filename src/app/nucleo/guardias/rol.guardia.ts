@@ -14,10 +14,14 @@ export const rolGuardia: CanActivateFn = (ruta: ActivatedRouteSnapshot) => {
 
   const usuario = auth.usuarioActual;
   if (usuario) {
+    // 2026-09-29: se había corregido este mismo destino en
+    // inicio-sesion.component.ts (SUPER_ADMIN ya no aterriza en
+    // /super-admin, la pantalla nunca conectada) pero se quedó sin
+    // corregir ACÁ - este guardia rebota a cualquier SUPER_ADMIN que caiga
+    // en una ruta que no le corresponde, y seguía mandándolo al mismo
+    // lugar muerto. Mismo criterio: SUPER_ADMIN siempre a /admin.
     const destino =
-      usuario.rol === 'SUPER_ADMIN'
-        ? '/super-admin'
-        : usuario.rol === 'ADMIN'
+      usuario.rol === 'SUPER_ADMIN' || usuario.rol === 'ADMIN'
         ? '/admin'
         : '/secretaria';
     return router.createUrlTree([destino]);
