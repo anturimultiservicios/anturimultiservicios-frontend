@@ -229,12 +229,38 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
             <input type="text" class="campo-input" [(ngModel)]="edicionForm.apellidos" name="edit-apellidos">
           </div>
           <div class="campo-grupo">
+            <label class="campo-etiqueta">Género <span style="color: var(--color-error);">*</span></label>
+            <select class="campo-input" [(ngModel)]="edicionForm.genero" name="edit-genero">
+              <option value="">Seleccionar...</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="INDETERMINADO">Prefiere no decir / Indeterminado</option>
+            </select>
+            <span *ngIf="!edicionForm.genero" class="mensaje-error" style="font-size: var(--tamano-sm); color: var(--color-error);">
+              Falta completar - no se puede guardar sin esto
+            </span>
+          </div>
+          <div class="campo-grupo">
             <label class="campo-etiqueta">Correo</label>
             <input type="email" class="campo-input" [(ngModel)]="edicionForm.correo" name="edit-correo">
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Teléfono</label>
             <input type="tel" class="campo-input" [(ngModel)]="edicionForm.telefono" name="edit-telefono">
+          </div>
+          <div class="campo-grupo campo-grupo--ancho" *ngIf="edicionForm.correo !== undefined">
+            <label class="campo-etiqueta">¿Cómo prefiere que le avisemos del vencimiento?</label>
+            <div style="display: flex; gap: var(--espacio-5); flex-wrap: wrap; margin-top: var(--espacio-2);">
+              <label style="display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); cursor: pointer;">
+                <input type="checkbox" [(ngModel)]="edicionForm.notificarCorreo" name="edit-notificarCorreo"> Correo
+              </label>
+              <label style="display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); cursor: pointer;">
+                <input type="checkbox" [(ngModel)]="edicionForm.notificarSms" name="edit-notificarSms"> Mensaje de texto
+              </label>
+              <label style="display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); cursor: pointer;">
+                <input type="checkbox" [(ngModel)]="edicionForm.notificarLlamada" name="edit-notificarLlamada"> Llamada
+              </label>
+            </div>
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Cargo</label>
@@ -269,7 +295,8 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 
         <div class="form-acciones" style="margin-top: var(--espacio-5);">
           <button class="boton boton-secundario" (click)="cancelarEdicion()" [disabled]="guardandoEdicion">Cancelar</button>
-          <button class="boton boton-primario" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
+          <button class="boton boton-primario" (click)="guardarEdicion()" [disabled]="guardandoEdicion || !edicionForm.genero"
+            [title]="!edicionForm.genero ? 'Complete el género antes de guardar' : ''">
             <span *ngIf="guardandoEdicion" class="spinner-inline"></span>
             {{ guardandoEdicion ? 'Guardando...' : (esSecretaria ? 'Enviar solicitud' : 'Guardar cambios') }}
           </button>
@@ -665,9 +692,18 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      // Admin: actualiza directamente
+      // Admin: actualiza directamente.
+      // 2026-09-29: antes mandaba this.edicionForm completo (venía de
+      // `{...this.afiliado}`, incluye id/seguros/sucursal/documentos/
+      // historial/creadoEn - ninguno es un campo editable real). Con
+      // whitelist+forbidNonWhitelisted activo en el backend, eso puede
+      // rechazar el PATCH entero por traer campos de más - mismo patrón de
+      // bug ya cerrado en otros formularios de este proyecto (permisos,
+      // usuarios). Se arma acá un payload explícito con solo los campos
+      // editables reales, mismo criterio que ya usa el alta de afiliado.
+      const { id, sucursal, seguros, documentos, historial, creadoEn, actualizadoEn, eliminadoEn, eliminacionDefinitivaEn, ...datosLimpios } = this.edicionForm as any;
       const motivo = this.motivoEdicion || 'Actualización desde panel de administración';
-      this.afiliadosServicio.actualizar(this.afiliadoId, this.edicionForm, motivo).pipe(
+      this.afiliadosServicio.actualizar(this.afiliadoId, datosLimpios, motivo).pipe(
         catchError(err => {
           this.mensajeError = err?.error?.message || 'Error al guardar los cambios. Intente nuevamente.';
           return of(null);

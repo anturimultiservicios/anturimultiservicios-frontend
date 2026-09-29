@@ -2,12 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl } from '../../../nucleo/servicios/afiliados.servicio';
+import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl, GeneroAfiliado } from '../../../nucleo/servicios/afiliados.servicio';
 
 interface ErroresCampo {
   nombres?: string;
   apellidos?: string;
   cedula?: string;
+  genero?: string;
+  confirmarCorreo?: string;
 }
 
 interface TipoAfiliacionInfo {
@@ -304,8 +306,28 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <span *ngIf="errores.cedula" class="mensaje-error">{{ errores.cedula }}</span>
             </div>
             <div class="campo-grupo">
+              <label class="campo-etiqueta">Género <span class="requerido">*</span></label>
+              <select class="campo-input" [class.campo-error]="errores.genero"
+                [(ngModel)]="form.genero" name="genero" (blur)="validarCampo('genero')">
+                <option value="">Seleccionar...</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+                <option value="INDETERMINADO">Prefiere no decir / Indeterminado</option>
+              </select>
+              <span *ngIf="errores.genero" class="mensaje-error">{{ errores.genero }}</span>
+              <span class="campo-ayuda">Para el saludo en correos (Sr./Sra.) - "Indeterminado" usa el nombre, sin título</span>
+            </div>
+            <div class="campo-grupo">
               <label class="campo-etiqueta">Correo electrónico</label>
-              <input type="email" class="campo-input" [(ngModel)]="form.correo" name="correo" placeholder="correo@ejemplo.com">
+              <input type="email" class="campo-input" [(ngModel)]="form.correo" name="correo"
+                placeholder="correo@ejemplo.com" (blur)="validarCampo('confirmarCorreo')">
+            </div>
+            <div class="campo-grupo" *ngIf="form.correo">
+              <label class="campo-etiqueta">Confirmar correo <span class="requerido">*</span></label>
+              <input type="email" class="campo-input" [class.campo-error]="errores.confirmarCorreo"
+                [(ngModel)]="form.confirmarCorreo" name="confirmarCorreo" placeholder="Repita el correo"
+                (blur)="validarCampo('confirmarCorreo')">
+              <span *ngIf="errores.confirmarCorreo" class="mensaje-error">{{ errores.confirmarCorreo }}</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Teléfono</label>
@@ -314,6 +336,21 @@ const TIPOS: TipoAfiliacionInfo[] = [
             <div class="campo-grupo">
               <label class="campo-etiqueta">Fecha de nacimiento</label>
               <input type="date" class="campo-input" [(ngModel)]="form.fechaNacimiento" name="fechaNacimiento">
+            </div>
+          </div>
+
+          <div class="campo-grupo campo-grupo--ancho" style="margin-top: var(--espacio-4);">
+            <label class="campo-etiqueta">¿Cómo prefiere que le avisemos del vencimiento?</label>
+            <div class="preferencias-notificacion">
+              <label class="permiso-check">
+                <input type="checkbox" [(ngModel)]="form.notificarCorreo" name="notificarCorreo"> Correo
+              </label>
+              <label class="permiso-check">
+                <input type="checkbox" [(ngModel)]="form.notificarSms" name="notificarSms"> Mensaje de texto
+              </label>
+              <label class="permiso-check">
+                <input type="checkbox" [(ngModel)]="form.notificarLlamada" name="notificarLlamada"> Llamada
+              </label>
             </div>
           </div>
         </div>
@@ -600,6 +637,9 @@ const TIPOS: TipoAfiliacionInfo[] = [
     .campo-error { border-color: var(--color-error) !important; }
     .mensaje-error { font-size: var(--tamano-sm); color: var(--color-error); }
     .requerido { color: var(--color-error); }
+    .campo-ayuda { font-size: var(--tamano-sm); color: var(--texto-terciario); }
+    .preferencias-notificacion { display: flex; gap: var(--espacio-5); flex-wrap: wrap; margin-top: var(--espacio-2); }
+    .permiso-check { display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); color: var(--texto-principal); cursor: pointer; }
 
     .alerta-error { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radio-md); color: var(--color-error); font-size: var(--tamano-sm); }
 
@@ -617,11 +657,16 @@ export class FormularioAfiliadoComponent implements OnInit {
 
   tipoSeleccionado: TipoAfiliacion | null = null;
 
-  form: CrearAfiliadoDto & { caja?: string; cesantias?: number; cuatroXMil?: number } = {
+  form: Omit<CrearAfiliadoDto, 'genero'> & { genero: GeneroAfiliado | ''; confirmarCorreo?: string; caja?: string; cesantias?: number; cuatroXMil?: number } = {
     nombres: '',
     apellidos: '',
     cedula: '',
+    genero: '',
     correo: '',
+    confirmarCorreo: '',
+    notificarCorreo: true,
+    notificarSms: false,
+    notificarLlamada: false,
     telefono: '',
     fechaNacimiento: '',
     cargo: '',
@@ -717,6 +762,15 @@ export class FormularioAfiliadoComponent implements OnInit {
       case 'cedula':
         this.errores.cedula = this.form.cedula?.trim() ? '' : 'La cédula es requerida';
         break;
+      case 'genero':
+        this.errores.genero = this.form.genero ? '' : 'El género es requerido';
+        break;
+      case 'confirmarCorreo':
+        // Sin correo cargado, no hay nada que confirmar.
+        if (!this.form.correo) { this.errores.confirmarCorreo = ''; break; }
+        this.errores.confirmarCorreo = this.form.correo === this.form.confirmarCorreo
+          ? '' : 'Los correos no coinciden';
+        break;
     }
   }
 
@@ -728,7 +782,10 @@ export class FormularioAfiliadoComponent implements OnInit {
     this.validarCampo('nombres');
     this.validarCampo('apellidos');
     this.validarCampo('cedula');
-    return !this.errores.nombres && !this.errores.apellidos && !this.errores.cedula;
+    this.validarCampo('genero');
+    this.validarCampo('confirmarCorreo');
+    return !this.errores.nombres && !this.errores.apellidos && !this.errores.cedula
+      && !this.errores.genero && !this.errores.confirmarCorreo;
   }
 
   guardar(): void {
@@ -741,7 +798,11 @@ export class FormularioAfiliadoComponent implements OnInit {
       nombres: this.form.nombres.trim(),
       apellidos: this.form.apellidos.trim(),
       cedula: this.form.cedula.trim(),
+      genero: this.form.genero as GeneroAfiliado, // ya validado en validarTodo()
       correo: this.form.correo || undefined,
+      notificarCorreo: this.form.notificarCorreo,
+      notificarSms: this.form.notificarSms,
+      notificarLlamada: this.form.notificarLlamada,
       telefono: this.form.telefono || undefined,
       fechaNacimiento: this.form.fechaNacimiento || undefined,
       cargo: this.form.cargo || undefined,
