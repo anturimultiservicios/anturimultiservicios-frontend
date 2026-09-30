@@ -22,7 +22,7 @@ type AccionPendiente = 'aprobar' | 'rechazar' | 'revocar';
       </div>
 
       <p style="color: var(--texto-terciario); margin-bottom: var(--espacio-4);">
-        Aprobar/rechazar/revocar acá tiene efecto real e inmediato en el dispositivo — queda auditado con motivo.
+        Aprobar/rechazar/revocar acá tiene efecto real e inmediato en el dispositivo, queda auditado con motivo.
         Este panel reemplaza la aprobación temporal por API usada durante el bootstrap inicial.
       </p>
 

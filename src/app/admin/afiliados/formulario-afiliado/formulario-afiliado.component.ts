@@ -404,11 +404,11 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Clase de riesgo ARL <span class="requerido">*</span></label>
               <select class="campo-input" [(ngModel)]="form.claseRiesgoArl" name="claseRiesgoArl" (change)="actualizarArl()">
                 <option value="">Seleccionar clase...</option>
-                <option value="I">Clase I — Mínimo (0.522%)</option>
-                <option value="II">Clase II — Bajo (1.044%)</option>
-                <option value="III">Clase III — Medio (2.436%)</option>
-                <option value="IV">Clase IV — Alto (4.350%)</option>
-                <option value="V">Clase V — Máximo (6.960%)</option>
+                <option value="I">Clase I, Mínimo (0.522%)</option>
+                <option value="II">Clase II, Bajo (1.044%)</option>
+                <option value="III">Clase III, Medio (2.436%)</option>
+                <option value="IV">Clase IV, Alto (4.350%)</option>
+                <option value="V">Clase V, Máximo (6.960%)</option>
               </select>
             </div>
 

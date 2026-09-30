@@ -90,7 +90,7 @@ interface FormUsuario {
               </td>
               <td class="celda-correo">{{ u.correo }}</td>
               <td>
-                <span class="badge-rol" [ngClass]="claseBadgeRol(u.rol)">{{ u.rol }}</span>
+                <span class="badge-rol" [ngClass]="claseBadgeRol(u.rol)">{{ etiquetaRol(u.rol) }}</span>
               </td>
               <td>
                 <span class="badge-estado" [ngClass]="u.activo ? 'badge-activo' : 'badge-inactivo'">
@@ -190,7 +190,7 @@ interface FormUsuario {
               <label class="campo-etiqueta">Rol <span class="requerido">*</span></label>
               <select class="campo-input" [(ngModel)]="formUsuario.rol">
                 <option value="ADMIN">Administrador</option>
-                <option value="SECRETARIA">Secretaria</option>
+                <option value="SECRETARIA">Asistente</option>
               </select>
             </div>
           </div>
@@ -507,6 +507,18 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       SUPER_ADMIN: 'badge-super',
     };
     return mapa[rol] ?? '';
+  }
+
+  // 2026-09-29: el valor interno del rol sigue siendo 'SECRETARIA' (backend,
+  // BD, permisos, todo intacto) - esto es solo la etiqueta que ve la
+  // persona en pantalla, decisión explícita de Cristopher.
+  etiquetaRol(rol: string): string {
+    const mapa: Record<string, string> = {
+      ADMIN: 'Admin',
+      SECRETARIA: 'Asistente',
+      SUPER_ADMIN: 'Super Admin',
+    };
+    return mapa[rol] ?? rol;
   }
 
   // ── MODAL USUARIO ─────────────────────────────────────────

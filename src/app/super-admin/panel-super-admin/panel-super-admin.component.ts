@@ -13,7 +13,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
       <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 var(--espacio-6); background: var(--fondo-tarjeta); border-bottom: 1px solid var(--borde-color); box-shadow: var(--sombra-sm);">
         <div style="display: flex; align-items: center; gap: var(--espacio-3);">
           <img src="/assets/imagenes/logo-2026.png" alt="Anturi" style="height: 36px;">
-          <span style="font-family: var(--fuente-titulos); font-weight: 800; color: var(--color-primario);">ANTURI — Super Admin</span>
+          <span style="font-family: var(--fuente-titulos); font-weight: 800; color: var(--color-primario);">ANTURI, Super Admin</span>
         </div>
         <div style="display: flex; gap: var(--espacio-3);">
           <button class="boton-tema" (click)="temaServicio.alternar()">
@@ -31,7 +31,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
           <p>Desde aquí puede gestionar todo el sistema incluyendo:</p>
           <ul style="margin-top: var(--espacio-4); padding-left: var(--espacio-6); display: flex; flex-direction: column; gap: var(--espacio-2);">
             <li>Configuración global del sistema</li>
-            <li>Gestión de todos los usuarios (admin, secretarias)</li>
+            <li>Gestión de todos los usuarios (admin, asistentes)</li>
             <li>Acceso completo a todas las empresas y afiliados</li>
             <li>Modificación de estructuras de datos</li>
             <li>Logs de auditoría completos</li>
