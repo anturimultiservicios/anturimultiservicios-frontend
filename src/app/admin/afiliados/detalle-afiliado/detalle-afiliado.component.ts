@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { HttpEventType } from '@angular/common/http';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
-import { DocumentosServicio, Documento } from '../../../nucleo/servicios/documentos.servicio';
+import { DocumentosServicio, Documento, TipoDocumento, TipoDocumentoRequerido } from '../../../nucleo/servicios/documentos.servicio';
 import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
@@ -361,39 +361,44 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
         <div class="docs-encabezado">
           <h3 class="seccion-titulo">Documentos</h3>
-          <button class="boton boton-secundario boton-sm" (click)="triggerInputArchivo()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            Seleccionar archivo
-          </button>
         </div>
 
-        <!-- Zona Drag & Drop -->
-        <div
-          class="dropzone"
-          [class.dropzone--activa]="arrastrando"
-          (dragover)="onDragOver($event)"
-          (dragleave)="arrastrando = false"
-          (drop)="onDrop($event)"
-          (click)="triggerInputArchivo()"
+        <!-- Input de archivo único, compartido por todos los botones "Subir" -
+             cada botón fija tipoParaSubir antes de abrirlo (triggerSubidaTipo). -->
+        <input
+          type="file"
+          #inputArchivo
+          style="display: none;"
+          accept=".pdf,.jpg,.jpeg,.png"
+          (change)="onArchivoSeleccionado($event)"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36" style="color: var(--texto-terciario);">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          <p>Arrastra archivos aquí o haz clic para seleccionar</p>
-          <p class="dropzone__tipos">PDF, JPG, PNG</p>
-          <input
-            type="file"
-            #inputArchivo
-            style="display: none;"
-            accept=".pdf,.jpg,.jpeg,.png"
-            (change)="onArchivoSeleccionado($event)"
+
+        <div *ngIf="cargandoDocs" class="estado-carga" style="padding: var(--espacio-6);">
+          <div class="spinner"></div>
+        </div>
+
+        <!-- Tarjetas por categoría: cédula (única obligatoria) + el resto de
+             seguros/documentos, cada una con su propio botón de subida. -->
+        <div *ngIf="!cargandoDocs" class="docs-tipos-grid">
+          <div
+            *ngFor="let t of tiposDocumento"
+            class="doc-tipo-tarjeta"
+            [class.doc-tipo-tarjeta--falta]="t.obligatorio && documentosPorTipo(t.tipo).length === 0"
           >
+            <div class="doc-tipo-tarjeta__info">
+              <span class="doc-tipo-tarjeta__label">{{ t.label }}</span>
+              <span class="doc-tipo-tarjeta__estado" *ngIf="documentosPorTipo(t.tipo).length > 0">
+                {{ documentosPorTipo(t.tipo).length }} archivo(s)
+              </span>
+              <span class="doc-tipo-tarjeta__estado doc-tipo-tarjeta__estado--falta" *ngIf="documentosPorTipo(t.tipo).length === 0 && t.obligatorio">
+                ⚠ Falta
+              </span>
+              <span class="doc-tipo-tarjeta__estado" *ngIf="documentosPorTipo(t.tipo).length === 0 && !t.obligatorio">
+                Sin subir
+              </span>
+            </div>
+            <button class="boton boton-secundario boton-sm" (click)="triggerSubidaTipo(t.tipo)">Subir</button>
+          </div>
         </div>
 
         <!-- Progreso de subida -->
@@ -411,17 +416,9 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
           <button style="margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;" (click)="errorSubida = ''">✕</button>
         </div>
 
-        <!-- Lista de documentos -->
-        <div *ngIf="cargandoDocs" class="estado-carga" style="padding: var(--espacio-6);">
-          <div class="spinner"></div>
-        </div>
-
-        <div *ngIf="!cargandoDocs && documentos.length === 0" class="docs-vacio">
-          No hay documentos adjuntos para este afiliado.
-        </div>
-
-        <div *ngIf="!cargandoDocs && documentos.length > 0" class="docs-lista">
-          <div *ngFor="let doc of documentos" class="doc-tarjeta">
+        <!-- Documentos ya clasificados, agrupados por su categoría real -->
+        <div *ngIf="!cargandoDocs && documentosClasificados.length > 0" class="docs-lista">
+          <div *ngFor="let doc of documentosClasificados" class="doc-tarjeta">
             <div class="doc-tarjeta__icono" (click)="abrirDocumento(doc)" style="cursor: pointer;">
               <svg *ngIf="docServicio.esPdf(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #dc2626;">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -439,7 +436,7 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
             </div>
             <div class="doc-tarjeta__info" (click)="abrirDocumento(doc)" style="cursor: pointer;">
               <span class="doc-nombre">{{ doc.nombre || doc.nombreOriginal }}</span>
-              <span class="doc-meta">{{ doc.tipo }} · {{ doc.creadoEn | date:'dd/MM/yyyy' }}</span>
+              <span class="doc-meta">{{ etiquetaTipo(doc.tipo) }} · {{ doc.creadoEn | date:'dd/MM/yyyy' }}</span>
             </div>
             <button
               class="boton boton-icono boton-peligro-suave"
@@ -452,6 +449,78 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
               </svg>
             </button>
+          </div>
+        </div>
+
+        <!-- Otros documentos: llegan sin saber qué son, se reclasifican después -->
+        <div *ngIf="!cargandoDocs" class="docs-otros">
+          <div class="docs-otros__encabezado">
+            <h4 class="docs-otros__titulo">Otros documentos</h4>
+            <button class="boton boton-secundario boton-sm" (click)="triggerSubidaTipo('OTRO')">Subir a Otros</button>
+          </div>
+          <p class="campo-ayuda">Lo que llega sin identificar todavía va acá - cuando sepas qué es cada uno, movelo a su categoría real con el selector, sin volver a subir el archivo.</p>
+
+          <!-- Zona Drag & Drop, siempre hacia "Otros" -->
+          <div
+            class="dropzone"
+            [class.dropzone--activa]="arrastrando"
+            (dragover)="onDragOver($event)"
+            (dragleave)="arrastrando = false"
+            (drop)="onDrop($event)"
+            (click)="triggerSubidaTipo('OTRO')"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="color: var(--texto-terciario);">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <p>Arrastra archivos aquí o haz clic para seleccionar</p>
+            <p class="dropzone__tipos">PDF, JPG, PNG</p>
+          </div>
+
+          <div *ngIf="documentosOtros.length === 0" class="docs-vacio">No hay documentos sin clasificar.</div>
+
+          <div *ngIf="documentosOtros.length > 0" class="docs-lista">
+            <div *ngFor="let doc of documentosOtros" class="doc-tarjeta">
+              <div class="doc-tarjeta__icono" (click)="abrirDocumento(doc)" style="cursor: pointer;">
+                <svg *ngIf="docServicio.esPdf(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #dc2626;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <svg *ngIf="docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #2563eb;">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <svg *ngIf="!docServicio.esPdf(doc.extension) && !docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: var(--texto-terciario);">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div class="doc-tarjeta__info" (click)="abrirDocumento(doc)" style="cursor: pointer;">
+                <span class="doc-nombre">{{ doc.nombre || doc.nombreOriginal }}</span>
+                <span class="doc-meta">{{ doc.creadoEn | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <select
+                class="campo-input campo-input--sm"
+                [disabled]="reclasificandoDocId === doc.id"
+                (change)="moverDocumento(doc, $event)"
+              >
+                <option value="" selected disabled>Mover a...</option>
+                <option *ngFor="let t of tiposDocumento" [value]="t.tipo">{{ t.label }}</option>
+              </select>
+              <button
+                class="boton boton-icono boton-peligro-suave"
+                title="Eliminar documento"
+                (click)="eliminarDocumento(doc)"
+                [disabled]="eliminandoDocId === doc.id"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -593,11 +662,26 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 
     /* Documentos */
     .docs-encabezado { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--espacio-4); }
-    .dropzone { border: 2px dashed var(--borde-color, #d1d5db); border-radius: var(--radio-lg); padding: var(--espacio-8) var(--espacio-6); display: flex; flex-direction: column; align-items: center; gap: var(--espacio-2); cursor: pointer; transition: var(--transicion-base); text-align: center; color: var(--texto-terciario); }
+    .dropzone { border: 2px dashed var(--borde-color, #d1d5db); border-radius: var(--radio-lg); padding: var(--espacio-6) var(--espacio-6); display: flex; flex-direction: column; align-items: center; gap: var(--espacio-2); cursor: pointer; transition: var(--transicion-base); text-align: center; color: var(--texto-terciario); }
     .dropzone:hover, .dropzone--activa { border-color: var(--color-primario); background: rgba(27,50,112,0.04); }
     .dropzone__tipos { font-size: var(--tamano-sm); }
     .docs-vacio { text-align: center; color: var(--texto-terciario); padding: var(--espacio-6); font-size: var(--tamano-sm); }
     .docs-lista { display: flex; flex-direction: column; gap: var(--espacio-2); margin-top: var(--espacio-4); }
+
+    /* Tarjetas por categoría (Cédula, ARL, EPS...) */
+    .docs-tipos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--espacio-3); margin-bottom: var(--espacio-4); }
+    .doc-tipo-tarjeta { display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-md); }
+    .doc-tipo-tarjeta--falta { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.04); }
+    .doc-tipo-tarjeta__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .doc-tipo-tarjeta__label { font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-principal); }
+    .doc-tipo-tarjeta__estado { font-size: 0.72rem; color: var(--texto-terciario); }
+    .doc-tipo-tarjeta__estado--falta { color: var(--color-error); font-weight: 600; }
+
+    /* Otros documentos */
+    .docs-otros { margin-top: var(--espacio-6); padding-top: var(--espacio-5); border-top: 1px solid var(--borde-color, #e5e7eb); }
+    .docs-otros__encabezado { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--espacio-2); }
+    .docs-otros__titulo { font-size: var(--tamano-base); font-weight: 600; color: var(--texto-principal); margin: 0; }
+    .campo-input--sm { padding: var(--espacio-1) var(--espacio-2); font-size: var(--tamano-sm); width: auto; max-width: 220px; }
     .doc-tarjeta { display: flex; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-md); transition: var(--transicion-base); }
     .doc-tarjeta:hover { background: var(--fondo-tarjeta-hover, rgba(0,0,0,0.02)); }
     .doc-tarjeta__icono { flex-shrink: 0; }
@@ -660,6 +744,11 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   nombreArchivoSubiendo = '';
   errorSubida = '';
   eliminandoDocId: number | null = null;
+  reclasificandoDocId: number | null = null;
+  tiposDocumento: TipoDocumentoRequerido[] = [];
+  // A qué tipo va el próximo archivo que se seleccione - lo fija el botón
+  // "Subir" de cada categoría antes de abrir el selector de archivos.
+  tipoParaSubir: TipoDocumento = 'OTRO';
 
   // Modal documento
   modalDoc = false;
@@ -800,6 +889,48 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       this.documentos = docs;
       this.cargandoDocs = false;
     });
+
+    if (this.tiposDocumento.length === 0) {
+      this.docServicio.tiposRequeridos().pipe(
+        catchError(() => of([])),
+        takeUntil(this.destruir$)
+      ).subscribe(tipos => this.tiposDocumento = tipos);
+    }
+  }
+
+  // Documentos ya clasificados (tipo distinto de OTRO) de una categoría
+  // puntual - usado tanto para el contador de cada tarjeta como para el
+  // listado agrupado.
+  documentosPorTipo(tipo: TipoDocumento): Documento[] {
+    return this.documentos.filter(d => d.tipo === tipo);
+  }
+
+  get documentosClasificados(): Documento[] {
+    return this.documentos.filter(d => d.tipo !== 'OTRO');
+  }
+
+  get documentosOtros(): Documento[] {
+    return this.documentos.filter(d => d.tipo === 'OTRO');
+  }
+
+  etiquetaTipo(tipo: TipoDocumento): string {
+    return this.tiposDocumento.find(t => t.tipo === tipo)?.label || tipo;
+  }
+
+  // Mueve un documento de "Otros" (o cualquier tipo) a la categoría real
+  // seleccionada en el <select> - no hay que volver a subir el archivo.
+  moverDocumento(doc: Documento, evento: Event): void {
+    const nuevoTipo = (evento.target as HTMLSelectElement).value as TipoDocumento;
+    if (!nuevoTipo) return;
+
+    this.reclasificandoDocId = doc.id;
+    this.docServicio.cambiarTipo(doc.id, nuevoTipo).pipe(
+      finalize(() => this.reclasificandoDocId = null),
+      takeUntil(this.destruir$)
+    ).subscribe({
+      next: () => this.cargarDocumentos(),
+      error: (err) => this.errorSubida = err?.error?.message || 'No se pudo mover el documento.',
+    });
   }
 
   obtenerSeguroNombre(tipo: string): string {
@@ -932,7 +1063,11 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   // ── DOCUMENTOS ────────────────────────────────────────────
-  triggerInputArchivo(): void {
+  // Cada tarjeta de categoría (Cédula, ARL, EPS...) y la sección "Otros"
+  // llaman a esto con su propio tipo antes de abrir el selector de
+  // archivos - así el próximo archivo elegido sabe a qué categoría va.
+  triggerSubidaTipo(tipo: TipoDocumento): void {
+    this.tipoParaSubir = tipo;
     const el = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (el) el.click();
   }
@@ -942,31 +1077,31 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     this.arrastrando = true;
   }
 
+  // El arrastrar-y-soltar solo existe en la sección "Otros" (no se sabe
+  // el tipo de lo que cae ahí) - se fuerza el tipo explícitamente, sin
+  // depender de qué botón se haya tocado por última vez.
   onDrop(e: DragEvent): void {
     e.preventDefault();
     this.arrastrando = false;
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
-      this.subirArchivo(files[0]);
+      this.subirArchivo(files[0], 'OTRO');
     }
   }
 
   onArchivoSeleccionado(e: Event): void {
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.subirArchivo(input.files[0]);
+      this.subirArchivo(input.files[0], this.tipoParaSubir);
       input.value = '';
     }
   }
 
-  private subirArchivo(archivo: File): void {
+  private subirArchivo(archivo: File, tipo: TipoDocumento): void {
     this.subiendoArchivo = true;
     this.progresoSubida = 0;
     this.errorSubida = '';
     this.nombreArchivoSubiendo = archivo.name;
-
-    const ext = archivo.name.split('.').pop() || '';
-    const tipo = this.docServicio.esPdf(ext) ? 'OTRO' : (this.docServicio.esImagen(ext) ? 'OTRO' : 'OTRO');
 
     this.docServicio.subir(this.afiliadoId, archivo, tipo, archivo.name).pipe(
       takeUntil(this.destruir$)
