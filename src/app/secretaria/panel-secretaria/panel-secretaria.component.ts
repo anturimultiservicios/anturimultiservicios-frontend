@@ -168,7 +168,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
                 </div>
                 <div class="perfil-info">
                   <span class="perfil-nombre">{{ nombreCompleto }}</span>
-                  <span class="perfil-rol">Secretaria</span>
+                  <span class="perfil-rol">Asistente</span>
                 </div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="selector-idioma__flecha">
                   <polyline points="6 9 12 15 18 9"></polyline>

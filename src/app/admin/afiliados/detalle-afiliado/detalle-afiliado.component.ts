@@ -264,7 +264,7 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            Como secretaria, su solicitud quedará pendiente de aprobación.
+            Como asistente, su solicitud quedará pendiente de aprobación.
           </div>
         </div>
 
@@ -1000,7 +1000,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   abrirDocumento(doc: Documento): void {
     this.docActual = doc;
     if (this.docServicio.esPdf(doc.extension)) {
-      // Asignamos directamente — el DomSanitizer se puede usar si se necesita bypassSecurity
+      // Asignamos directamente, el DomSanitizer se puede usar si se necesita bypassSecurity
       this.urlPdfSeguro = this.docServicio.obtenerUrlVisualizacion(doc.id);
     }
     this.modalDoc = true;
