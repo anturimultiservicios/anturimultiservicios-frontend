@@ -205,46 +205,9 @@
   background-color: var(--fondo-tarjeta-hover);
 }
 
-/* Botón tema */
-.boton-tema {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radio-md);
-  border: 1.5px solid var(--borde-color);
-  background: transparent;
-  color: var(--texto-secundario);
-  cursor: pointer;
-  transition: all var(--transicion-rapida);
-}
-
-.boton-tema:hover {
-  border-color: var(--color-primario);
-  color: var(--color-primario);
-  background-color: var(--fondo-tarjeta-hover);
-}
-
-:host-context(body.tema-oscuro) .boton-tema {
-  border-color: rgba(255,255,255,0.15);
-  color: var(--texto-principal);
-}
-
-:host-context(body.tema-oscuro) .boton-tema:hover {
-  border-color: var(--color-secundario);
-  color: var(--color-secundario);
-  background-color: rgba(232,87,12,0.1);
-}
-
 :host-context(body.tema-oscuro) .selector-idioma__boton {
   border-color: rgba(255,255,255,0.15);
   color: var(--texto-principal);
-}
-
-.icono-tema {
-  width: 18px;
-  height: 18px;
 }
 
 /* Botón ingresar */

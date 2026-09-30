@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio, esLoginCompleto } from '../../nucleo/servicios/autenticacion.servicio';
 import { DispositivosServicio } from '../../nucleo/servicios/dispositivos.servicio';
@@ -53,16 +52,11 @@ export class InicioSesionComponent {
   nombreDispositivo = '';
 
   constructor(
-    public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio,
     private auth: AutenticacionServicio,
     private dispositivosServicio: DispositivosServicio,
     private router: Router
   ) {}
-
-  alternarTema(): void {
-    this.temaServicio.alternar();
-  }
 
   cambiarIdioma(codigo: string): void {
     this.idiomaServicio.cambiar(codigo);
