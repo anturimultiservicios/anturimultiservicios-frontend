@@ -2,7 +2,6 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio, Idioma } from '../../nucleo/servicios/idioma.servicio';
 
 @Component({
@@ -20,7 +19,6 @@ export class BarraNavComponent implements OnInit {
   idiomasDisponibles!: Idioma[];
 
   constructor(
-    public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio
   ) {}
 
@@ -47,10 +45,6 @@ export class BarraNavComponent implements OnInit {
   seleccionarIdioma(codigo: string): void {
     this.idiomaServicio.cambiar(codigo);
     this.menuIdiomaAbierto = false;
-  }
-
-  alternarTema(): void {
-    this.temaServicio.alternar();
   }
 
   cerrarMenus(): void {

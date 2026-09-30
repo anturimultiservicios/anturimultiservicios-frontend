@@ -29,6 +29,24 @@ export class TemaServicio {
     localStorage.setItem(this.CLAVE, nuevo);
   }
 
+  // 2026-09-29 (decisión de Cristopher): el cambio de tema solo tiene
+  // sentido DESPUÉS de iniciar sesión (admin/secretaria/super-admin) - la
+  // página pública y el login se quedan siempre en modo claro, sin botón.
+  // No se toca localStorage acá - la preferencia real de la persona sigue
+  // guardada, se re-aplica sola en cuanto vuelve a una pantalla con sesión
+  // (ver restaurarPreferencia()).
+  forzarClaro(): void {
+    const cuerpo = document.body;
+    cuerpo.classList.remove('tema-claro', 'tema-oscuro');
+    cuerpo.classList.add('tema-claro');
+    this.temaActual$.next('tema-claro');
+  }
+
+  restaurarPreferencia(): void {
+    const guardado = localStorage.getItem(this.CLAVE) as Tema | null;
+    this.aplicar(guardado ?? 'tema-claro');
+  }
+
   private aplicar(tema: Tema): void {
     const cuerpo = document.body;
     cuerpo.classList.remove('tema-claro', 'tema-oscuro');
