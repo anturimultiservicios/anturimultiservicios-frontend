@@ -59,6 +59,13 @@ export const rutasSecretaria: Routes = [
             (m) => m.MisDispositivosComponent
           ),
       },
+      {
+        path: 'calendario',
+        loadComponent: () =>
+          import('../compartido/calendario-pagos/calendario-pagos.component').then(
+            (m) => m.CalendarioPagosComponent
+          ),
+      },
     ],
   },
 ];

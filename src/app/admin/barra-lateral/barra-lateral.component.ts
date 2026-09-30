@@ -28,6 +28,7 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'resumen', etiqueta: 'Resumen', ruta: '/admin/resumen' },
     { icono: 'afiliados', etiqueta: 'Afiliados', ruta: '/admin/afiliados' },
     { icono: 'empresas', etiqueta: 'Empresas', ruta: '/admin/empresas' },
+    { icono: 'calendario', etiqueta: 'Calendario', ruta: '/admin/calendario' },
     { icono: 'solicitudes', etiqueta: 'Solicitudes', ruta: '/admin/solicitudes', soloAdmin: true },
     { icono: 'usuarios', etiqueta: 'Usuarios del sistema', ruta: '/admin/usuarios', soloAdmin: true },
     { icono: 'mis-dispositivos', etiqueta: 'Mis dispositivos', ruta: '/admin/mis-dispositivos' },
