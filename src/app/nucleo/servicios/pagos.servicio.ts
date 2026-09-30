@@ -1,7 +1,19 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { entorno } from '../../../environments/entorno';
+
+export interface AfiliadoDiaCalendario {
+  seguroId: number;
+  tipo: string;
+  estado: 'AL_DIA' | 'VENCIDO';
+  afiliado: { id: number; nombres: string; apellidos: string; cedula: string; telefono?: string; correo?: string };
+}
+
+export interface DiaCalendario {
+  fecha: string; // 'YYYY-MM-DD'
+  afiliados: AfiliadoDiaCalendario[];
+}
 
 export interface Pago {
   id: number;
@@ -35,5 +47,10 @@ export class PagosServicio {
 
   listarPorAfiliado(afiliadoId: number): Observable<Pago[]> {
     return this.http.get<Pago[]>(`${this.URL}/afiliado/${afiliadoId}`);
+  }
+
+  calendario(desde: string, hasta: string): Observable<DiaCalendario[]> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta);
+    return this.http.get<DiaCalendario[]>(`${this.URL}/calendario`, { params });
   }
 }
