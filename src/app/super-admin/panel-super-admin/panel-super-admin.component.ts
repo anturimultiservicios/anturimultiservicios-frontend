@@ -12,7 +12,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     <div style="min-height: 100vh; display: flex; flex-direction: column;">
       <header style="display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 var(--espacio-6); background: var(--fondo-tarjeta); border-bottom: 1px solid var(--borde-color); box-shadow: var(--sombra-sm);">
         <div style="display: flex; align-items: center; gap: var(--espacio-3);">
-          <img src="/assets/imagenes/logo.png" alt="Anturi" style="height: 36px;">
+          <img src="/assets/imagenes/logo-2026.png" alt="Anturi" style="height: 36px;">
           <span style="font-family: var(--fuente-titulos); font-weight: 800; color: var(--color-primario);">ANTURI — Super Admin</span>
         </div>
         <div style="display: flex; gap: var(--espacio-3);">
