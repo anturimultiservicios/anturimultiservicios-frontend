@@ -26,7 +26,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
       <aside class="barra-lateral" [class.contraida]="!barraExpandida">
         <!-- Logo -->
         <div class="barra-lateral__logo">
-          <img src="/assets/imagenes/logo.png" alt="Anturi" class="barra-lateral__logo-img">
+          <img src="/assets/imagenes/logo-2026.png" alt="Anturi" class="barra-lateral__logo-img">
           <div class="barra-lateral__logo-texto" *ngIf="barraExpandida">
             <span class="barra-lateral__logo-nombre">ANTURI</span>
             <span class="barra-lateral__logo-sub">MULTISERVICIOS</span>
