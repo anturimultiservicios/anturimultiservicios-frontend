@@ -2,6 +2,7 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError, Observable, shareReplay, finalize } from 'rxjs';
 import { AutenticacionServicio } from '../servicios/autenticacion.servicio';
+import { HorarioAccesoServicio } from '../servicios/horario-acceso.servicio';
 
 // Refresco compartido (2026-09-28): si varias peticiones fallan con 401 al
 // mismo tiempo (ej. el Resumen, que dispara 3 peticiones en paralelo por
@@ -15,8 +16,18 @@ import { AutenticacionServicio } from '../servicios/autenticacion.servicio';
 // refresco terminado, si dispare uno nuevo.
 let refrescoEnCurso$: Observable<{ acceso: string }> | null = null;
 
+// 2026-10-01 (decisión de Cristopher, seguridad): el backend corta CUALQUIER
+// request fuera del horario de acceso con un 401 que trae este mensaje
+// exacto (JwtEstrategia, AutenticacionServicio.refrescarToken) - se detecta
+// acá antes de intentar el refresco normal (que fallaría igual, con el
+// mismo mensaje, por las dudas) y se muestra la pantalla completa en vez
+// de un cierre de sesión silencioso.
+const esCorteFueraDeHorario = (error: HttpErrorResponse): boolean =>
+  typeof error.error?.message === 'string' && error.error.message.includes('Fuera de horario de acceso');
+
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AutenticacionServicio);
+  const horarioServicio = inject(HorarioAccesoServicio);
   const token = auth.obtenerToken();
 
   const solicitudConToken = token
@@ -25,6 +36,12 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(solicitudConToken).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && esCorteFueraDeHorario(error)) {
+        auth.cerrarSesion();
+        horarioServicio.anunciarCierreForzado(error.error.message);
+        return throwError(() => error);
+      }
+
       if (error.status === 401 && !req.url.includes('refrescar')) {
         if (!refrescoEnCurso$) {
           refrescoEnCurso$ = auth.refrescarToken().pipe(

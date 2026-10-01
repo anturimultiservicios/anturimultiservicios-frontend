@@ -4,12 +4,13 @@ import { filter } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TemaServicio } from './nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from './nucleo/servicios/idioma.servicio';
+import { AvisoHorarioComponent } from './compartido/aviso-horario/aviso-horario.component';
 
 @Component({
   selector: 'anturi-raiz',
   standalone: true,
-  imports: [RouterOutlet],
-  template: '<router-outlet />',
+  imports: [RouterOutlet, AvisoHorarioComponent],
+  template: '<router-outlet /><anturi-aviso-horario />',
   styles: [':host { display: block; min-height: 100vh; }'],
 })
 export class AppComponent implements OnInit {

@@ -44,6 +44,12 @@ export class InicioSesionComponent {
   contrasena = '';
   correoRecuperar = '';
 
+  // 2026-10-01 (decisión de Cristopher, seguridad): no-null = pantalla
+  // completa en vez del formulario - el backend ya validó la contraseña
+  // correcta pero el horario de acceso (7:00-19:00 hora Colombia) no deja
+  // entrar en este momento.
+  fueraDeHorarioMensaje: string | null = null;
+
   // Estado de las ramas D3+D4 (dispositivo/contraseña temporal)
   mensajePaso = '';
   opcionesDispositivo: any = null;
@@ -57,6 +63,11 @@ export class InicioSesionComponent {
     private dispositivosServicio: DispositivosServicio,
     private router: Router
   ) {}
+
+  cerrarAvisoHorario(): void {
+    this.fueraDeHorarioMensaje = null;
+    this.contrasena = '';
+  }
 
   cambiarIdioma(codigo: string): void {
     this.idiomaServicio.cambiar(codigo);
@@ -99,7 +110,13 @@ export class InicioSesionComponent {
       },
       error: (err) => {
         this.cargando = false;
-        if (err.status === 401) {
+        const mensaje: string | undefined = err?.error?.message;
+        if (err.status === 401 && mensaje?.includes('Fuera de horario de acceso')) {
+          // La contraseña sí era correcta - distinto de "credenciales
+          // incorrectas", por eso pantalla completa propia en vez del
+          // mensaje de error genérico del formulario.
+          this.fueraDeHorarioMensaje = mensaje;
+        } else if (err.status === 401) {
           this.error = 'Correo o contraseña incorrectos.';
         } else {
           this.error = 'Error de conexión. Intente nuevamente.';
