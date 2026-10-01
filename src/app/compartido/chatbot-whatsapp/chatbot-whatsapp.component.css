@@ -251,17 +251,31 @@
 
 /* Burbuja de saludo */
 .wa-saludo {
+  position: relative;
   background: var(--fondo-tarjeta);
   color: var(--texto-principal);
   padding: var(--espacio-3) var(--espacio-4);
   border-radius: var(--radio-lg);
-  border-bottom-right-radius: var(--radio-sm);
   box-shadow: var(--sombra-lg);
   font-size: var(--tamano-sm);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   animation: saludoAparecer 0.5s ease 0.6s both, saludoFlotar 2.4s ease-in-out 1.2s infinite;
+}
+
+/* 2026-10-01: colita apuntando al robot, para que se lea como una nube
+   de diálogo de verdad y no solo un cartel flotando. */
+.wa-saludo::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: 24px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--fondo-tarjeta);
 }
 
 @keyframes saludoAparecer {
