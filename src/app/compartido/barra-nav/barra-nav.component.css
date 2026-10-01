@@ -43,7 +43,7 @@
 }
 
 .barra-nav__logo-imagen {
-  height: 44px;
+  height: 52px;
   width: auto;
   object-fit: contain;
   transition: filter var(--transicion-normal);
@@ -219,11 +219,6 @@
   color: var(--texto-principal);
 }
 
-/* Botón ingresar */
-.barra-nav__btn-ingresar {
-  font-size: var(--tamano-sm);
-  padding: var(--espacio-2) var(--espacio-5);
-}
 
 /* Hamburguesa */
 .barra-nav__hamburguesa {
@@ -332,7 +327,7 @@
     display: none;
   }
 
-  .barra-nav__btn-ingresar {
+  .barra-nav__enlace-ingresar {
     display: none;
   }
 
