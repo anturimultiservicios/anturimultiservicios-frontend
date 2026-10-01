@@ -1,13 +1,16 @@
 <nav class="barra-nav" [class.desplazada]="desplazado">
   <div class="barra-nav__contenido">
 
-    <!-- Logo -->
-    <a class="barra-nav__logo" routerLink="/" (click)="cerrarMenus()">
-      <img src="/assets/imagenes/logo-2026.png" alt="Anturi Multiservicios" class="barra-nav__logo-imagen">
-      <span class="barra-nav__logo-texto">
-        <span class="barra-nav__logo-nombre">ANTURI</span>
-        <span class="barra-nav__logo-subtitulo">MULTISERVICIOS</span>
-      </span>
+    <!-- 2026-10-01 (decisión de Cristopher): "Ingresar" es solo para 3
+         personas (los roles internos), no para el público general - bajó
+         de protagonismo (mismo estilo que Inicio/Servicios/Nosotros/
+         Contacto, ya no es un botón azul) y además solo aparece arriba
+         del todo, al cargar la página. Al bajar (desplazado=true) se
+         esconde, porque se asume que quien ya está navegando el sitio es
+         un cliente buscando algo, no la empresa entrando a trabajar -
+         vuelve a aparecer solo si sube de nuevo al tope. -->
+    <a routerLink="/ingresar" class="barra-nav__enlace barra-nav__enlace-ingresar" *ngIf="!desplazado" (click)="cerrarMenus()">
+      {{ 'nav.ingresar' | translate }}
     </a>
 
     <!-- Navegación escritorio -->
@@ -18,66 +21,60 @@
       <li><a class="barra-nav__enlace" (click)="irASeccion('contacto')">{{ 'nav.contacto' | translate }}</a></li>
     </ul>
 
-    <!-- Controles derecha -->
-    <div class="barra-nav__controles">
-
-      <!-- 2026-10-01 (decisión de Cristopher): "Ingresar" bajó de
-           protagonismo a propósito - es solo para 3 personas (los roles
-           internos), no para el público general, y el botón azul grande
-           hacía parecer que era un login/registro para cualquiera. Ahora
-           usa el mismo estilo que Inicio/Servicios/Nosotros/Contacto
-           (barra-nav__enlace), sin destacarse del resto. -->
-
-      <!-- 2026-09-29: el cambio de tema se sacó del sitio público a
-           propósito (decisión de Cristopher) - queda solo disponible
-           adentro, ya con sesión iniciada. El sitio público siempre en
-           modo claro. -->
-
-      <!-- Botón ingresar -->
-      <a routerLink="/ingresar" class="barra-nav__enlace barra-nav__enlace-ingresar" (click)="cerrarMenus()">
-        {{ 'nav.ingresar' | translate }}
-      </a>
-
-      <!-- Cambiar idioma -->
-      <div class="selector-idioma" [class.abierto]="menuIdiomaAbierto">
-        <button class="selector-idioma__boton" (click)="alternarMenuIdioma()" [attr.aria-label]="'Idioma: ' + idiomaActual.nombre">
-          <span class="selector-idioma__bandera">{{ idiomaActual.bandera }}</span>
-          <span class="selector-idioma__codigo">{{ idiomaActual.codigo.toUpperCase() }}</span>
-          <svg class="selector-idioma__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <!-- 2026-10-01 (bug real encontrado): el overlay de pantalla completa
-             de abajo (línea 83) existe para cerrar el menú al tocar afuera -
-             pero al ser un hermano fuera de <nav>, cualquier inconsistencia
-             de stacking entre su z-index y el de esta lista (ambos
-             posicionados "fixed") deja que algunos clics dentro del propio
-             desplegable terminen cerrando el menú en vez de seleccionar el
-             idioma, en vez de llegar al <button> real. stopPropagation acá
-             corta el problema de raíz: un clic adentro de la lista nunca
-             llega al overlay, sin depender de que el z-index se comporte
-             perfecto en todos los navegadores/zoom. Mismo patrón aplicado
-             al menú móvil más abajo. -->
-        <ul class="selector-idioma__lista" *ngIf="menuIdiomaAbierto" (click)="$event.stopPropagation()">
-          <li *ngFor="let idioma of idiomasDisponibles">
-            <button
-              class="selector-idioma__opcion"
-              [class.activo]="idioma.codigo === idiomaActual.codigo"
-              (click)="seleccionarIdioma(idioma.codigo)">
-              <span class="selector-idioma__bandera">{{ idioma.bandera }}</span>
-              <span>{{ idioma.nombre }}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Hamburguesa móvil -->
-      <button class="barra-nav__hamburguesa" [class.activo]="menuAbierto" (click)="alternarMenu()" aria-label="Menú">
-        <span></span>
-        <span></span>
-        <span></span>
+    <!-- 2026-10-01: idioma se muda al lado izquierdo del logo, y pierde el
+         botón/borde - ahora es solo texto + flecha, para que no llame tanto
+         la atención (decisión de Cristopher). -->
+    <div class="selector-idioma selector-idioma--simple" [class.abierto]="menuIdiomaAbierto">
+      <button class="selector-idioma__boton" (click)="alternarMenuIdioma()" [attr.aria-label]="'Idioma: ' + idiomaActual.nombre">
+        <span class="selector-idioma__codigo">{{ idiomaActual.codigo.toUpperCase() }}</span>
+        <svg class="selector-idioma__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
       </button>
+      <!-- 2026-10-01 (bug real encontrado): el overlay de pantalla completa
+           de abajo (línea 83) existe para cerrar el menú al tocar afuera -
+           pero al ser un hermano fuera de <nav>, cualquier inconsistencia
+           de stacking entre su z-index y el de esta lista (ambos
+           posicionados "fixed") deja que algunos clics dentro del propio
+           desplegable terminen cerrando el menú en vez de seleccionar el
+           idioma, en vez de llegar al <button> real. stopPropagation acá
+           corta el problema de raíz: un clic adentro de la lista nunca
+           llega al overlay, sin depender de que el z-index se comporte
+           perfecto en todos los navegadores/zoom. Mismo patrón aplicado
+           al menú móvil más abajo. -->
+      <ul class="selector-idioma__lista" *ngIf="menuIdiomaAbierto" (click)="$event.stopPropagation()">
+        <li *ngFor="let idioma of idiomasDisponibles">
+          <button
+            class="selector-idioma__opcion"
+            [class.activo]="idioma.codigo === idiomaActual.codigo"
+            (click)="seleccionarIdioma(idioma.codigo)">
+            <span class="selector-idioma__bandera">{{ idioma.bandera }}</span>
+            <span>{{ idioma.nombre }}</span>
+          </button>
+        </li>
+      </ul>
     </div>
+
+    <!-- Logo -->
+    <a class="barra-nav__logo" routerLink="/" (click)="cerrarMenus()">
+      <img src="/assets/imagenes/logo-2026.png" alt="Anturi Multiservicios" class="barra-nav__logo-imagen">
+      <span class="barra-nav__logo-texto">
+        <span class="barra-nav__logo-nombre">ANTURI</span>
+        <span class="barra-nav__logo-subtitulo">MULTISERVICIOS</span>
+      </span>
+    </a>
+
+    <!-- 2026-09-29: el cambio de tema se sacó del sitio público a
+         propósito (decisión de Cristopher) - queda solo disponible
+         adentro, ya con sesión iniciada. El sitio público siempre en
+         modo claro. -->
+
+    <!-- Hamburguesa móvil -->
+    <button class="barra-nav__hamburguesa" [class.activo]="menuAbierto" (click)="alternarMenu()" aria-label="Menú">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </div>
 
   <!-- Menú móvil -->

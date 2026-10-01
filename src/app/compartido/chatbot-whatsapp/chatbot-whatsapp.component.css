@@ -153,15 +153,18 @@
   border-color: #25D366;
 }
 
-/* Botón acción */
+/* Botón acción - 2026-10-01: antes ocupaba el 100% del panel (se veía
+   demasiado ancho) - ahora centrado y con un ancho más natural al texto. */
 .wa-panel__accion {
   padding: var(--espacio-3) var(--espacio-4);
   background: var(--fondo-tarjeta);
   border-top: 1px solid var(--borde-color);
+  display: flex;
+  justify-content: center;
 }
 
 .wa-btn-directo {
-  width: 100%;
+  width: auto;
   background: #25D366;
   border-color: #25D366;
   font-size: var(--tamano-sm);
@@ -203,6 +206,51 @@
 
 .wa-boton-flotante:hover svg {
   transform: scale(1.05);
+}
+
+/* 2026-10-01: la carita de robot es de trazo (fill:none + stroke), a
+   diferencia del ícono viejo de WhatsApp que era sólido - pisa el
+   fill:white genérico de arriba, que si no lo rellenaría como un blob
+   sólido en vez de dejar ver el trazo. */
+.wa-boton-flotante .wa-icono-robot,
+.wa-panel__avatar .wa-icono-robot {
+  fill: none;
+  stroke: white;
+  color: white;
+}
+
+/* Burbuja de saludo */
+.wa-saludo {
+  background: var(--fondo-tarjeta);
+  color: var(--texto-principal);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-lg);
+  border-bottom-right-radius: var(--radio-sm);
+  box-shadow: var(--sombra-lg);
+  font-size: var(--tamano-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  animation: saludoAparecer 0.5s ease 0.6s both, saludoFlotar 2.4s ease-in-out 1.2s infinite;
+}
+
+@keyframes saludoAparecer {
+  from { opacity: 0; transform: translateY(10px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes saludoFlotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@media (max-width: 480px) {
+  .wa-saludo {
+    font-size: var(--tamano-xs);
+    white-space: normal;
+    max-width: 180px;
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
