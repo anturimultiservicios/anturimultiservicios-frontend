@@ -30,7 +30,18 @@
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-        <ul class="selector-idioma__lista" *ngIf="menuIdiomaAbierto">
+        <!-- 2026-10-01 (bug real encontrado): el overlay de pantalla completa
+             de abajo (línea 83) existe para cerrar el menú al tocar afuera -
+             pero al ser un hermano fuera de <nav>, cualquier inconsistencia
+             de stacking entre su z-index y el de esta lista (ambos
+             posicionados "fixed") deja que algunos clics dentro del propio
+             desplegable terminen cerrando el menú en vez de seleccionar el
+             idioma, en vez de llegar al <button> real. stopPropagation acá
+             corta el problema de raíz: un clic adentro de la lista nunca
+             llega al overlay, sin depender de que el z-index se comporte
+             perfecto en todos los navegadores/zoom. Mismo patrón aplicado
+             al menú móvil más abajo. -->
+        <ul class="selector-idioma__lista" *ngIf="menuIdiomaAbierto" (click)="$event.stopPropagation()">
           <li *ngFor="let idioma of idiomasDisponibles">
             <button
               class="selector-idioma__opcion"
@@ -63,7 +74,7 @@
   </div>
 
   <!-- Menú móvil -->
-  <div class="barra-nav__menu-movil" [class.abierto]="menuAbierto">
+  <div class="barra-nav__menu-movil" [class.abierto]="menuAbierto" (click)="$event.stopPropagation()">
     <ul>
       <li><a (click)="irASeccion('inicio')">{{ 'nav.inicio' | translate }}</a></li>
       <li><a (click)="irASeccion('servicios')">{{ 'nav.servicios' | translate }}</a></li>
