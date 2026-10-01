@@ -21,6 +21,23 @@
     <!-- Controles derecha -->
     <div class="barra-nav__controles">
 
+      <!-- 2026-10-01 (decisión de Cristopher): "Ingresar" bajó de
+           protagonismo a propósito - es solo para 3 personas (los roles
+           internos), no para el público general, y el botón azul grande
+           hacía parecer que era un login/registro para cualquiera. Ahora
+           usa el mismo estilo que Inicio/Servicios/Nosotros/Contacto
+           (barra-nav__enlace), sin destacarse del resto. -->
+
+      <!-- 2026-09-29: el cambio de tema se sacó del sitio público a
+           propósito (decisión de Cristopher) - queda solo disponible
+           adentro, ya con sesión iniciada. El sitio público siempre en
+           modo claro. -->
+
+      <!-- Botón ingresar -->
+      <a routerLink="/ingresar" class="barra-nav__enlace barra-nav__enlace-ingresar" (click)="cerrarMenus()">
+        {{ 'nav.ingresar' | translate }}
+      </a>
+
       <!-- Cambiar idioma -->
       <div class="selector-idioma" [class.abierto]="menuIdiomaAbierto">
         <button class="selector-idioma__boton" (click)="alternarMenuIdioma()" [attr.aria-label]="'Idioma: ' + idiomaActual.nombre">
@@ -53,16 +70,6 @@
           </li>
         </ul>
       </div>
-
-      <!-- 2026-09-29: el cambio de tema se sacó del sitio público a
-           propósito (decisión de Cristopher) - queda solo disponible
-           adentro, ya con sesión iniciada. El sitio público siempre en
-           modo claro. -->
-
-      <!-- Botón ingresar -->
-      <a routerLink="/ingresar" class="boton boton-primario barra-nav__btn-ingresar" (click)="cerrarMenus()">
-        {{ 'nav.ingresar' | translate }}
-      </a>
 
       <!-- Hamburguesa móvil -->
       <button class="barra-nav__hamburguesa" [class.activo]="menuAbierto" (click)="alternarMenu()" aria-label="Menú">
