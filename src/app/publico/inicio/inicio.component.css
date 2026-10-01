@@ -316,9 +316,14 @@
 }
 
 .carrusel__fila {
+  /* 2026-10-01 (bug real encontrado): el riel tiene max-width:600px pero
+     ocupa todo el ancho del contenedor (que suele ser más ancho) - sin
+     justify-content, el espacio sobrante quedaba sin repartir a la
+     derecha, haciendo ver todo el carrusel corrido hacia la izquierda. */
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: var(--espacio-4);
   width: 100%;
 }

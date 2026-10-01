@@ -15,10 +15,11 @@
         <p class="pie-pagina__descripcion">{{ 'pie.descripcion' | translate }}</p>
       </div>
 
-      <!-- Columna servicios -->
+      <!-- Columna servicios - 2026-10-01: en 2 columnas para que la lista
+           de 6 no estire tanto el pie de página hacia abajo. -->
       <div class="pie-pagina__columna">
         <h4 class="pie-pagina__titulo-col">{{ 'nav.servicios' | translate }}</h4>
-        <ul class="pie-pagina__lista">
+        <ul class="pie-pagina__lista pie-pagina__lista--grid">
           <li>{{ 'servicios.eps.titulo' | translate }}</li>
           <li>{{ 'servicios.pension.titulo' | translate }}</li>
           <li>{{ 'servicios.arl.titulo' | translate }}</li>
@@ -60,14 +61,15 @@
     <!-- Separador -->
     <hr class="separador">
 
-    <!-- Copyright -->
+    <!-- Copyright - 2026-10-01: el símbolo ® ya indica marca registrada,
+         sobraba repetirlo en texto; "- Colombia" sobra también (el sitio
+         entero ya es de Colombia); ambas líneas centradas. -->
     <div class="pie-pagina__copyright">
       <p>
         &copy; {{ anioActual }} ANTURI MULTISERVICIOS&#174;.
         {{ 'pie.derechos' | translate }}.
-        <span class="pie-pagina__marca">{{ 'pie.marca' | translate }}</span>
       </p>
-      <p class="pie-pagina__ubicacion">Quimbaya, Quindío - Colombia</p>
+      <p class="pie-pagina__ubicacion">Quimbaya, Quindío</p>
     </div>
 
   </div>

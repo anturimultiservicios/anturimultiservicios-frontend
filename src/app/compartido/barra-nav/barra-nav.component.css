@@ -28,13 +28,12 @@
 
 /* Logo */
 .barra-nav__logo {
-  /* 2026-10-01 (diagnóstico temporal, a pedido de Cristopher): logo pasa a
-     la derecha y los controles (idioma/ingresar) a la izquierda, para
-     probar si el problema de clic es por estar en la esquina
-     superior-derecha de la ventana (zona de maximizar/restaurar de
-     Windows). Revertir si no cambia nada - ver orders de __menu y
-     __controles más abajo. */
-  order: 3;
+  /* 2026-10-01: logo al final (derecha) - confirmado que estar en la
+     esquina superior-derecha de la ventana le robaba clics a los
+     controles (zona de maximizar/restaurar de Windows), así que quedan
+     del lado izquierdo en vez de volver atrás. Orden final completo:
+     Ingresar(1) → menú(2) → idioma(3) → logo(4) → hamburguesa(5). */
+  order: 4;
   display: flex;
   align-items: center;
   gap: var(--espacio-3);
@@ -119,18 +118,33 @@
   right: var(--espacio-3);
 }
 
-/* Controles - temporalmente a la izquierda, ver nota en .barra-nav__logo */
-.barra-nav__controles {
+/* 2026-10-01: "Ingresar" ya no vive en un contenedor de controles
+   compartido con idioma - cada uno es su propio ítem flex directo de
+   .barra-nav__contenido, con su order propio (ver nota en .barra-nav__logo). */
+.barra-nav__enlace-ingresar {
   order: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-2);
   flex-shrink: 0;
 }
 
 /* Selector idioma */
 .selector-idioma {
+  order: 3;
   position: relative;
+  flex-shrink: 0;
+}
+
+/* 2026-10-01: versión "simple" junto al logo - sin botón/borde, solo
+   texto + flecha, para que no llame tanto la atención (decisión de
+   Cristopher). La lista desplegable mantiene su estilo normal. */
+.selector-idioma--simple .selector-idioma__boton {
+  border: none;
+  padding: var(--espacio-2);
+  background: transparent;
+}
+
+.selector-idioma--simple .selector-idioma__boton:hover {
+  background: var(--fondo-tarjeta-hover);
+  border-radius: var(--radio-md);
 }
 
 .selector-idioma__boton {
@@ -222,6 +236,7 @@
 
 /* Hamburguesa */
 .barra-nav__hamburguesa {
+  order: 5;
   display: none;
   flex-direction: column;
   justify-content: space-between;
