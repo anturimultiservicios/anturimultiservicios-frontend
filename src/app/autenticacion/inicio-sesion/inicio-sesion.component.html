@@ -1,4 +1,20 @@
-<div class="login-pagina">
+<!-- 2026-10-01 (decisión de Cristopher, seguridad): pantalla completa
+     propia - la contraseña SÍ era correcta, nada que ver con el
+     formulario de abajo, que ni siquiera se muestra mientras esto esté
+     activo. -->
+<div class="aviso-pantalla" *ngIf="fueraDeHorarioMensaje">
+  <div class="aviso-pantalla__tarjeta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+    <h2>Fuera de horario de acceso</h2>
+    <p>{{ fueraDeHorarioMensaje }}</p>
+    <button class="boton boton-primario" (click)="cerrarAvisoHorario()">Entendido</button>
+  </div>
+</div>
+
+<div class="login-pagina" *ngIf="!fueraDeHorarioMensaje">
 
   <!-- Panel izquierdo decorativo -->
   <div class="login-lateral">

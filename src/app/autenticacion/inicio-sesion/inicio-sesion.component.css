@@ -387,3 +387,34 @@
   font-weight: 600;
   background-color: var(--fondo-tarjeta-hover);
 }
+
+/* 2026-10-01: pantalla completa de "fuera de horario" - mismo estilo que
+   compartido/aviso-horario, duplicado a propósito acá porque el login no
+   pasa por AppComponent todavía con sesión (es antes de tener token). */
+.aviso-pantalla {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: var(--color-primario-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-6);
+}
+
+.aviso-pantalla__tarjeta {
+  background: var(--fondo-tarjeta);
+  border-radius: var(--radio-2xl);
+  padding: var(--espacio-10);
+  max-width: 420px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-3);
+  box-shadow: var(--sombra-xl);
+}
+
+.aviso-pantalla__tarjeta svg { color: var(--color-secundario); }
+.aviso-pantalla__tarjeta h2 { margin: 0; color: var(--texto-principal); }
+.aviso-pantalla__tarjeta p { margin: 0; color: var(--texto-secundario); }
