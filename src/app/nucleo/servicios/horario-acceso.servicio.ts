@@ -9,6 +9,24 @@ export interface EstadoHorarioAcceso {
   horaFin: number;
 }
 
+export interface ConfiguracionHorarioAcceso {
+  id: number;
+  activo: boolean;
+  horaInicio: number;
+  horaFin: number;
+  actualizadoEn: string;
+}
+
+export interface ExcepcionHorarioAcceso {
+  id: number;
+  usuarioId: number;
+  motivo: string | null;
+  vigenteDesde: string;
+  vigenteHasta: string;
+  usuario: { id: number; nombre: string; apellido: string; rol: string };
+  otorgadaPor: { id: number; nombre: string; apellido: string };
+}
+
 // 2026-10-01 (decisión de Cristopher, seguridad): ADMIN/SECRETARIA solo
 // pueden estar conectados de 7:00 a 19:00 hora Colombia - SUPER_ADMIN
 // nunca está restringido. Este servicio es el punto único donde vive el
@@ -31,6 +49,27 @@ export class HorarioAccesoServicio {
 
   consultarEstado(): Observable<EstadoHorarioAcceso> {
     return this.http.get<EstadoHorarioAcceso>(`${this.URL}/estado`);
+  }
+
+  // Gestión - exclusivo SUPER_ADMIN (el backend también lo exige)
+  obtenerConfiguracion(): Observable<ConfiguracionHorarioAcceso> {
+    return this.http.get<ConfiguracionHorarioAcceso>(`${this.URL}/configuracion`);
+  }
+
+  actualizarConfiguracion(datos: { activo?: boolean; horaInicio?: number; horaFin?: number }): Observable<ConfiguracionHorarioAcceso> {
+    return this.http.patch<ConfiguracionHorarioAcceso>(`${this.URL}/configuracion`, datos);
+  }
+
+  listarExcepciones(): Observable<ExcepcionHorarioAcceso[]> {
+    return this.http.get<ExcepcionHorarioAcceso[]>(`${this.URL}/excepciones`);
+  }
+
+  otorgarExcepcion(usuarioId: number, vigenteHasta: string, motivo: string): Observable<ExcepcionHorarioAcceso> {
+    return this.http.post<ExcepcionHorarioAcceso>(`${this.URL}/excepciones`, { usuarioId, vigenteHasta, motivo });
+  }
+
+  revocarExcepcion(id: number): Observable<any> {
+    return this.http.delete(`${this.URL}/excepciones/${id}`);
   }
 
   actualizarMinutosParaCierre(minutos: number | null): void {

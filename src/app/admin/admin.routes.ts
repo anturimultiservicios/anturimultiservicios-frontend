@@ -67,6 +67,11 @@ export const rutasAdmin: Routes = [
         loadComponent: () =>
           import('../compartido/calendario-pagos/calendario-pagos.component').then((m) => m.CalendarioPagosComponent),
       },
+      {
+        path: 'horario-acceso',
+        loadComponent: () =>
+          import('./horario-acceso/horario-acceso.component').then((m) => m.HorarioAccesoComponent),
+      },
     ],
   },
 ];
