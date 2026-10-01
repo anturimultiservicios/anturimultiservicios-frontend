@@ -1,65 +1,6 @@
-/* 2026-10-01: pie de página reescrito en dos franjas (antes era un solo
-   bloque azul con 3 columnas + copyright). Ver nota en el HTML. */
-
-/* Franja blanca: logo + descripción, lado a lado */
-.pie-pagina__marca-franja {
-  background: var(--fondo-tarjeta);
-  border-top: 1px solid var(--borde-color);
-  padding: var(--espacio-10) 0;
-}
-
-.pie-pagina__marca {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--espacio-8);
-  flex-wrap: wrap;
-}
-
-.pie-pagina__logo {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-3);
-  flex-shrink: 0;
-}
-
-.pie-pagina__logo-imagen {
-  height: 48px;
-  width: auto;
-}
-
-.pie-pagina__logo-texto {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.pie-pagina__logo-nombre {
-  font-family: var(--fuente-titulos);
-  font-size: var(--tamano-xl);
-  font-weight: 800;
-  color: var(--color-primario);
-  letter-spacing: 0.05em;
-}
-
-.pie-pagina__logo-sub {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--color-secundario);
-  letter-spacing: 0.12em;
-}
-
-.pie-pagina__descripcion {
-  color: var(--texto-secundario);
-  font-size: var(--tamano-sm);
-  line-height: 1.7;
-  margin: 0;
-  max-width: 480px;
-  text-align: right;
-}
-
-/* Franja azul: solo copyright - angosta, ya no carga 3 columnas de
-   contenido como antes. */
+/* 2026-10-01: pie de página reducido a una sola franja azul de copyright -
+   se sacaron logo/descripción y las columnas de Servicios/Contacto (ya
+   están arriba en la página). */
 .pie-pagina__copyright-franja {
   background: linear-gradient(135deg, var(--color-primario-oscuro) 0%, var(--color-primario) 100%);
   padding: var(--espacio-4) 0;
@@ -83,17 +24,4 @@
   color: rgba(255, 255, 255, 0.45);
   font-size: var(--tamano-xs);
   font-weight: 300;
-}
-
-/* Responsividad */
-@media (max-width: 600px) {
-  .pie-pagina__marca {
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-  }
-
-  .pie-pagina__descripcion {
-    text-align: left;
-  }
 }
