@@ -10,6 +10,7 @@ interface ItemMenu {
   etiqueta: string;
   ruta: string;
   soloAdmin?: boolean;
+  soloSuperAdmin?: boolean;
   badge?: number;
 }
 
@@ -33,10 +34,12 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'usuarios', etiqueta: 'Usuarios del sistema', ruta: '/admin/usuarios', soloAdmin: true },
     { icono: 'mis-dispositivos', etiqueta: 'Mis dispositivos', ruta: '/admin/mis-dispositivos' },
     { icono: 'dispositivos', etiqueta: 'Administrar dispositivos', ruta: '/admin/dispositivos', soloAdmin: true },
+    { icono: 'horario', etiqueta: 'Horario de acceso', ruta: '/admin/horario-acceso', soloSuperAdmin: true },
     { icono: 'configuracion', etiqueta: 'Configuración', ruta: '/admin/configuracion' },
   ];
 
   esAdmin = false;
+  esSuperAdmin = false;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -46,6 +49,7 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.esAdmin = this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
+    this.esSuperAdmin = this.auth.tieneRol(['SUPER_ADMIN']);
     if (this.esAdmin) {
       this.solicitudesServicio.contarPendientes().pipe(takeUntil(this.destroy$)).subscribe((n) => {
         const idx = this.items.findIndex((i) => i.icono === 'solicitudes');
