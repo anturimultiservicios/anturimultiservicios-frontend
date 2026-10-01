@@ -28,6 +28,13 @@
 
 /* Logo */
 .barra-nav__logo {
+  /* 2026-10-01 (diagnóstico temporal, a pedido de Cristopher): logo pasa a
+     la derecha y los controles (idioma/ingresar) a la izquierda, para
+     probar si el problema de clic es por estar en la esquina
+     superior-derecha de la ventana (zona de maximizar/restaurar de
+     Windows). Revertir si no cambia nada - ver orders de __menu y
+     __controles más abajo. */
+  order: 3;
   display: flex;
   align-items: center;
   gap: var(--espacio-3);
@@ -70,6 +77,7 @@
 
 /* Menú escritorio */
 .barra-nav__menu {
+  order: 2;
   display: flex;
   list-style: none;
   gap: var(--espacio-2);
@@ -111,8 +119,9 @@
   right: var(--espacio-3);
 }
 
-/* Controles derecha */
+/* Controles - temporalmente a la izquierda, ver nota en .barra-nav__logo */
 .barra-nav__controles {
+  order: 1;
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
