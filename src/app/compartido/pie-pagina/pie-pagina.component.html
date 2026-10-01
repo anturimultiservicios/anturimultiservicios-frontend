@@ -1,26 +1,8 @@
-<!-- 2026-10-01 (decisión de Cristopre): Servicios y Contacto se sacaron
-     del pie de página - ya están arriba en la propia página (carrusel de
-     servicios y sección de contacto), eran redundantes acá abajo. El pie
-     queda en dos franjas: una blanca con el logo (sin fondo azul que le
-     quitaba visual) + descripción, y una azul angosta solo con el
-     copyright. -->
+<!-- 2026-10-01 (decisión de Cristopher): se saca también el logo +
+     descripción - quedaba feo con poco contenido alrededor. El pie queda
+     solo con la franja azul de copyright. -->
 <footer class="pie-pagina">
 
-  <!-- Franja blanca: logo + descripción -->
-  <div class="pie-pagina__marca-franja">
-    <div class="pie-pagina__marca contenedor">
-      <div class="pie-pagina__logo">
-        <img src="/assets/imagenes/logo-2026.png" alt="Anturi Multiservicios" class="pie-pagina__logo-imagen">
-        <div class="pie-pagina__logo-texto">
-          <span class="pie-pagina__logo-nombre">ANTURI</span>
-          <span class="pie-pagina__logo-sub">MULTISERVICIOS</span>
-        </div>
-      </div>
-      <p class="pie-pagina__descripcion">{{ 'pie.descripcion' | translate }}</p>
-    </div>
-  </div>
-
-  <!-- Franja azul: copyright -->
   <div class="pie-pagina__copyright-franja">
     <div class="pie-pagina__copyright contenedor">
       <p>

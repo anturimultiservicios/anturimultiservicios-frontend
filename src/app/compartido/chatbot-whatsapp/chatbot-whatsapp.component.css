@@ -175,48 +175,108 @@
   border-color: #1DA851;
 }
 
-/* Botón principal flotante */
-.wa-boton-flotante {
-  width: 60px;
-  height: 60px;
+/* Ícono del bot en el encabezado del panel - trazo, no sólido */
+.wa-panel__avatar .wa-icono-robot {
+  fill: none;
+  stroke: white;
+  color: white;
+}
+
+/* 2026-10-01 (decisión de Cristopher): mascota robot completa - estilo
+   WALL-E/EVA, chiquito y llamativo, en vez del círculo verde con un
+   ícono adentro. Saluda con el brazo derecho en loop. */
+.wa-robot {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  filter: drop-shadow(0 6px 16px rgba(27, 50, 112, 0.35));
+  transition: transform var(--transicion-normal);
+}
+
+.wa-robot:hover {
+  transform: scale(1.06) translateY(-2px);
+}
+
+.wa-robot__svg {
+  width: 70px;
+  height: 91px;
+  display: block;
+}
+
+.wa-robot__pieza {
+  fill: var(--color-primario);
+}
+
+.wa-robot__cabeza {
+  fill: #FFFFFF;
+}
+
+.wa-robot__ojo {
+  fill: var(--color-primario);
+}
+
+.wa-robot__brillo {
+  fill: #FFFFFF;
+}
+
+.wa-robot__luz {
+  fill: var(--color-secundario);
+}
+
+.wa-robot__trazo {
+  stroke: var(--color-primario);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* Brazo que saluda - gira desde el hombro, en loop continuo */
+.wa-robot__brazo {
+  transform-origin: 85px 70px;
+  animation: saludoMano 1.8s ease-in-out infinite;
+}
+
+@keyframes saludoMano {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-22deg); }
+  50% { transform: rotate(-6deg); }
+  75% { transform: rotate(-22deg); }
+}
+
+/* Botón compacto para cerrar, una vez el panel ya está abierto - la
+   mascota solo hace falta para invitar a entrar. */
+.wa-boton-cerrar {
+  width: 48px;
+  height: 48px;
   border-radius: var(--radio-redondo);
-  background: #25D366;
+  background: var(--color-primario);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.5);
+  color: white;
+  box-shadow: var(--sombra-lg);
   transition: all var(--transicion-normal);
   flex-shrink: 0;
 }
 
-.wa-boton-flotante:hover {
-  background: #1DA851;
-  transform: scale(1.08);
-  box-shadow: 0 8px 28px rgba(37, 211, 102, 0.6);
+.wa-boton-cerrar:hover {
+  background: var(--color-primario-claro);
+  transform: scale(1.06);
 }
 
-.wa-boton-flotante svg {
-  width: 32px;
-  height: 32px;
-  fill: white;
-  transition: all var(--transicion-normal);
+.wa-boton-cerrar svg {
+  width: 20px;
+  height: 20px;
 }
 
-.wa-boton-flotante:hover svg {
-  transform: scale(1.05);
-}
-
-/* 2026-10-01: la carita de robot es de trazo (fill:none + stroke), a
-   diferencia del ícono viejo de WhatsApp que era sólido - pisa el
-   fill:white genérico de arriba, que si no lo rellenaría como un blob
-   sólido en vez de dejar ver el trazo. */
-.wa-boton-flotante .wa-icono-robot,
-.wa-panel__avatar .wa-icono-robot {
-  fill: none;
-  stroke: white;
-  color: white;
+@media (max-width: 480px) {
+  .wa-robot__svg {
+    width: 58px;
+    height: 76px;
+  }
 }
 
 /* Burbuja de saludo */
