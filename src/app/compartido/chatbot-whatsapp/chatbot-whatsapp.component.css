@@ -182,9 +182,10 @@
   color: white;
 }
 
-/* 2026-10-01 (decisión de Cristopher): mascota robot completa - estilo
-   WALL-E/EVA, chiquito y llamativo, en vez del círculo verde con un
-   ícono adentro. Saluda con el brazo derecho en loop. */
+/* 2026-10-01 (decisión de Cristopher): mascota real (foto recortada) en
+   vez del dibujo SVG - chiquito y llamativo. Es una imagen plana, así que
+   en vez de mover solo el brazo (imposible sin partes separadas), se
+   balancea el personaje completo en loop - da sensación de saludo. */
 .wa-robot {
   background: none;
   border: none;
@@ -192,56 +193,26 @@
   padding: 0;
   flex-shrink: 0;
   filter: drop-shadow(0 6px 16px rgba(27, 50, 112, 0.35));
-  transition: transform var(--transicion-normal);
+  transition: transform var(--transicion-rapida);
 }
 
 .wa-robot:hover {
-  transform: scale(1.06) translateY(-2px);
+  transform: scale(1.06);
 }
 
-.wa-robot__svg {
-  width: 70px;
-  height: 91px;
+.wa-robot__img {
   display: block;
+  height: 92px;
+  width: auto;
+  transform-origin: bottom center;
+  animation: saludoBalanceo 2.2s ease-in-out infinite;
 }
 
-.wa-robot__pieza {
-  fill: var(--color-primario);
-}
-
-.wa-robot__cabeza {
-  fill: #FFFFFF;
-}
-
-.wa-robot__ojo {
-  fill: var(--color-primario);
-}
-
-.wa-robot__brillo {
-  fill: #FFFFFF;
-}
-
-.wa-robot__luz {
-  fill: var(--color-secundario);
-}
-
-.wa-robot__trazo {
-  stroke: var(--color-primario);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-/* Brazo que saluda - gira desde el hombro, en loop continuo */
-.wa-robot__brazo {
-  transform-origin: 85px 70px;
-  animation: saludoMano 1.8s ease-in-out infinite;
-}
-
-@keyframes saludoMano {
+@keyframes saludoBalanceo {
   0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-22deg); }
-  50% { transform: rotate(-6deg); }
-  75% { transform: rotate(-22deg); }
+  25% { transform: rotate(-4deg); }
+  50% { transform: rotate(2deg); }
+  75% { transform: rotate(-4deg); }
 }
 
 /* Botón compacto para cerrar, una vez el panel ya está abierto - la
@@ -273,9 +244,8 @@
 }
 
 @media (max-width: 480px) {
-  .wa-robot__svg {
-    width: 58px;
-    height: 76px;
+  .wa-robot__img {
+    height: 74px;
   }
 }
 
