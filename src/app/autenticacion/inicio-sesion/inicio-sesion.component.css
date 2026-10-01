@@ -295,3 +295,95 @@
     min-height: 100vh;
   }
 }
+
+/* 2026-09-30 (bug real encontrado): el selector de idioma de esta pantalla
+   usa las mismas clases que la barra-nav pública (selector-idioma__*),
+   pero nunca se le copió el estilo correspondiente acá - por eso se veía
+   como una lista sin formato, con los puntos de lista por defecto del
+   navegador. Mismas reglas que barra-nav.component.css, sin cambios. */
+.selector-idioma {
+  position: relative;
+}
+
+.selector-idioma__boton {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  padding: var(--espacio-2) var(--espacio-3);
+  background: transparent;
+  border: 1.5px solid var(--borde-color);
+  border-radius: var(--radio-md);
+  color: var(--texto-secundario);
+  font-size: var(--tamano-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transicion-rapida);
+}
+
+.selector-idioma__boton:hover {
+  border-color: var(--color-primario);
+  color: var(--color-primario);
+}
+
+.selector-idioma__bandera {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.selector-idioma__codigo {
+  font-size: var(--tamano-xs);
+  font-weight: 700;
+}
+
+.selector-idioma__flecha {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--transicion-rapida);
+}
+
+.selector-idioma.abierto .selector-idioma__flecha {
+  transform: rotate(180deg);
+}
+
+.selector-idioma__lista {
+  position: absolute;
+  top: calc(100% + var(--espacio-2));
+  right: 0;
+  background-color: var(--fondo-tarjeta);
+  border: 1px solid var(--borde-color);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-lg);
+  list-style: none;
+  min-width: 160px;
+  overflow: hidden;
+  animation: escalar var(--transicion-rapida) ease forwards;
+  z-index: calc(var(--z-flotante) + 10);
+  margin: 0;
+  padding: 0;
+}
+
+.selector-idioma__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  padding: var(--espacio-3) var(--espacio-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--tamano-sm);
+  color: var(--texto-secundario);
+  transition: background-color var(--transicion-rapida);
+}
+
+.selector-idioma__opcion:hover {
+  background-color: var(--fondo-tarjeta-hover);
+  color: var(--color-primario);
+}
+
+.selector-idioma__opcion.activo {
+  color: var(--color-primario);
+  font-weight: 600;
+  background-color: var(--fondo-tarjeta-hover);
+}
