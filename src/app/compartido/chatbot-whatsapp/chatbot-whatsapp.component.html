@@ -66,35 +66,16 @@
     </div>
   </div>
 
-  <!-- 2026-10-01 (decisión de Cristopher): mascota robot completa en vez
-       del círculo verde con un ícono adentro - estilo WALL-E/EVA, chiquito
-       y llamativo, saludando con la mano. Cierra con un botón simple
+  <!-- 2026-10-01 (decisión de Cristopher): mascota robot real (foto
+       recortada, sin el fondo) en vez del dibujo a mano/círculo verde -
+       chiquito y llamativo, saludando. Como es una foto plana (no por
+       partes), el brazo no se puede mover aislado sin arruinar la imagen -
+       en cambio se balancea el personaje completo, da la sensación de
+       saludo sin arriesgar que se vea mal. Cierra con un botón simple
        compacto cuando el panel ya está abierto (la mascota solo invita a
        entrar, una vez adentro no hace falta). -->
   <button *ngIf="!abierto" class="wa-robot" (click)="abrir()" [attr.aria-label]="'chatbot.titulo' | translate">
-    <svg viewBox="0 0 100 130" class="wa-robot__svg">
-      <!-- pies -->
-      <rect class="wa-robot__pieza" x="30" y="114" width="15" height="10" rx="4"></rect>
-      <rect class="wa-robot__pieza" x="55" y="114" width="15" height="10" rx="4"></rect>
-      <!-- brazo izquierdo (quieto) -->
-      <rect class="wa-robot__pieza" x="8" y="72" width="13" height="32" rx="6.5"></rect>
-      <!-- cuerpo -->
-      <rect class="wa-robot__pieza" x="20" y="66" width="60" height="50" rx="16"></rect>
-      <circle class="wa-robot__luz" cx="50" cy="91" r="6"></circle>
-      <!-- brazo derecho (saluda) -->
-      <g class="wa-robot__brazo">
-        <rect class="wa-robot__pieza" x="78" y="68" width="13" height="32" rx="6.5"></rect>
-      </g>
-      <!-- antena -->
-      <circle class="wa-robot__luz" cx="50" cy="6" r="4"></circle>
-      <line class="wa-robot__trazo" x1="50" y1="10" x2="50" y2="18"></line>
-      <!-- cabeza -->
-      <rect class="wa-robot__cabeza" x="18" y="18" width="64" height="48" rx="22"></rect>
-      <ellipse class="wa-robot__ojo" cx="36" cy="42" rx="8" ry="10"></ellipse>
-      <ellipse class="wa-robot__ojo" cx="64" cy="42" rx="8" ry="10"></ellipse>
-      <circle class="wa-robot__brillo" cx="33" cy="38" r="2.3"></circle>
-      <circle class="wa-robot__brillo" cx="61" cy="38" r="2.3"></circle>
-    </svg>
+    <img src="/assets/imagenes/bot-anturi.png" alt="Anturi" class="wa-robot__img">
   </button>
 
   <button *ngIf="abierto" class="wa-boton-cerrar" (click)="cerrar()" aria-label="Cerrar chat">
