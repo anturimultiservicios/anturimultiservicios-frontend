@@ -72,6 +72,16 @@ export const rutasAdmin: Routes = [
         loadComponent: () =>
           import('./horario-acceso/horario-acceso.component').then((m) => m.HorarioAccesoComponent),
       },
+      {
+        path: 'hallazgos-reconciliacion',
+        loadComponent: () =>
+          import('./hallazgos-reconciliacion/lista-hallazgos/lista-hallazgos.component').then((m) => m.ListaHallazgosComponent),
+      },
+      {
+        path: 'hallazgos-reconciliacion/:id',
+        loadComponent: () =>
+          import('./hallazgos-reconciliacion/detalle-hallazgo/detalle-hallazgo.component').then((m) => m.DetalleHallazgoComponent),
+      },
     ],
   },
 ];

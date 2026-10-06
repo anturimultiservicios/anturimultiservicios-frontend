@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 import { SolicitudesServicio } from '../../nucleo/servicios/solicitudes.servicio';
+import { HallazgosReconciliacionServicio } from '../../nucleo/servicios/hallazgos-reconciliacion.servicio';
 
 interface ItemMenu {
   icono: string;
@@ -35,6 +36,7 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'mis-dispositivos', etiqueta: 'Mis dispositivos', ruta: '/admin/mis-dispositivos' },
     { icono: 'dispositivos', etiqueta: 'Administrar dispositivos', ruta: '/admin/dispositivos', soloAdmin: true },
     { icono: 'horario', etiqueta: 'Horario de acceso', ruta: '/admin/horario-acceso', soloSuperAdmin: true },
+    { icono: 'hallazgos', etiqueta: 'Reconciliación empleadores', ruta: '/admin/hallazgos-reconciliacion', soloAdmin: true },
     { icono: 'configuracion', etiqueta: 'Configuración', ruta: '/admin/configuracion' },
   ];
 
@@ -45,6 +47,7 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
   constructor(
     private auth: AutenticacionServicio,
     private solicitudesServicio: SolicitudesServicio,
+    private hallazgosServicio: HallazgosReconciliacionServicio,
   ) {}
 
   ngOnInit(): void {
@@ -54,6 +57,15 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
       this.solicitudesServicio.contarPendientes().pipe(takeUntil(this.destroy$)).subscribe((n) => {
         const idx = this.items.findIndex((i) => i.icono === 'solicitudes');
         if (idx >= 0) this.items[idx].badge = n;
+      });
+
+      // Alerta persistente (FASE 8, 2026-10-06): hallazgos sin cédula real
+      // (centinela PENDIENTE) - no desaparece sola, solo cuando alguien
+      // complete la identificación real desde el detalle del hallazgo.
+      this.hallazgosServicio.listar().pipe(takeUntil(this.destroy$)).subscribe((lista) => {
+        const n = lista.filter((h) => h.estado === 'PENDIENTE_IDENTIFICACION').length;
+        const idx = this.items.findIndex((i) => i.icono === 'hallazgos');
+        if (idx >= 0 && n > 0) this.items[idx].badge = n;
       });
     }
   }
