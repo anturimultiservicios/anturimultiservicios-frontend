@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, of, Observable } from 'rxjs';
 import {
   HallazgosReconciliacionServicio,
   HallazgoReconciliacion,
   EvidenciaHallazgo,
   IDENTIFICACION_PENDIENTE,
 } from '../../../nucleo/servicios/hallazgos-reconciliacion.servicio';
+import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
+import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 
 // Categorías conocidas hasta hoy (las mismas usadas en los 237 documentos
 // reales subidos en FASE 8) - lista fija por ahora. Pendiente: Cristopher
@@ -26,16 +28,23 @@ const ESTADOS = ['PENDIENTE_MIGRACION_B', 'REVISADO', 'DESCARTADO', 'PENDIENTE_I
 @Component({
   selector: 'anturi-detalle-hallazgo',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="pagina-detalle" *ngIf="!cargando">
       <div class="pagina-encabezado">
-        <button class="boton boton-texto" routerLink="/admin/hallazgos-reconciliacion">← Volver</button>
+        <button class="boton boton-texto" (click)="volver()">← Volver</button>
       </div>
 
       <div *ngIf="error" class="tarjeta estado-vacio"><p>{{ error }}</p></div>
 
       <ng-container *ngIf="hallazgo">
+        <!-- Solicitudes pendientes sobre este hallazgo (visibles en tiempo real) -->
+        <div *ngIf="solicitudesPendientes.length > 0" class="tarjeta alerta-solicitud">
+          <div *ngFor="let s of solicitudesPendientes">
+            ⏳ <strong>{{ s.tipo }}</strong> pedida por {{ s.creadoPor.nombre }} {{ s.creadoPor.apellido }} - "{{ s.motivo }}" - pendiente de aprobación de un ADMIN/SUPER_ADMIN.
+          </div>
+        </div>
+
         <!-- ALERTA de identificación pendiente -->
         <div *ngIf="hallazgo.numeroIdentificacion === PENDIENTE" class="tarjeta alerta-pendiente">
           <div class="alerta-pendiente__icono">⚠</div>
@@ -51,7 +60,7 @@ const ESTADOS = ['PENDIENTE_MIGRACION_B', 'REVISADO', 'DESCARTADO', 'PENDIENTE_I
             </select>
             <input type="text" class="campo-input" placeholder="Número real" [(ngModel)]="correccionNumero">
             <button class="boton boton-primario" [disabled]="!correccionNumero || guardandoCorreccion" (click)="guardarCorreccion()">
-              {{ guardandoCorreccion ? 'Guardando...' : 'Guardar identificación real' }}
+              {{ guardandoCorreccion ? 'Guardando...' : (esSecretaria ? 'Pedir corrección (necesita aprobación)' : 'Guardar identificación real') }}
             </button>
           </div>
         </div>
@@ -86,7 +95,7 @@ const ESTADOS = ['PENDIENTE_MIGRACION_B', 'REVISADO', 'DESCARTADO', 'PENDIENTE_I
               <textarea class="campo-input" rows="2" [(ngModel)]="formObservaciones"></textarea>
             </div>
             <button class="boton boton-secundario" [disabled]="guardandoEstado" (click)="guardarEstado()">
-              {{ guardandoEstado ? 'Guardando...' : 'Guardar' }}
+              {{ guardandoEstado ? 'Guardando...' : (esSecretaria ? 'Pedir aprobación' : 'Guardar') }}
             </button>
           </div>
         </div>
@@ -135,8 +144,8 @@ const ESTADOS = ['PENDIENTE_MIGRACION_B', 'REVISADO', 'DESCARTADO', 'PENDIENTE_I
           </div>
 
           <div *ngIf="!cargandoEvidencias && evidencias.length > 0" class="docs-lista">
-            <div *ngFor="let ev of evidencias" class="doc-tarjeta" (click)="abrirDocumento(ev)">
-              <div class="doc-tarjeta__icono">
+            <div *ngFor="let ev of evidencias" class="doc-tarjeta">
+              <div class="doc-tarjeta__icono" (click)="abrirDocumento(ev)">
                 <svg *ngIf="servicio.esPdf(ev.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24" style="color: #dc2626;">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
                 </svg>
@@ -144,10 +153,11 @@ const ESTADOS = ['PENDIENTE_MIGRACION_B', 'REVISADO', 'DESCARTADO', 'PENDIENTE_I
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
               </div>
-              <div class="doc-tarjeta__info">
+              <div class="doc-tarjeta__info" (click)="abrirDocumento(ev)">
                 <span class="doc-tarjeta__tipo">{{ ev.tipo }}</span>
                 <span class="doc-tarjeta__meta">{{ ev.tamanoKb }} KB</span>
               </div>
+              <button class="doc-tarjeta__eliminar" title="Eliminar" (click)="eliminarDocumento(ev)">✕</button>
             </div>
           </div>
         </div>
@@ -201,11 +211,16 @@ const ESTADOS = ['PENDIENTE_MIGRACION_B', 'REVISADO', 'DESCARTADO', 'PENDIENTE_I
     .alerta-error { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3); background: rgba(239,68,68,0.08); color: #b91c1c; border-radius: var(--radio-md); margin-bottom: var(--espacio-3); font-size: var(--tamano-sm); }
 
     .docs-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--espacio-3); }
-    .doc-tarjeta { display: flex; flex-direction: column; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3); border: 1px solid var(--borde-color); border-radius: var(--radio-md); cursor: pointer; text-align: center; }
+    .doc-tarjeta { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3); border: 1px solid var(--borde-color); border-radius: var(--radio-md); text-align: center; }
     .doc-tarjeta:hover { background: var(--fondo-tarjeta-hover, rgba(0,0,0,0.02)); }
+    .doc-tarjeta__icono, .doc-tarjeta__info { cursor: pointer; }
     .doc-tarjeta__info { display: flex; flex-direction: column; gap: 2px; }
     .doc-tarjeta__tipo { font-size: var(--tamano-xs); font-weight: 600; }
     .doc-tarjeta__meta { font-size: 0.7rem; color: var(--texto-terciario); }
+    .doc-tarjeta__eliminar { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(239,68,68,0.1); color: #b91c1c; cursor: pointer; font-size: 0.7rem; line-height: 1; }
+    .doc-tarjeta__eliminar:hover { background: rgba(239,68,68,0.2); }
+
+    .alerta-solicitud { background: rgba(37,99,235,0.08); border: 1.5px solid rgba(37,99,235,0.25); padding: var(--espacio-4); font-size: var(--tamano-sm); display: flex; flex-direction: column; gap: var(--espacio-2); }
 
     .estado-carga { display: flex; flex-direction: column; align-items: center; gap: var(--espacio-4); padding: var(--espacio-10); color: var(--texto-terciario); }
     .spinner { width: 40px; height: 40px; border: 3px solid var(--borde-color, #e5e7eb); border-top-color: var(--color-primario); border-radius: 50%; animation: girar 0.8s linear infinite; }
@@ -242,16 +257,34 @@ export class DetalleHallazgoComponent implements OnInit {
   progresoSubida = 0;
   errorSubida = '';
 
+  esSecretaria = false;
+  solicitudesPendientes: any[] = [];
+
   constructor(
     public servicio: HallazgosReconciliacionServicio,
+    private solicitudesServicio: SolicitudesServicio,
+    private auth: AutenticacionServicio,
     private route: ActivatedRoute,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
+    this.esSecretaria = this.auth.tieneRol(['SECRETARIA']);
     this.route.params.subscribe((params) => {
       this.hallazgoId = +params['id'];
       this.cargar();
+    });
+  }
+
+  private cargarSolicitudesPendientes(): void {
+    this.solicitudesServicio.listar('PENDIENTE').pipe(
+      catchError(() => of([])),
+    ).subscribe((lista) => {
+      this.solicitudesPendientes = lista.filter(
+        (s) =>
+          (s.tabla === 'hallazgos_reconciliacion' && s.registroId === this.hallazgoId) ||
+          (s.tabla === 'evidencias_hallazgo' && this.evidencias.some((e) => e.id === s.registroId)),
+      );
     });
   }
 
@@ -288,38 +321,97 @@ export class DetalleHallazgoComponent implements OnInit {
     ).subscribe((lista) => {
       this.evidencias = lista;
       this.cargandoEvidencias = false;
+      this.cargarSolicitudesPendientes();
     });
   }
 
-  irAHallazgo(id: number): void {
-    this.router.navigate(['/admin', 'hallazgos-reconciliacion', id]);
+  protected get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
   }
 
+  irAHallazgo(id: number): void {
+    this.router.navigate([this.prefijo, 'hallazgos-reconciliacion', id]);
+  }
+
+  volver(): void {
+    this.router.navigate([this.prefijo, 'hallazgos-reconciliacion']);
+  }
+
+  // Secretaria: pide la edición vía SolicitudCambio (tabla='hallazgos_reconciliacion'),
+  // un ADMIN/SUPER_ADMIN la aprueba después desde "Solicitudes". ADMIN/
+  // SUPER_ADMIN: aplica directo, como siempre.
   guardarEstado(): void {
     this.guardandoEstado = true;
-    this.servicio.actualizar(this.hallazgoId, { estado: this.formEstado, observaciones: this.formObservaciones })
-      .pipe(catchError(() => { this.guardandoEstado = false; return of(null); }))
-      .subscribe((actualizado) => {
+    const datosNuevos = { estado: this.formEstado, observaciones: this.formObservaciones };
+
+    const operacion: Observable<any> = this.esSecretaria
+      ? this.solicitudesServicio.crear({
+          tipo: 'EDICION', tabla: 'hallazgos_reconciliacion', registroId: this.hallazgoId,
+          motivo: this.formObservaciones || `Cambiar estado a ${this.formEstado}`,
+          datosNuevos,
+        })
+      : this.servicio.actualizar(this.hallazgoId, datosNuevos);
+
+    operacion.pipe(catchError(() => { this.guardandoEstado = false; return of(null); }))
+      .subscribe((resultado) => {
         this.guardandoEstado = false;
-        if (actualizado) this.hallazgo = actualizado;
+        if (!resultado) return;
+        if (this.esSecretaria) {
+          this.cargarSolicitudesPendientes();
+        } else {
+          this.hallazgo = resultado as HallazgoReconciliacion;
+        }
       });
   }
 
   guardarCorreccion(): void {
     if (!this.correccionNumero) return;
     this.guardandoCorreccion = true;
-    this.servicio.actualizar(this.hallazgoId, {
+    const datosNuevos = {
       tipoIdentificacion: this.correccionTipo,
       numeroIdentificacion: this.correccionNumero,
       estado: 'REVISADO',
-    }).pipe(catchError(() => { this.guardandoCorreccion = false; return of(null); }))
-      .subscribe((actualizado) => {
+    };
+
+    const operacion: Observable<any> = this.esSecretaria
+      ? this.solicitudesServicio.crear({
+          tipo: 'EDICION', tabla: 'hallazgos_reconciliacion', registroId: this.hallazgoId,
+          motivo: `Identificación real conseguida: ${this.correccionTipo} ${this.correccionNumero}`,
+          datosNuevos,
+        })
+      : this.servicio.actualizar(this.hallazgoId, datosNuevos);
+
+    operacion.pipe(catchError(() => { this.guardandoCorreccion = false; return of(null); }))
+      .subscribe((resultado) => {
         this.guardandoCorreccion = false;
-        if (actualizado) {
-          this.hallazgo = actualizado;
-          this.formEstado = actualizado.estado;
+        if (!resultado) return;
+        if (this.esSecretaria) {
+          this.cargarSolicitudesPendientes();
+        } else {
+          this.hallazgo = resultado as HallazgoReconciliacion;
+          this.formEstado = this.hallazgo.estado;
         }
       });
+  }
+
+  // Eliminar un documento: ADMIN/SUPER_ADMIN directo; Secretaria pide la
+  // eliminación vía SolicitudCambio (tabla='evidencias_hallazgo') - el
+  // documento sigue visible hasta que se apruebe de verdad.
+  eliminarDocumento(ev: EvidenciaHallazgo): void {
+    const motivo = window.prompt('¿Por qué se elimina este documento? (obligatorio)');
+    if (!motivo || !motivo.trim()) return;
+
+    const operacion = this.esSecretaria
+      ? this.solicitudesServicio.crear({ tipo: 'ELIMINACION', tabla: 'evidencias_hallazgo', registroId: ev.id, motivo: motivo.trim() })
+      : this.servicio.eliminarEvidencia(ev.id, motivo.trim());
+
+    operacion.subscribe(() => {
+      if (this.esSecretaria) {
+        this.cargarSolicitudesPendientes();
+      } else {
+        this.cargarEvidencias();
+      }
+    });
   }
 
   onArchivoSeleccionado(evento: Event): void {

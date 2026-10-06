@@ -80,6 +80,17 @@ export class HallazgosReconciliacionServicio {
     return `${this.URL_EVIDENCIAS}/${id}/ver`;
   }
 
+  // 2026-10-06 (permisos Secretaria): ADMIN/SUPER_ADMIN únicamente, directo
+  // - Secretaria usa SolicitudesServicio.crear() (tabla='evidencias_hallazgo')
+  // en vez de llamar estos 2 métodos.
+  cambiarTipoEvidencia(id: number, tipo: string, motivo: string): Observable<EvidenciaHallazgo> {
+    return this.http.patch<EvidenciaHallazgo>(`${this.URL_EVIDENCIAS}/${id}/tipo`, { tipo, motivo });
+  }
+
+  eliminarEvidencia(id: number, motivo: string): Observable<any> {
+    return this.http.request('delete', `${this.URL_EVIDENCIAS}/${id}`, { body: { motivo } });
+  }
+
   esImagen(extension: string | null): boolean {
     if (!extension) return false;
     return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension.toLowerCase().replace('.', ''));

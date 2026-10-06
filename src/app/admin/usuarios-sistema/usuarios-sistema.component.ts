@@ -234,6 +234,13 @@ interface FormUsuario {
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeVerPagos"> Puede ver pagos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeRegistrarPagos"> Puede registrar pagos</label>
           </div>
+          <div class="permisos-grupo">
+            <h4 class="permisos-grupo__titulo">Reconciliación de empleadores</h4>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeVerHallazgosReconciliacion"> Puede ver hallazgos</label>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeSubirEvidenciasHallazgo"> Puede subir documentos (incluye salud/incapacidades)</label>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEditarHallazgosReconciliacion"> Puede pedir editar hallazgos/documentos</label>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEliminarEvidenciasHallazgo"> Puede pedir eliminar documentos</label>
+          </div>
           <div class="campo-grupo" style="margin-top: var(--espacio-2);">
             <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
             <input type="text" class="campo-input" [(ngModel)]="motivoPermisos" placeholder="Ej: empieza a encargarse también de las solicitudes de afiliados">
@@ -654,6 +661,10 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeEliminarDocumentos: this.formPermisos.puedeEliminarDocumentos,
       puedeVerPagos: this.formPermisos.puedeVerPagos,
       puedeRegistrarPagos: this.formPermisos.puedeRegistrarPagos,
+      puedeVerHallazgosReconciliacion: this.formPermisos.puedeVerHallazgosReconciliacion,
+      puedeSubirEvidenciasHallazgo: this.formPermisos.puedeSubirEvidenciasHallazgo,
+      puedeEditarHallazgosReconciliacion: this.formPermisos.puedeEditarHallazgosReconciliacion,
+      puedeEliminarEvidenciasHallazgo: this.formPermisos.puedeEliminarEvidenciasHallazgo,
     };
     this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload).pipe(
       catchError(err => {
@@ -812,6 +823,10 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeSubirDocumentos: false,
       puedeVerPagos: false,
       puedeRegistrarPagos: false,
+      puedeVerHallazgosReconciliacion: false,
+      puedeSubirEvidenciasHallazgo: false,
+      puedeEditarHallazgosReconciliacion: false,
+      puedeEliminarEvidenciasHallazgo: false,
     };
   }
 }

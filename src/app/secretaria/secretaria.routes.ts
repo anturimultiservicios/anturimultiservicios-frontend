@@ -46,6 +46,20 @@ export const rutasSecretaria: Routes = [
           ),
       },
       {
+        path: 'hallazgos-reconciliacion',
+        loadComponent: () =>
+          import('../admin/hallazgos-reconciliacion/lista-hallazgos/lista-hallazgos.component').then(
+            (m) => m.ListaHallazgosComponent
+          ),
+      },
+      {
+        path: 'hallazgos-reconciliacion/:id',
+        loadComponent: () =>
+          import('../admin/hallazgos-reconciliacion/detalle-hallazgo/detalle-hallazgo.component').then(
+            (m) => m.DetalleHallazgoComponent
+          ),
+      },
+      {
         path: 'configuracion',
         loadComponent: () =>
           import('../admin/configuracion/configuracion.component').then(

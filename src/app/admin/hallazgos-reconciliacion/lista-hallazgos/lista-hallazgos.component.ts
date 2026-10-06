@@ -242,7 +242,11 @@ export class ListaHallazgosComponent implements OnInit {
     return 'badge-pendiente';
   }
 
+  protected get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
+
   irADetalle(id: number): void {
-    this.router.navigate(['/admin', 'hallazgos-reconciliacion', id]);
+    this.router.navigate([this.prefijo, 'hallazgos-reconciliacion', id]);
   }
 }

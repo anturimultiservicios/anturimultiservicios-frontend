@@ -6,6 +6,7 @@ import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 import { SolicitudesServicio } from '../../nucleo/servicios/solicitudes.servicio';
+import { HallazgosReconciliacionServicio } from '../../nucleo/servicios/hallazgos-reconciliacion.servicio';
 import { AlcanceServicio } from '../../nucleo/servicios/alcance.servicio';
 import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
 
@@ -85,6 +86,21 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
                 <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">
                   Mis solicitudes
                   <span *ngIf="solicitudesPendientes > 0" class="badge-nav-texto">{{ solicitudesPendientes }}</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a routerLink="/secretaria/hallazgos-reconciliacion" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Reconciliación empleadores' : ''">
+                <span class="barra-lateral__icono" style="position: relative;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                  <span *ngIf="hallazgosPendientes > 0" class="badge-nav">{{ hallazgosPendientes }}</span>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">
+                  Reconciliación empleadores
+                  <span *ngIf="hallazgosPendientes > 0" class="badge-nav-texto">{{ hallazgosPendientes }}</span>
                 </span>
               </a>
             </li>
@@ -291,6 +307,7 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
   menuPerfil = false;
   tiempoSesion = '';
   solicitudesPendientes = 0;
+  hallazgosPendientes = 0;
   sinAlcanceAsignado = false;
 
   private timerSesion: ReturnType<typeof setInterval> | null = null;
@@ -303,6 +320,7 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
     public auth: AutenticacionServicio,
     private solicitudesServicio: SolicitudesServicio,
     private alcanceServicio: AlcanceServicio,
+    private hallazgosServicio: HallazgosReconciliacionServicio,
   ) {}
 
   ngOnInit(): void {
@@ -316,6 +334,15 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
 
     // Cargar conteo de solicitudes propias pendientes
     this.cargarSolicitudesPropias();
+
+    // Alerta persistente (FASE 8, 2026-10-06): hallazgos sin cédula real -
+    // no desaparece sola, solo cuando alguien complete la identificación.
+    this.hallazgosServicio.listar().pipe(
+      catchError(() => of([])),
+      takeUntil(this.destruir$),
+    ).subscribe((lista) => {
+      this.hallazgosPendientes = lista.filter((h) => h.estado === 'PENDIENTE_IDENTIFICACION').length;
+    });
 
     // Aviso de alcance vacío (29/08) - ver hallazgo arriba en el template.
     this.alcanceServicio.miAlcance().pipe(
