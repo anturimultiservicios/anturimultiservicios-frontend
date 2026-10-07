@@ -101,6 +101,13 @@ export const rutasSecretaria: Routes = [
             (m) => m.RecordatoriosLlamadaComponent
           ),
       },
+      {
+        path: 'registrar-pago',
+        loadComponent: () =>
+          import('../compartido/registrar-pago/registrar-pago.component').then(
+            (m) => m.RegistrarPagoComponent
+          ),
+      },
     ],
   },
 ];

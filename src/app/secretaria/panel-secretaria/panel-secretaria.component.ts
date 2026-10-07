@@ -96,6 +96,17 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
+              <a routerLink="/secretaria/registrar-pago" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Registrar pago' : ''">
+                <span class="barra-lateral__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Registrar pago</span>
+              </a>
+            </li>
+            <li>
               <a routerLink="/secretaria/mis-solicitudes" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis solicitudes' : ''">
                 <span class="barra-lateral__icono" style="position: relative;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

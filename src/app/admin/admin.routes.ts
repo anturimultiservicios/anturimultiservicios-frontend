@@ -80,6 +80,11 @@ export const rutasAdmin: Routes = [
           import('../compartido/recordatorios-llamada/recordatorios-llamada.component').then((m) => m.RecordatoriosLlamadaComponent),
       },
       {
+        path: 'registrar-pago',
+        loadComponent: () =>
+          import('../compartido/registrar-pago/registrar-pago.component').then((m) => m.RegistrarPagoComponent),
+      },
+      {
         path: 'horario-acceso',
         loadComponent: () =>
           import('./horario-acceso/horario-acceso.component').then((m) => m.HorarioAccesoComponent),

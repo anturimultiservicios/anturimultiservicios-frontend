@@ -105,11 +105,12 @@ export class AfiliadosServicio {
 
   constructor(private http: HttpClient) {}
 
-  listar(busqueda?: string, estado?: string, sucursalId?: number, pagina = 1, porPagina = 50): Observable<{ datos: Afiliado[]; total: number; pagina: number; porPagina: number; totalPaginas: number }> {
+  listar(busqueda?: string, estado?: string, sucursalId?: number, pagina = 1, porPagina = 50, empresaId?: number): Observable<{ datos: Afiliado[]; total: number; pagina: number; porPagina: number; totalPaginas: number }> {
     let params = new HttpParams();
     if (busqueda) params = params.set('busqueda', busqueda);
     if (estado) params = params.set('estado', estado);
     if (sucursalId) params = params.set('sucursalId', sucursalId.toString());
+    if (empresaId) params = params.set('empresaId', empresaId.toString());
     params = params.set('pagina', pagina.toString());
     params = params.set('porPagina', porPagina.toString());
     return this.http.get<{ datos: Afiliado[]; total: number; pagina: number; porPagina: number; totalPaginas: number }>(this.URL, { params });

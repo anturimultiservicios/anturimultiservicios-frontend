@@ -35,6 +35,27 @@ export interface RegistrarPagoDto {
   referencia?: string;
 }
 
+export type CanalPago = 'EFECTIVO' | 'TRANSFERENCIA';
+
+// 2026-10-07 (pantalla de "marcar como pagado"): un pago completo cubre
+// todos los seguros reales del afiliado de una vez - ver nota en
+// pagos.servicio.ts (backend) y registrar-pago.component.ts.
+export interface PagoRegistrado {
+  id: number;
+  monto: number | string;
+  canal: CanalPago | null;
+  mesesCubiertos: number | null;
+  fechaPago: string;
+  afiliado: { id: number; nombres: string; apellidos: string; cedula: string } | null;
+  registradoPor: { id: number; nombre: string; apellido: string } | null;
+}
+
+export interface ResumenPagos {
+  totalRecibido: number;
+  porCanal: { EFECTIVO: number; TRANSFERENCIA: number; SIN_CANAL: number };
+  pagos: PagoRegistrado[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class PagosServicio {
   private readonly URL = `${entorno.urlApi}/pagos`;
@@ -43,6 +64,15 @@ export class PagosServicio {
 
   registrar(dto: RegistrarPagoDto): Observable<Pago> {
     return this.http.post<Pago>(this.URL, dto);
+  }
+
+  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, referencia?: string): Observable<any> {
+    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos: 1, referencia });
+  }
+
+  resumen(desde: string, hasta: string): Observable<ResumenPagos> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta);
+    return this.http.get<ResumenPagos>(`${this.URL}/resumen`, { params });
   }
 
   listarPorAfiliado(afiliadoId: number): Observable<Pago[]> {
