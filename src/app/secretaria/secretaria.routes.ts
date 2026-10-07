@@ -94,6 +94,13 @@ export const rutasSecretaria: Routes = [
             (m) => m.CalendarioPagosComponent
           ),
       },
+      {
+        path: 'recordatorios-llamada',
+        loadComponent: () =>
+          import('../compartido/recordatorios-llamada/recordatorios-llamada.component').then(
+            (m) => m.RecordatoriosLlamadaComponent
+          ),
+      },
     ],
   },
 ];
