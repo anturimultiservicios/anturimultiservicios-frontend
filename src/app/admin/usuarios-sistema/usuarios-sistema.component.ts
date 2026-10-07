@@ -6,6 +6,7 @@ import { UsuariosServicio, UsuarioSistema, CrearUsuarioDto } from '../../nucleo/
 import { PermisoSecretaria } from '../../nucleo/modelos/usuario.modelo';
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
 import { AlcanceServicio, AlcanceUsuario } from '../../nucleo/servicios/alcance.servicio';
+import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 interface FormUsuario {
   nombre: string;
@@ -129,6 +130,18 @@ interface FormUsuario {
                     <rect x="14" y="3" width="7" height="7"></rect>
                     <rect x="14" y="14" width="7" height="7"></rect>
                     <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                </button>
+                <button
+                  *ngIf="esSuperAdmin && u.id !== idUsuarioActual && u.rol !== 'SUPER_ADMIN'"
+                  class="boton boton-icono"
+                  title="Cambiar rol"
+                  style="color: #b45309;"
+                  (click)="abrirModalCambiarRol(u)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                   </svg>
                 </button>
                 <button
@@ -401,6 +414,40 @@ interface FormUsuario {
         </div>
       </div>
     </div>
+
+    <!-- MODAL: Cambiar rol (SUPER_ADMIN-only) -->
+    <div *ngIf="modalCambiarRol" class="modal-overlay" (click)="cerrarModalCambiarRol()">
+      <div class="modal-confirm" (click)="$event.stopPropagation()">
+        <h3 class="modal-confirm__titulo">Cambiar rol</h3>
+        <p class="modal-confirm__texto">
+          Cuenta de <strong>{{ usuarioRol?.nombre }} {{ usuarioRol?.apellido }}</strong> -
+          rol actual: <strong>{{ etiquetaRol(usuarioRol?.rol || '') }}</strong>.
+        </p>
+        <div class="campo-grupo" style="margin-top: var(--espacio-4);">
+          <label class="campo-etiqueta">Nuevo rol <span class="requerido">*</span></label>
+          <select class="campo-input" [(ngModel)]="nuevoRolSeleccionado">
+            <option value="ADMIN">Administrador</option>
+            <option value="SECRETARIA">Asistente</option>
+          </select>
+        </div>
+        <div class="campo-grupo" style="margin-top: var(--espacio-3);">
+          <label class="campo-etiqueta">Motivo <span class="requerido">*</span></label>
+          <input type="text" class="campo-input" [(ngModel)]="motivoRol" placeholder="Ej: pasa a encargarse de administración">
+        </div>
+        <div *ngIf="mensajeError" class="alerta-error" style="margin-top: var(--espacio-3);">{{ mensajeError }}</div>
+        <div class="modal-confirm__acciones">
+          <button class="boton boton-secundario" (click)="cerrarModalCambiarRol()">Cancelar</button>
+          <button
+            class="boton boton-primario"
+            (click)="confirmarCambioRol()"
+            [disabled]="cambiandoRolId !== null || !motivoRol.trim() || nuevoRolSeleccionado === usuarioRol?.rol"
+          >
+            <span *ngIf="cambiandoRolId !== null" class="spinner-inline"></span>
+            {{ cambiandoRolId !== null ? 'Guardando...' : 'Cambiar rol' }}
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
@@ -527,13 +574,27 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   cambiandoEstadoId: number | null = null;
   motivoEstado = '';
 
+  // Modal cambiar rol (SUPER_ADMIN-only)
+  modalCambiarRol = false;
+  usuarioRol: UsuarioSistema | null = null;
+  nuevoRolSeleccionado: 'ADMIN' | 'SECRETARIA' = 'SECRETARIA';
+  motivoRol = '';
+  cambiandoRolId: number | null = null;
+
+  esSuperAdmin = false;
+  idUsuarioActual: number | null = null;
+
   private destruir$ = new Subject<void>();
 
   constructor(
     private usuariosServicio: UsuariosServicio,
     private empresasServicio: EmpresasServicio,
     private alcanceServicio: AlcanceServicio,
-  ) {}
+    private auth: AutenticacionServicio,
+  ) {
+    this.esSuperAdmin = this.auth.tieneRol(['SUPER_ADMIN']);
+    this.idUsuarioActual = this.auth.usuarioActual?.id ?? null;
+  }
 
   ngOnInit(): void {
     this.cargarUsuarios();
@@ -883,6 +944,40 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       if (res !== null) {
         const nombre = this.usuarioEstado?.activo ? 'desactivado' : 'activado';
         this.mensajeExito = `Usuario ${nombre} correctamente.`;
+        this.cargarUsuarios();
+        setTimeout(() => { this.mensajeExito = ''; }, 4000);
+      }
+    });
+  }
+
+  // ── ROL ───────────────────────────────────────────────────
+  abrirModalCambiarRol(u: UsuarioSistema): void {
+    this.usuarioRol = u;
+    this.nuevoRolSeleccionado = u.rol === 'ADMIN' ? 'SECRETARIA' : 'ADMIN';
+    this.motivoRol = '';
+    this.mensajeError = '';
+    this.modalCambiarRol = true;
+  }
+
+  cerrarModalCambiarRol(): void {
+    this.modalCambiarRol = false;
+    this.usuarioRol = null;
+  }
+
+  confirmarCambioRol(): void {
+    if (!this.usuarioRol || !this.motivoRol.trim()) return;
+    this.cambiandoRolId = this.usuarioRol.id;
+    this.mensajeError = '';
+    this.usuariosServicio.cambiarRol(this.usuarioRol.id, this.nuevoRolSeleccionado, this.motivoRol.trim()).pipe(
+      catchError(err => {
+        this.mensajeError = err?.error?.message || 'Error al cambiar el rol del usuario.';
+        return of(null);
+      }),
+      finalize(() => { this.cambiandoRolId = null; })
+    ).subscribe(res => {
+      if (res) {
+        this.modalCambiarRol = false;
+        this.mensajeExito = `Rol de ${this.usuarioRol?.nombre} actualizado correctamente.`;
         this.cargarUsuarios();
         setTimeout(() => { this.mensajeExito = ''; }, 4000);
       }
