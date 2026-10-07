@@ -200,6 +200,16 @@
   transform: scale(1.06);
 }
 
+.wa-robot__video {
+  display: block;
+  height: 92px;
+  width: 92px;
+  object-fit: cover;
+  border-radius: 50%;
+  mix-blend-mode: multiply;
+  background: transparent;
+}
+
 .wa-robot__img {
   display: block;
   height: 92px;

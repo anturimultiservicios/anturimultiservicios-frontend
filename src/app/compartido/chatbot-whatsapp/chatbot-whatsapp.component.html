@@ -66,16 +66,22 @@
     </div>
   </div>
 
-  <!-- 2026-10-01 (decisión de Cristopher): mascota robot real (foto
-       recortada, sin el fondo) en vez del dibujo a mano/círculo verde -
-       chiquito y llamativo, saludando. Como es una foto plana (no por
-       partes), el brazo no se puede mover aislado sin arruinar la imagen -
-       en cambio se balancea el personaje completo, da la sensación de
-       saludo sin arriesgar que se vea mal. Cierra con un botón simple
-       compacto cuando el panel ya está abierto (la mascota solo invita a
-       entrar, una vez adentro no hace falta). -->
+  <!-- 2026-10-07 (video real de Cristopher): reemplaza la foto estática
+       del 2026-10-01 - aquella no podía mover el brazo por separado sin
+       arruinar la imagen ("en cambio se balancea el personaje completo"),
+       este video sí trae el saludo real. Fondo blanco sólido del video
+       (no tiene alpha, confirmado: códec h264/yuv420p) - se usa
+       mix-blend-mode:multiply para que el blanco desaparezca visualmente
+       sobre cualquier fondo de la página, sin reeditar el archivo.
+       poster = la foto vieja, se ve mientras el video carga. -->
   <button *ngIf="!abierto" class="wa-robot" (click)="abrir()" [attr.aria-label]="'chatbot.titulo' | translate">
-    <img src="/assets/imagenes/bot-anturi.png" alt="Anturi" class="wa-robot__img">
+    <video
+      class="wa-robot__video"
+      src="/assets/bot/bot-anturi.mp4"
+      poster="/assets/imagenes/bot-anturi.png"
+      autoplay loop muted playsinline
+      disablepictureinpicture
+    ></video>
   </button>
 
   <button *ngIf="abierto" class="wa-boton-cerrar" (click)="cerrar()" aria-label="Cerrar chat">
