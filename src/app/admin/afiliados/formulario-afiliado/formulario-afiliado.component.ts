@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl, GeneroAfiliado } from '../../../nucleo/servicios/afiliados.servicio';
+import { MotorLiquidacionServicio, PlantillaLiquidacion, ResultadoMotorLiquidacion } from '../../../nucleo/servicios/motor-liquidacion.servicio';
+import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 
 interface ErroresCampo {
   nombres?: string;
@@ -41,9 +44,16 @@ interface Porcentajes {
   icbf: number;
 }
 
+// 2026-10-07 (hallazgo real, verificado contra plantillas_liquidacion reales
+// vía SQL directo - tipos 5-19, "Ind. Voluntario ARL — Salud, Pensión y ARL"):
+// INDEPENDIENTE_VOLUNTARIO_ARL SÍ cotiza salud+pensión igual que CONTRATISTA
+// - "Voluntario" se refiere a que el ARL no es obligatorio para un
+// independiente, no a que salud/pensión "no apliquen". El dato de acá
+// decía salud:0/pension:0 - estaba mal, nunca se había verificado contra
+// el motor real porque nunca se había llamado.
 const PORCENTAJES_POR_TIPO: Record<TipoAfiliacion, Porcentajes> = {
   INDEPENDIENTE_VOLUNTARIO_ARL: {
-    salud: 0, pension: 0,
+    salud: 12.5, pension: 16,
     saludEmpleador: 0, pensionEmpleador: 0,
     caja: 0, sena: 0, icbf: 0,
   },
@@ -178,13 +188,17 @@ const TIPOS: TipoAfiliacionInfo[] = [
         </h4>
         <div class="porcentajes-grid">
           <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL'">
+            <div class="pct-item">
+              <span class="pct-label">Salud</span>
+              <span class="pct-valor">12.5%</span>
+            </div>
+            <div class="pct-item">
+              <span class="pct-label">Pensión</span>
+              <span class="pct-valor">16%</span>
+            </div>
             <div class="pct-item pct-item--arl">
               <span class="pct-label">ARL (clase {{ form.claseRiesgoArl || '?' }})</span>
               <span class="pct-valor">{{ form.porcentajeArl || '—' }}%</span>
-            </div>
-            <div class="pct-item pct-item--nota">
-              <span class="pct-label">Salud / Pensión</span>
-              <span class="pct-valor">No aplica</span>
             </div>
           </ng-container>
           <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA'">
@@ -418,7 +432,20 @@ const TIPOS: TipoAfiliacionInfo[] = [
                 name="porcentajeArl" placeholder="—" min="0" max="100" step="0.001" readonly>
             </div>
 
-            <ng-container *ngIf="tipoSeleccionado !== 'INDEPENDIENTE_VOLUNTARIO_ARL'">
+            <!-- Nivel de Caja de Compensación - solo independientes (empresa ya trae su propio % fijo).
+                 2026-10-07: antes no existía este selector - el nivel quedaba fijo en 0% sin que
+                 nadie lo eligiera, pese a que las 3 variantes (0%/0.6%/2%) son reales en las
+                 plantillas (verificado por SQL directo). -->
+            <div class="campo-grupo" *ngIf="tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' || tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA'">
+              <label class="campo-etiqueta">Caja de Compensación <span class="requerido">*</span></label>
+              <select class="campo-input" [(ngModel)]="nivelCajaFraccion" name="nivelCajaFraccion" (change)="alCambiarCaja()">
+                <option [ngValue]="0">No cotiza (0%)</option>
+                <option [ngValue]="0.006">0.6%</option>
+                <option [ngValue]="0.02">2%</option>
+              </select>
+            </div>
+
+            <ng-container>
               <div class="campo-grupo">
                 <label class="campo-etiqueta">Salud empleado (%)</label>
                 <input type="number" class="campo-input campo-input--readonly" [(ngModel)]="form.porcentajeSalud"
@@ -488,18 +515,22 @@ const TIPOS: TipoAfiliacionInfo[] = [
           </h3>
           <div class="campos-grid">
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Valor base</label>
+              <label class="campo-etiqueta">Base de cotización - IBC</label>
               <input type="number" class="campo-input" [(ngModel)]="form.valor" name="valor"
-                placeholder="0" min="0" (ngModelChange)="calcularTotal()">
+                placeholder="0" min="0" (ngModelChange)="alCambiarValorOComision()">
+              <span class="campo-ayuda">Sobre este valor se calculan los aportes reales (salud/pensión/ARL/caja).</span>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Comisión</label>
+              <label class="campo-etiqueta">Comisión Anturi</label>
               <input type="number" class="campo-input" [(ngModel)]="form.comision" name="comision"
                 placeholder="0" min="0" (ngModelChange)="calcularTotal()">
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Total pago (calculado)</label>
+              <label class="campo-etiqueta">Total a pagar (calculado)</label>
               <input type="number" class="campo-input campo-input--readonly" [value]="totalPago" readonly>
+              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Aportes reales ({{ resultadoSimulacion.totalAPagar | number }}) + comisión Anturi.</span>
+              <span class="campo-ayuda" *ngIf="!resultadoSimulacion && !simulando && puedeSimular">Complete clase de riesgo{{ (tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' || tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA') ? ', caja' : '' }} y base de cotización para ver el cálculo real.</span>
+              <span class="campo-ayuda" *ngIf="!puedeSimular">La simulación del cálculo real solo está disponible para Admin/Super Admin - un administrador puede revisarla luego en el detalle.</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">4 x Mil</label>
@@ -509,6 +540,34 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Cesantías</label>
               <input type="number" class="campo-input" [(ngModel)]="form.cesantias" name="cesantias" placeholder="0" min="0">
             </div>
+          </div>
+
+          <!-- Desglose real del motor K→Q - "¿por qué este valor dio así?" -->
+          <div *ngIf="simulando" class="simulacion-cargando">
+            <span class="spinner-inline"></span> Calculando con el motor real...
+          </div>
+          <div *ngIf="errorSimulacion" class="alerta-error" style="margin-top: var(--espacio-3);">{{ errorSimulacion }}</div>
+          <div *ngIf="resultadoSimulacion && !simulando" class="desglose-simulacion">
+            <h4 class="desglose-titulo">Desglose real (motor de liquidación)</h4>
+            <table class="tabla-desglose">
+              <thead>
+                <tr><th>Concepto</th><th>Base</th><th>Tarifa</th><th>Valor</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let linea of resultadoSimulacion.lineas">
+                  <td>{{ linea.concepto }}</td>
+                  <td>{{ linea.base | number }}</td>
+                  <td>{{ linea.tarifa | number:'1.0-3' }}%</td>
+                  <td>{{ linea.valor | number }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td colspan="3">Seguridad social + mora</td><td>{{ resultadoSimulacion.totalValorSeguridadSocial | number }}</td></tr>
+                <tr><td colspan="3">4x1000</td><td>{{ resultadoSimulacion.valorCuatroXMil | number }}</td></tr>
+                <tr><td colspan="3">Administración</td><td>{{ resultadoSimulacion.valorAdministracion | number }}</td></tr>
+                <tr class="fila-total"><td colspan="3">Total aportes (sin comisión Anturi)</td><td>{{ resultadoSimulacion.totalAPagar | number }}</td></tr>
+              </tfoot>
+            </table>
           </div>
         </div>
 
@@ -650,12 +709,38 @@ const TIPOS: TipoAfiliacionInfo[] = [
 
     .spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; margin-right: var(--espacio-2); }
     @keyframes girar { to { transform: rotate(360deg); } }
+
+    .simulacion-cargando { display: flex; align-items: center; gap: var(--espacio-2); margin-top: var(--espacio-4); color: var(--texto-terciario); font-size: var(--tamano-sm); }
+    .simulacion-cargando .spinner-inline { border: 2px solid var(--borde-color, #e5e7eb); border-top-color: var(--color-primario); margin-right: 0; }
+
+    .desglose-simulacion { margin-top: var(--espacio-5); padding-top: var(--espacio-4); border-top: 1px solid var(--borde-color); }
+    .desglose-titulo { font-size: var(--tamano-sm); font-weight: 600; margin: 0 0 var(--espacio-3); color: var(--texto-secundario); }
+    .tabla-desglose { width: 100%; border-collapse: collapse; font-size: var(--tamano-sm); }
+    .tabla-desglose th { text-align: left; padding: var(--espacio-2) var(--espacio-3); font-weight: 600; color: var(--texto-terciario); border-bottom: 1px solid var(--borde-color); }
+    .tabla-desglose td { padding: var(--espacio-2) var(--espacio-3); border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .tabla-desglose th:not(:first-child), .tabla-desglose td:not(:first-child) { text-align: right; }
+    .tabla-desglose tfoot td { border-bottom: none; color: var(--texto-secundario); }
+    .tabla-desglose .fila-total td { font-weight: 700; color: var(--texto-principal); font-size: var(--tamano-base); border-top: 1.5px solid var(--borde-color); padding-top: var(--espacio-3); }
   `]
 })
-export class FormularioAfiliadoComponent implements OnInit {
+export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   readonly tipos = TIPOS;
 
   tipoSeleccionado: TipoAfiliacion | null = null;
+
+  // ── Motor de liquidación real (K→Q), conectado 2026-10-07 ──────────────
+  // Antes "Total pago" era literalmente valor+comisión tecleados a mano -
+  // ver AUDITORIA-CONECTIVIDAD-FRONTEND-BACKEND-2026-10-06.md. Ahora
+  // "Valor base" se usa como IBC real para el motor, que calcula línea por
+  // línea con las mismas reglas que el Excel - comisión de Anturi se suma
+  // aparte, nunca se mezcla con los aportes de seguridad social.
+  plantillas: PlantillaLiquidacion[] = [];
+  nivelCajaFraccion = 0; // 0 | 0.006 | 0.02 - fracción real de plantillas_liquidacion, no %
+  resultadoSimulacion: ResultadoMotorLiquidacion | null = null;
+  simulando = false;
+  errorSimulacion = '';
+  private simular$ = new Subject<void>();
+  private destruir$ = new Subject<void>();
 
   form: Omit<CrearAfiliadoDto, 'genero'> & { genero: GeneroAfiliado | ''; confirmarCorreo?: string; caja?: string; cesantias?: number; cuatroXMil?: number } = {
     nombres: '',
@@ -702,10 +787,21 @@ export class FormularioAfiliadoComponent implements OnInit {
   guardando = false;
   totalPago = 0;
 
+  // El motor /simular/* es ADMIN/SUPER_ADMIN-only por diseño del backend
+  // (misma razón que ParametrosLegales - valores que afectan cuánto se le
+  // cobra a un cliente). Secretaria SÍ puede crear afiliados, pero no ve
+  // la simulación en vivo - mismo criterio, no se cambia el permiso del
+  // backend desde el frontend.
+  puedeSimular = false;
+
   constructor(
     private afiliadosServicio: AfiliadosServicio,
+    private motorServicio: MotorLiquidacionServicio,
+    private auth: AutenticacionServicio,
     private router: Router
-  ) {}
+  ) {
+    this.puedeSimular = this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
+  }
 
   private get prefijo(): string {
     return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
@@ -713,6 +809,99 @@ export class FormularioAfiliadoComponent implements OnInit {
 
   ngOnInit(): void {
     this.form.fechaIngreso = new Date().toISOString().substring(0, 10);
+
+    if (this.puedeSimular) {
+      this.motorServicio.listarPlantillas().subscribe({
+        next: (lista) => { this.plantillas = lista; },
+        error: () => { /* el formulario sigue siendo usable sin simulación en vivo */ },
+      });
+
+      this.simular$.pipe(
+        debounceTime(500),
+        takeUntil(this.destruir$),
+      ).subscribe(() => this.ejecutarSimulacion());
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destruir$.next();
+    this.destruir$.complete();
+  }
+
+  alCambiarCaja(): void {
+    // form.porcentajeCaja se guarda en el Afiliado en escala de porcentaje
+    // (0.6 = "0.6%"), igual que el resto del formulario - nivelCajaFraccion
+    // es la fracción real de plantillas_liquidacion (0.006) que se usa para
+    // buscar la plantilla correcta.
+    this.form.porcentajeCaja = this.nivelCajaFraccion * 100 || undefined;
+    this.simular$.next();
+  }
+
+  // Busca la fila real de plantillas_liquidacion que corresponde a este tipo
+  // + clase de riesgo ARL + nivel de caja elegidos - nunca se adivina un id,
+  // se busca contra el catálogo real (mismo que ya usa el motor viejo).
+  private buscarTipoPlantilla(): number | null {
+    if (!this.tipoSeleccionado || !this.form.claseRiesgoArl) return null;
+    const claseNum = { I: 1, II: 2, III: 3, IV: 4, V: 5 }[this.form.claseRiesgoArl];
+    const textoLibro = this.tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' ? 'Voluntario' : 'Contrato';
+    const fila = this.plantillas.find((p) =>
+      p.activa &&
+      p.libro.includes(textoLibro) &&
+      p.claseRiesgo === claseNum &&
+      Math.abs(p.porcentajeCaja - this.nivelCajaFraccion) < 0.0001,
+    );
+    return fila ? fila.tipo : null;
+  }
+
+  // Dispara una simulación real contra el motor K→Q - no reemplaza "Guardar
+  // afiliado" (eso sigue creando el Afiliado tal cual), solo muestra en vivo
+  // cuánto daría de pagar con los datos actuales, igual que pedía Cristopher.
+  private ejecutarSimulacion(): void {
+    this.errorSimulacion = '';
+    const ibc = Number(this.form.valor) || 0;
+
+    if (!this.tipoSeleccionado || ibc <= 0) {
+      this.resultadoSimulacion = null;
+      this.calcularTotal();
+      return;
+    }
+
+    if (this.tipoSeleccionado === 'EMPRESA_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_NO_EXONERADA') {
+      if (!this.form.claseRiesgoArl) { this.resultadoSimulacion = null; this.calcularTotal(); return; }
+      this.simulando = true;
+      this.motorServicio.simularEmpleador({
+        modalidad: this.tipoSeleccionado,
+        ibc,
+        claseRiesgoArl: this.form.claseRiesgoArl,
+      }).subscribe({
+        next: (r) => { this.resultadoSimulacion = r; this.simulando = false; this.calcularTotal(); },
+        error: (err) => {
+          this.simulando = false;
+          this.resultadoSimulacion = null;
+          this.errorSimulacion = err?.error?.message || 'No se pudo simular el cálculo real.';
+          this.calcularTotal();
+        },
+      });
+      return;
+    }
+
+    // Independiente (Voluntario ARL / Contratista)
+    const tipoPlantilla = this.buscarTipoPlantilla();
+    if (!tipoPlantilla) {
+      this.resultadoSimulacion = null;
+      this.calcularTotal();
+      return;
+    }
+    this.simulando = true;
+    this.motorServicio.simularIndependiente({ tipoPlantilla, ibc }).subscribe({
+      next: (r) => { this.resultadoSimulacion = r; this.simulando = false; this.calcularTotal(); },
+      error: (err) => {
+        this.simulando = false;
+        this.resultadoSimulacion = null;
+        this.errorSimulacion = err?.error?.message || 'No se pudo simular el cálculo real.';
+        this.calcularTotal();
+      },
+    });
   }
 
   seleccionarTipo(tipo: TipoAfiliacion): void {
@@ -728,12 +917,15 @@ export class FormularioAfiliadoComponent implements OnInit {
     this.form.porcentajeIcbf = pct.icbf || undefined;
     // Mantener ARL si ya se había seleccionado clase de riesgo
     if (this.form.claseRiesgoArl) this.actualizarArl();
+    this.resultadoSimulacion = null;
+    this.simular$.next();
   }
 
   actualizarArl(): void {
     if (this.form.claseRiesgoArl) {
       this.form.porcentajeArl = ARL_POR_CLASE[this.form.claseRiesgoArl];
     }
+    this.simular$.next();
   }
 
   etiquetaTipo(tipo: TipoAfiliacion): string {
@@ -744,11 +936,26 @@ export class FormularioAfiliadoComponent implements OnInit {
     return TIPOS.find(t => t.valor === tipo)?.descripcion ?? '';
   }
 
+  // 2026-10-07: antes esto era SIEMPRE valor+comisión, aunque el "valor"
+  // tecleado no tuviera ninguna relación con lo que de verdad corresponde
+  // pagar por ley. Ahora, si ya hay un resultado real del motor K→Q
+  // (ejecutarSimulacion()), el total usa ESE cálculo real + la comisión de
+  // Anturi encima - la comisión nunca se mezcla con los aportes, se suma
+  // aparte. Si todavía no hay simulación (faltan datos, o falló), cae al
+  // comportamiento anterior para no dejar el campo vacío sin sentido.
   calcularTotal(): void {
-    const valor = Number(this.form.valor) || 0;
     const comision = Number(this.form.comision) || 0;
-    this.totalPago = valor + comision;
+    if (this.resultadoSimulacion) {
+      this.totalPago = this.resultadoSimulacion.totalAPagar + comision;
+    } else {
+      const valor = Number(this.form.valor) || 0;
+      this.totalPago = valor + comision;
+    }
     this.form.totalPago = this.totalPago;
+  }
+
+  alCambiarValorOComision(): void {
+    this.simular$.next();
   }
 
   validarCampo(campo: keyof ErroresCampo): void {
