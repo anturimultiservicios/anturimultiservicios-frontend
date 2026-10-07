@@ -610,9 +610,22 @@ const TIPOS: TipoAfiliacionInfo[] = [
                 <option value="SUSPENDIDO">Suspendido</option>
               </select>
             </div>
-            <div class="campo-grupo">
+            <div class="campo-grupo campo-grupo--ancho">
               <label class="campo-etiqueta">Fecha de ingreso</label>
-              <input type="date" class="campo-input" [(ngModel)]="form.fechaIngreso" name="fechaIngreso">
+              <div class="fecha-dmy">
+                <select class="campo-input" [(ngModel)]="fechaIngDia" name="fechaIngDia" (ngModelChange)="actualizarFechaIngreso()">
+                  <option [ngValue]="null">Día</option>
+                  <option *ngFor="let d of diasDelMes" [ngValue]="d">{{ d }}</option>
+                </select>
+                <select class="campo-input" [(ngModel)]="fechaIngMes" name="fechaIngMes" (ngModelChange)="actualizarFechaIngreso()">
+                  <option [ngValue]="null">Mes</option>
+                  <option *ngFor="let m of meses" [ngValue]="m.valor">{{ m.nombre }}</option>
+                </select>
+                <select class="campo-input" [(ngModel)]="fechaIngAnio" name="fechaIngAnio" (ngModelChange)="actualizarFechaIngreso()">
+                  <option [ngValue]="null">Año</option>
+                  <option *ngFor="let a of aniosIngreso" [ngValue]="a">{{ a }}</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -823,6 +836,13 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   // Más reciente primero - quien se afilia casi siempre es adulto, no bebé.
   readonly aniosNacimiento = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 16 - i);
 
+  // Fecha de ingreso, mismo patrón - puede ser de años atrás (afiliado
+  // viejo que se está registrando ahora) o de hoy (lo normal).
+  fechaIngDia: number | null = null;
+  fechaIngMes: number | null = null;
+  fechaIngAnio: number | null = null;
+  readonly aniosIngreso = Array.from({ length: 40 }, (_, i) => new Date().getFullYear() - i);
+
   errores: ErroresCampo = {};
   errorGlobal = '';
   guardando = false;
@@ -852,7 +872,11 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.form.fechaIngreso = new Date().toISOString().substring(0, 10);
+    const hoy = new Date();
+    this.fechaIngDia = hoy.getDate();
+    this.fechaIngMes = hoy.getMonth() + 1;
+    this.fechaIngAnio = hoy.getFullYear();
+    this.actualizarFechaIngreso();
 
     if (this.puedeSimular) {
       this.motorServicio.listarPlantillas().subscribe({
@@ -1128,6 +1152,16 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       this.form.fechaNacimiento = `${this.fechaNacAnio}-${mm}-${dd}`;
     } else {
       this.form.fechaNacimiento = '';
+    }
+  }
+
+  actualizarFechaIngreso(): void {
+    if (this.fechaIngDia && this.fechaIngMes && this.fechaIngAnio) {
+      const dd = String(this.fechaIngDia).padStart(2, '0');
+      const mm = String(this.fechaIngMes).padStart(2, '0');
+      this.form.fechaIngreso = `${this.fechaIngAnio}-${mm}-${dd}`;
+    } else {
+      this.form.fechaIngreso = '';
     }
   }
 
