@@ -10,7 +10,8 @@ import { AlcanceServicio, AlcanceUsuario } from '../../nucleo/servicios/alcance.
 interface FormUsuario {
   nombre: string;
   apellido: string;
-  correo: string;
+  nombreUsuario: string; // solo para CREAR - el backend arma el correo real
+  correo: string; // solo para EDITAR - el backend sí acepta correo completo ahí
   contrasena: string;
   rol: 'ADMIN' | 'SECRETARIA';
 }
@@ -132,6 +133,18 @@ interface FormUsuario {
                 </button>
                 <button
                   class="boton boton-icono"
+                  title="Restablecer contraseña"
+                  style="color: var(--color-advertencia);"
+                  (click)="restablecerContrasena(u)"
+                  [disabled]="restableciendoId === u.id"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </button>
+                <button
+                  class="boton boton-icono"
                   [class.boton-peligro-suave]="u.activo"
                   [class.boton-exito-suave]="!u.activo"
                   [title]="u.activo ? 'Desactivar usuario' : 'Activar usuario'"
@@ -178,20 +191,32 @@ interface FormUsuario {
               <label class="campo-etiqueta">Apellido <span class="requerido">*</span></label>
               <input type="text" class="campo-input" [(ngModel)]="formUsuario.apellido" placeholder="Apellido">
             </div>
-            <div class="campo-grupo campo-grupo--ancho">
+            <div class="campo-grupo campo-grupo--ancho" *ngIf="!modoEditar">
+              <label class="campo-etiqueta">Nombre de usuario <span class="requerido">*</span></label>
+              <input type="text" class="campo-input" [(ngModel)]="formUsuario.nombreUsuario" placeholder="ej: jperez">
+              <small style="color: var(--texto-terciario);">Quedará como <strong>{{ formUsuario.nombreUsuario || '...' }}&#64;anturimultiservicios.com</strong> - sin arroba, el dominio lo agrega el sistema.</small>
+            </div>
+            <div class="campo-grupo campo-grupo--ancho" *ngIf="modoEditar">
               <label class="campo-etiqueta">Correo electrónico <span class="requerido">*</span></label>
               <input type="email" class="campo-input" [(ngModel)]="formUsuario.correo" placeholder="correo@ejemplo.com">
             </div>
-            <div class="campo-grupo campo-grupo--ancho">
-              <label class="campo-etiqueta">{{ modoEditar ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *' }}</label>
+            <div class="campo-grupo campo-grupo--ancho" *ngIf="!modoEditar">
+              <label class="campo-etiqueta">Contraseña *</label>
               <input type="password" class="campo-input" [(ngModel)]="formUsuario.contrasena" placeholder="••••••••">
+            </div>
+            <div class="campo-grupo campo-grupo--ancho" *ngIf="modoEditar">
+              <label class="campo-etiqueta">Contraseña</label>
+              <p style="font-size: var(--tamano-sm); color: var(--texto-terciario); margin: 0;">
+                No se cambia desde acá - usá el botón "Restablecer contraseña" de la lista.
+              </p>
             </div>
             <div class="campo-grupo campo-grupo--ancho">
               <label class="campo-etiqueta">Rol <span class="requerido">*</span></label>
-              <select class="campo-input" [(ngModel)]="formUsuario.rol">
+              <select class="campo-input" [(ngModel)]="formUsuario.rol" [disabled]="modoEditar">
                 <option value="ADMIN">Administrador</option>
                 <option value="SECRETARIA">Asistente</option>
               </select>
+              <small *ngIf="modoEditar" style="color: var(--texto-terciario);">El rol no se cambia desde acá - es una acción separada, solo para SUPER_ADMIN.</small>
             </div>
           </div>
         </div>
@@ -201,6 +226,25 @@ interface FormUsuario {
             <span *ngIf="guardandoUsuario" class="spinner-inline"></span>
             {{ guardandoUsuario ? 'Guardando...' : (modoEditar ? 'Guardar cambios' : 'Crear usuario') }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: contraseña temporal generada (se muestra UNA sola vez) -->
+    <div *ngIf="contrasenaTemporalGenerada" class="modal-overlay" (click)="contrasenaTemporalGenerada = null">
+      <div class="modal-form" (click)="$event.stopPropagation()" style="max-width: 420px;">
+        <div class="modal-header">
+          <h3 class="modal-titulo">Contraseña temporal generada</h3>
+        </div>
+        <div class="modal-cuerpo">
+          <p>Para <strong>{{ contrasenaTemporalGenerada.usuario }}</strong>. Copiala ahora - no se puede volver a consultar:</p>
+          <p style="font-family: monospace; font-size: var(--tamano-lg); background: rgba(0,0,0,0.05); padding: var(--espacio-3); border-radius: var(--radio-md); text-align: center; user-select: all;">
+            {{ contrasenaTemporalGenerada.valor }}
+          </p>
+          <p style="font-size: var(--tamano-sm); color: var(--texto-terciario);">La cuenta deberá cambiarla en su próximo ingreso.</p>
+        </div>
+        <div class="modal-pie">
+          <button class="boton boton-primario" (click)="contrasenaTemporalGenerada = null">Entendido</button>
         </div>
       </div>
     </div>
@@ -446,6 +490,9 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   mensajeExito = '';
   mensajeError = '';
 
+  restableciendoId: number | null = null;
+  contrasenaTemporalGenerada: { usuario: string; valor: string } | null = null;
+
   // Modal usuario
   modalUsuario = false;
   modoEditar = false;
@@ -543,6 +590,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     this.formUsuario = {
       nombre: u.nombre,
       apellido: u.apellido,
+      nombreUsuario: '',
       correo: u.correo,
       contrasena: '',
       rol: u.rol === 'ADMIN' || u.rol === 'SECRETARIA' ? u.rol : 'SECRETARIA',
@@ -557,8 +605,16 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   }
 
   guardarUsuario(): void {
-    if (!this.formUsuario.nombre.trim() || !this.formUsuario.apellido.trim() || !this.formUsuario.correo.trim()) {
-      this.errorModal = 'Nombre, apellido y correo son obligatorios.';
+    if (!this.formUsuario.nombre.trim() || !this.formUsuario.apellido.trim()) {
+      this.errorModal = 'Nombre y apellido son obligatorios.';
+      return;
+    }
+    if (this.modoEditar && !this.formUsuario.correo.trim()) {
+      this.errorModal = 'El correo es obligatorio.';
+      return;
+    }
+    if (!this.modoEditar && !this.formUsuario.nombreUsuario.trim()) {
+      this.errorModal = 'El nombre de usuario es obligatorio.';
       return;
     }
     if (!this.modoEditar && !this.formUsuario.contrasena.trim()) {
@@ -570,15 +626,13 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     this.errorModal = '';
 
     if (this.modoEditar && this.usuarioEditando) {
-      const dto: any = {
+      // 2026-10-06: ya NO se manda rol ni contrasena acá - ActualizarUsuarioDto
+      // del backend no los acepta a propósito (ver cambiarRol()/forzarReset()).
+      const dto = {
         nombre: this.formUsuario.nombre,
         apellido: this.formUsuario.apellido,
         correo: this.formUsuario.correo,
-        rol: this.formUsuario.rol,
       };
-      if (this.formUsuario.contrasena.trim()) {
-        dto.contrasena = this.formUsuario.contrasena;
-      }
       this.usuariosServicio.actualizar(this.usuarioEditando.id, dto).pipe(
         catchError(err => {
           this.errorModal = err?.error?.message || 'Error al actualizar el usuario.';
@@ -597,7 +651,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       const dto: CrearUsuarioDto = {
         nombre: this.formUsuario.nombre,
         apellido: this.formUsuario.apellido,
-        correo: this.formUsuario.correo,
+        nombreUsuario: this.formUsuario.nombreUsuario.split('@')[0].trim(),
         contrasena: this.formUsuario.contrasena,
         rol: this.formUsuario.rol,
       };
@@ -616,6 +670,26 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  // 2026-10-06: antes "Nueva contraseña" en el modal de editar mandaba
+  // `contrasena` a PATCH /usuarios/:id, campo que ActualizarUsuarioDto no
+  // acepta (siempre rechazado). Único camino real: POST /:id/forzar-reset,
+  // que genera una temporal aleatoria y la devuelve UNA sola vez - no se
+  // puede "elegir" la contraseña de otra persona por diseño.
+  restablecerContrasena(u: UsuarioSistema): void {
+    if (!confirm(`¿Restablecer la contraseña de ${u.nombre} ${u.apellido}? Se generará una temporal nueva.`)) return;
+    this.restableciendoId = u.id;
+    this.usuariosServicio.forzarReset(u.id).pipe(
+      catchError(err => {
+        this.mensajeError = err?.error?.message || 'Error al restablecer la contraseña.';
+        setTimeout(() => { this.mensajeError = ''; }, 5000);
+        return of(null);
+      }),
+      finalize(() => { this.restableciendoId = null; }),
+    ).subscribe((r) => {
+      if (r) this.contrasenaTemporalGenerada = { usuario: `${u.nombre} ${u.apellido}`, valor: r.contrasenaTemporal };
+    });
   }
 
   // ── PERMISOS ──────────────────────────────────────────────
@@ -810,7 +884,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   }
 
   private formVacio(): FormUsuario {
-    return { nombre: '', apellido: '', correo: '', contrasena: '', rol: 'SECRETARIA' };
+    return { nombre: '', apellido: '', nombreUsuario: '', correo: '', contrasena: '', rol: 'SECRETARIA' };
   }
 
   private permisosVacios(): Partial<PermisoSecretaria> {

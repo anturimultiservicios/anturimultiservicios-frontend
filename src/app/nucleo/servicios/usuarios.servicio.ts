@@ -15,10 +15,16 @@ export interface UsuarioSistema {
   creadoEn: string;
 }
 
+// 2026-10-06 (hallazgo real, FASE auditoría conectividad): el backend NO
+// recibe `correo` completo al crear - recibe `nombreUsuario` (la parte
+// antes de la arroba) y genera él mismo `nombreUsuario@anturimultiservicios.com`,
+// resolviendo colisiones (ver CrearUsuarioDto/UsuariosServicio.crear() del
+// backend). El frontend mandaba `correo` hasta hoy - con
+// forbidNonWhitelisted:true eso rechazaba SIEMPRE la creación con 400.
 export interface CrearUsuarioDto {
   nombre: string;
   apellido: string;
-  correo: string;
+  nombreUsuario: string;
   contrasena: string;
   rol: 'ADMIN' | 'SECRETARIA';
 }
@@ -41,8 +47,28 @@ export class UsuariosServicio {
     return this.http.post<UsuarioSistema>(this.URL, dto);
   }
 
-  actualizar(id: number, dto: Partial<UsuarioSistema & { contrasena?: string }>): Observable<UsuarioSistema> {
+  // 2026-10-06 (hallazgo real): ActualizarUsuarioDto del backend es
+  // DELIBERADAMENTE solo {nombre?, apellido?, correo?, fotoPerfil?} - sin
+  // rol ni contrasena (tienen sus propios endpoints con su propia
+  // autorización, ver cambiarRol()/forzarReset() abajo). Mandar esos 2
+  // campos de más acá rechazaba SIEMPRE la edición con 400
+  // (forbidNonWhitelisted:true). El tipo ya no los acepta.
+  actualizar(id: number, dto: Partial<Pick<UsuarioSistema, 'nombre' | 'apellido' | 'correo' | 'fotoPerfil'>>): Observable<UsuarioSistema> {
     return this.http.patch<UsuarioSistema>(`${this.URL}/${id}`, dto);
+  }
+
+  // Único camino real para cambiar el rol de una cuenta - SUPER_ADMIN-only
+  // en el backend, con motivo obligatorio (ver PATCH /usuarios/:id/rol).
+  cambiarRol(id: number, nuevoRol: 'ADMIN' | 'SECRETARIA', motivo: string): Observable<UsuarioSistema> {
+    return this.http.patch<UsuarioSistema>(`${this.URL}/${id}/rol`, { nuevoRol, motivo });
+  }
+
+  // Genera una contraseña temporal aleatoria para la cuenta (nunca se puede
+  // "escribir" una contraseña nueva a mano para otra persona) - el backend
+  // la devuelve UNA sola vez en la respuesta, para que el admin se la pase
+  // a la persona.
+  forzarReset(id: number): Observable<{ mensaje: string; contrasenaTemporal: string }> {
+    return this.http.post<{ mensaje: string; contrasenaTemporal: string }>(`${this.URL}/${id}/forzar-reset`, {});
   }
 
   actualizarPermisos(id: number, permisos: any): Observable<any> {
