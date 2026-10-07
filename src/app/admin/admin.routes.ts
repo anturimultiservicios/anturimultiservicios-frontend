@@ -73,6 +73,11 @@ export const rutasAdmin: Routes = [
           import('./horario-acceso/horario-acceso.component').then((m) => m.HorarioAccesoComponent),
       },
       {
+        path: 'parametros-legales',
+        loadComponent: () =>
+          import('./parametros-legales/parametros-legales.component').then((m) => m.ParametrosLegalesComponent),
+      },
+      {
         path: 'hallazgos-reconciliacion',
         loadComponent: () =>
           import('./hallazgos-reconciliacion/lista-hallazgos/lista-hallazgos.component').then((m) => m.ListaHallazgosComponent),
