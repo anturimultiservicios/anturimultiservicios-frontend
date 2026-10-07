@@ -39,6 +39,20 @@ export const rutasSecretaria: Routes = [
           ),
       },
       {
+        path: 'empresas',
+        loadComponent: () =>
+          import('../admin/empresas/lista-empresas/lista-empresas.component').then(
+            (m) => m.ListaEmpresasComponent
+          ),
+      },
+      {
+        path: 'empresas/:id',
+        loadComponent: () =>
+          import('../admin/empresas/detalle-empresa/detalle-empresa.component').then(
+            (m) => m.DetalleEmpresaComponent
+          ),
+      },
+      {
         path: 'mis-solicitudes',
         loadComponent: () =>
           import('./mis-solicitudes/mis-solicitudes.component').then(

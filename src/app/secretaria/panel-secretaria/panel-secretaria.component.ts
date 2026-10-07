@@ -63,6 +63,17 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
+              <a routerLink="/secretaria/empresas" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Empresas' : ''">
+                <span class="barra-lateral__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Empresas</span>
+              </a>
+            </li>
+            <li>
               <a routerLink="/secretaria/calendario" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Calendario' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

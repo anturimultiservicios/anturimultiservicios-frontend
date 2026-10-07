@@ -13,6 +13,7 @@ import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.se
     <div class="pagina-lista">
       <div class="pagina-encabezado">
         <h2 class="pagina-titulo">Empresas</h2>
+        <button class="boton boton-primario" (click)="abrirModalCrear()">+ Nueva empresa</button>
       </div>
 
       <div class="estadisticas-chips">
@@ -123,6 +124,56 @@ import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.se
         </div>
       </div>
     </div>
+
+    <!-- MODAL: Nueva empresa - 2026-10-07, primera vez que existe este botón -->
+    <div *ngIf="modalCrear" class="modal-overlay" (click)="cerrarModalCrear()">
+      <div class="modal-form" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-titulo">Nueva empresa</h3>
+          <button class="boton boton-icono" (click)="cerrarModalCrear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-cuerpo">
+          <div *ngIf="errorModal" class="alerta-error" style="margin-bottom: var(--espacio-4);">{{ errorModal }}</div>
+          <div class="campos-grid-modal">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Razón social <span class="requerido">*</span></label>
+              <input type="text" class="campo-input" [(ngModel)]="formEmpresa.razonSocial" placeholder="Nombre de la empresa">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">NIT <span class="requerido">*</span></label>
+              <input type="text" class="campo-input" [(ngModel)]="formEmpresa.nit" placeholder="NIT">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Correo</label>
+              <input type="email" class="campo-input" [(ngModel)]="formEmpresa.correo" placeholder="correo@empresa.com">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Teléfono</label>
+              <input type="tel" class="campo-input" [(ngModel)]="formEmpresa.telefono">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Municipio</label>
+              <input type="text" class="campo-input" [(ngModel)]="formEmpresa.municipio">
+            </div>
+            <div class="campo-grupo campo-grupo--ancho">
+              <label class="campo-etiqueta">Dirección</label>
+              <input type="text" class="campo-input" [(ngModel)]="formEmpresa.direccion">
+            </div>
+          </div>
+        </div>
+        <div class="modal-pie">
+          <button class="boton boton-secundario" (click)="cerrarModalCrear()" [disabled]="guardandoCrear">Cancelar</button>
+          <button class="boton boton-primario" (click)="guardarCrear()" [disabled]="guardandoCrear || !formEmpresa.razonSocial?.trim() || !formEmpresa.nit?.trim()">
+            <span *ngIf="guardandoCrear" class="spinner-inline"></span>
+            {{ guardandoCrear ? 'Creando...' : 'Crear empresa' }}
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
@@ -174,6 +225,19 @@ import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.se
     .tabla-pie { padding: var(--espacio-3) var(--espacio-4); border-top: 1px solid var(--borde-color, #e5e7eb); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.02)); display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-4); flex-wrap: wrap; }
     .tabla-pie__total { font-size: var(--tamano-sm); color: var(--texto-terciario); }
     .tabla-pie__filtro { font-weight: 600; color: var(--color-primario); text-transform: capitalize; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: var(--espacio-4); }
+    .modal-form { background: var(--fondo-tarjeta, #fff); border-radius: var(--radio-xl); width: 100%; max-width: 520px; display: flex; flex-direction: column; box-shadow: var(--sombra-md); max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--espacio-5); border-bottom: 1px solid var(--borde-color, #e5e7eb); }
+    .modal-titulo { font-size: var(--tamano-xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
+    .modal-cuerpo { padding: var(--espacio-5); }
+    .modal-pie { display: flex; justify-content: flex-end; gap: var(--espacio-3); padding: var(--espacio-4) var(--espacio-5); border-top: 1px solid var(--borde-color, #e5e7eb); }
+    .campos-grid-modal { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-4); }
+    .campo-grupo { display: flex; flex-direction: column; gap: var(--espacio-1); }
+    .campo-grupo--ancho { grid-column: 1 / -1; }
+    .requerido { color: var(--color-error); }
+    .alerta-error { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radio-md); color: var(--color-error); font-size: var(--tamano-sm); }
+    .spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; margin-right: var(--espacio-2); }
   `]
 })
 export class ListaEmpresasComponent implements OnInit, OnDestroy {
@@ -185,6 +249,11 @@ export class ListaEmpresasComponent implements OnInit, OnDestroy {
   error = '';
 
   stats = { total: 0, activas: 0, inactivas: 0 };
+
+  modalCrear = false;
+  formEmpresa: Partial<Empresa> = {};
+  errorModal = '';
+  guardandoCrear = false;
 
   private busqueda$ = new Subject<string>();
   private destruir$ = new Subject<void>();
@@ -257,7 +326,37 @@ export class ListaEmpresasComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected get prefijo(): string {
+    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+  }
+
   irADetalle(id: number): void {
-    this.router.navigate(['/admin', 'empresas', id]);
+    this.router.navigate([this.prefijo, 'empresas', id]);
+  }
+
+  abrirModalCrear(): void {
+    this.formEmpresa = {};
+    this.errorModal = '';
+    this.modalCrear = true;
+  }
+
+  cerrarModalCrear(): void {
+    this.modalCrear = false;
+  }
+
+  guardarCrear(): void {
+    if (!this.formEmpresa.razonSocial?.trim() || !this.formEmpresa.nit?.trim()) return;
+    this.guardandoCrear = true;
+    this.errorModal = '';
+    this.empresasServicio.crear(this.formEmpresa).pipe(
+      catchError((err) => { this.errorModal = err?.error?.message || 'Error al crear la empresa.'; return of(null); }),
+    ).subscribe((creada) => {
+      this.guardandoCrear = false;
+      if (creada) {
+        this.modalCrear = false;
+        this.cargarEmpresas();
+        this.irADetalle(creada.id);
+      }
+    });
   }
 }
