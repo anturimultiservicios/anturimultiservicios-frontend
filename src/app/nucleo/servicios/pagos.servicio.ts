@@ -56,6 +56,15 @@ export interface ResumenPagos {
   pagos: PagoRegistrado[];
 }
 
+export interface ResumenMensual {
+  anio: number;
+  mes: number;
+  total: number;
+  efectivo: number;
+  transferencia: number;
+  cantidad: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PagosServicio {
   private readonly URL = `${entorno.urlApi}/pagos`;
@@ -73,6 +82,11 @@ export class PagosServicio {
   resumen(desde: string, hasta: string): Observable<ResumenPagos> {
     const params = new HttpParams().set('desde', desde).set('hasta', hasta);
     return this.http.get<ResumenPagos>(`${this.URL}/resumen`, { params });
+  }
+
+  resumenMensual(meses = 12): Observable<ResumenMensual[]> {
+    const params = new HttpParams().set('meses', meses.toString());
+    return this.http.get<ResumenMensual[]>(`${this.URL}/resumen-mensual`, { params });
   }
 
   listarPorAfiliado(afiliadoId: number): Observable<Pago[]> {

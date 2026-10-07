@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Subject, catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of, switchMap, takeUntil } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../nucleo/servicios/afiliados.servicio';
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
-import { PagosServicio, CanalPago, ResumenPagos } from '../../nucleo/servicios/pagos.servicio';
+import { PagosServicio, CanalPago, ResumenPagos, ResumenMensual } from '../../nucleo/servicios/pagos.servicio';
+import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 // 2026-10-07 (decisión de Cristopher): "no tenemos esa parte" - marcar que
 // una persona ya pagó, de una sola vez cubre todos sus seguros (EPS/
@@ -107,9 +108,36 @@ import { PagosServicio, CanalPago, ResumenPagos } from '../../nucleo/servicios/p
         <div *ngIf="mensajeExito" class="alerta-exito" style="margin-top: var(--espacio-3);">{{ mensajeExito }}</div>
       </div>
 
-      <!-- Resumen de ingresos -->
-      <div class="tarjeta">
-        <h3 class="seccion-titulo">Resumen de ingresos</h3>
+      <!-- Resumen de ingresos (cuentas reales) - solo ADMIN/SUPER_ADMIN.
+           Secretaria sí ve en el buscador quién pagó y quién falta, pero
+           las cuentas como tal ("cuánto se recogió en total") son de Anturi,
+           no de quien solo marca el pago - decisión explícita de Cristopher. -->
+      <div class="tarjeta" *ngIf="esAdmin">
+        <h3 class="seccion-titulo">Comparación mes a mes</h3>
+        <p class="nota-resumen">Esta función se activó el 7 de octubre de 2026 - no hay historial de meses anteriores a esa fecha, es esperado.</p>
+
+        <div *ngIf="cargandoMensual" class="estado-carga-inline">Cargando...</div>
+        <div *ngIf="!cargandoMensual && resumenMensualDatos.length === 0" class="estado-vacio-inline">Todavía no hay ningún mes con pagos registrados.</div>
+        <div *ngIf="!cargandoMensual && resumenMensualDatos.length > 0" class="tabla-scroll">
+          <table class="tabla">
+            <thead>
+              <tr><th>Mes</th><th>Total</th><th>Efectivo</th><th>Transferencia</th><th>Pagos</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of resumenMensualDatos">
+                <td>{{ nombreMes(m.mes) }} {{ m.anio }}</td>
+                <td><strong>{{ m.total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></td>
+                <td>{{ m.efectivo | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.transferencia | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.cantidad }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tarjeta" *ngIf="esAdmin">
+        <h3 class="seccion-titulo">Detalle por rango de fechas</h3>
         <div class="resumen-filtros">
           <div class="campo-grupo">
             <label class="campo-etiqueta">Desde</label>
@@ -186,6 +214,7 @@ import { PagosServicio, CanalPago, ResumenPagos } from '../../nucleo/servicios/p
     .panel-confirmar__resumen { margin: 0; }
     .panel-confirmar__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
 
+    .nota-resumen { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 0; }
     .resumen-filtros { display: flex; gap: var(--espacio-4); flex-wrap: wrap; }
     .resumen-totales { display: flex; gap: var(--espacio-4); flex-wrap: wrap; }
     .resumen-total-item { display: flex; flex-direction: column; gap: 2px; padding: var(--espacio-3); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.03)); border-radius: var(--radio-md); min-width: 160px; }
@@ -225,6 +254,13 @@ export class RegistrarPagoComponent implements OnDestroy {
   resumen: ResumenPagos | null = null;
   cargandoResumen = false;
 
+  resumenMensualDatos: ResumenMensual[] = [];
+  cargandoMensual = false;
+
+  esAdmin = false;
+
+  private readonly nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
   buscar$ = new Subject<string>();
   private destruir$ = new Subject<void>();
 
@@ -232,11 +268,18 @@ export class RegistrarPagoComponent implements OnDestroy {
     private afiliadosServicio: AfiliadosServicio,
     private empresasServicio: EmpresasServicio,
     private pagosServicio: PagosServicio,
+    private auth: AutenticacionServicio,
   ) {
+    this.esAdmin = this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
+
     const hoy = new Date();
     const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     this.resumenDesde = primerDiaMes.toISOString().slice(0, 10);
     this.resumenHasta = hoy.toISOString().slice(0, 10);
+
+    if (this.esAdmin) {
+      this.cargarResumenMensual();
+    }
 
     this.buscar$.pipe(
       debounceTime(400),
@@ -262,7 +305,9 @@ export class RegistrarPagoComponent implements OnDestroy {
       }
     });
 
-    this.cargarResumen();
+    if (this.esAdmin) {
+      this.cargarResumen();
+    }
   }
 
   ngOnDestroy(): void {
@@ -354,5 +399,18 @@ export class RegistrarPagoComponent implements OnDestroy {
       finalize(() => { this.cargandoResumen = false; }),
       takeUntil(this.destruir$),
     ).subscribe((res) => { this.resumen = res; });
+  }
+
+  cargarResumenMensual(): void {
+    this.cargandoMensual = true;
+    this.pagosServicio.resumenMensual(12).pipe(
+      catchError(() => of([] as ResumenMensual[])),
+      finalize(() => { this.cargandoMensual = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe((res) => { this.resumenMensualDatos = res; });
+  }
+
+  nombreMes(mes: number): string {
+    return this.nombresMeses[mes - 1] ?? String(mes);
   }
 }
