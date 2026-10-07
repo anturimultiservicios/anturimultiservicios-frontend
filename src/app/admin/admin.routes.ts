@@ -85,6 +85,11 @@ export const rutasAdmin: Routes = [
           import('./horario-acceso/horario-acceso.component').then((m) => m.HorarioAccesoComponent),
       },
       {
+        path: 'backup',
+        loadComponent: () =>
+          import('./backup/backup.component').then((m) => m.BackupComponent),
+      },
+      {
         path: 'parametros-legales',
         loadComponent: () =>
           import('./parametros-legales/parametros-legales.component').then((m) => m.ParametrosLegalesComponent),

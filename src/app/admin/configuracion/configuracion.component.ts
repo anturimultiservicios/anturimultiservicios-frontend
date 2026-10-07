@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 import { UsuariosServicio } from '../../nucleo/servicios/usuarios.servicio';
+import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/config-sistema.servicio';
 
 @Component({
   selector: 'anturi-configuracion',
@@ -151,6 +152,27 @@ import { UsuariosServicio } from '../../nucleo/servicios/usuarios.servicio';
           </div>
         </form>
       </div>
+
+      <!-- Sección: Configuración del sistema (solo ADMIN/SUPER_ADMIN) -->
+      <div *ngIf="esAdmin" class="tarjeta config-seccion">
+        <h3 class="seccion-titulo">Correos de cobro</h3>
+        <div *ngIf="cargandoConfig" class="estado-carga-inline">Cargando...</div>
+        <div *ngIf="errorConfig" class="alerta-error">{{ errorConfig }}</div>
+        <div *ngIf="!cargandoConfig && configSistema">
+          <label class="permiso-check">
+            <input type="checkbox" [(ngModel)]="configSistema.enviarCorreosCobro" name="enviarCorreosCobro" (ngModelChange)="guardarConfigSistema()">
+            Enviar correos de cobro automáticos (vencimientos T-8/T-5/T-3/T-1/T-0/T+1)
+          </label>
+          <p class="campo-ayuda">Destinatario de prueba configurado: {{ configSistema.correoTestDestinatario }}</p>
+          <div class="seccion-acciones">
+            <button class="boton boton-secundario" (click)="probarCorreo()" [disabled]="probandoCorreo">
+              <span *ngIf="probandoCorreo" class="spinner-inline"></span>
+              {{ probandoCorreo ? 'Enviando...' : 'Enviar correo de prueba' }}
+            </button>
+          </div>
+          <div *ngIf="mensajeExitoConfig" class="alerta-exito" style="margin-top: var(--espacio-3);">{{ mensajeExitoConfig }}</div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -190,6 +212,10 @@ import { UsuariosServicio } from '../../nucleo/servicios/usuarios.servicio';
 
     .spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; margin-right: var(--espacio-2); }
     @keyframes girar { to { transform: rotate(360deg); } }
+
+    .permiso-check { display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); color: var(--texto-principal); margin-bottom: var(--espacio-2); cursor: pointer; }
+    .permiso-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-primario); }
+    .estado-carga-inline { color: var(--texto-terciario); font-size: var(--tamano-sm); }
   `]
 })
 export class ConfiguracionComponent implements OnInit, OnDestroy {
@@ -203,12 +229,23 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
   mensajeExitoPerfil = '';
   mensajeExitoContrasena = '';
 
+  configSistema: ConfigSistema | null = null;
+  cargandoConfig = false;
+  errorConfig = '';
+  mensajeExitoConfig = '';
+  probandoCorreo = false;
+
   private destruir$ = new Subject<void>();
 
   constructor(
     public auth: AutenticacionServicio,
-    private usuariosServicio: UsuariosServicio
+    private usuariosServicio: UsuariosServicio,
+    private configSistemaServicio: ConfigSistemaServicio,
   ) {}
+
+  get esAdmin(): boolean {
+    return this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
+  }
 
   ngOnInit(): void {
     const u = this.auth.usuarioActual;
@@ -216,6 +253,53 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
       this.formPerfil.nombre = u.nombre;
       this.formPerfil.apellido = u.apellido;
     }
+    if (this.esAdmin) {
+      this.cargarConfigSistema();
+    }
+  }
+
+  cargarConfigSistema(): void {
+    this.cargandoConfig = true;
+    this.errorConfig = '';
+    this.configSistemaServicio.obtener().pipe(
+      catchError(() => { this.errorConfig = 'Error al cargar la configuración del sistema.'; return of(null); }),
+      finalize(() => { this.cargandoConfig = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe((cfg) => { this.configSistema = cfg; });
+  }
+
+  guardarConfigSistema(): void {
+    if (!this.configSistema) return;
+    this.errorConfig = '';
+    this.configSistemaServicio.actualizar(this.configSistema.enviarCorreosCobro).pipe(
+      catchError((err) => {
+        this.errorConfig = err?.error?.message || 'Error al guardar la configuración.';
+        if (this.configSistema) this.configSistema.enviarCorreosCobro = !this.configSistema.enviarCorreosCobro;
+        return of(null);
+      }),
+      takeUntil(this.destruir$),
+    ).subscribe((cfg) => {
+      if (cfg) {
+        this.configSistema = cfg;
+        this.mensajeExitoConfig = 'Configuración guardada correctamente.';
+        setTimeout(() => { this.mensajeExitoConfig = ''; }, 4000);
+      }
+    });
+  }
+
+  probarCorreo(): void {
+    this.probandoCorreo = true;
+    this.errorConfig = '';
+    this.configSistemaServicio.enviarCorreoTest().pipe(
+      catchError((err) => { this.errorConfig = err?.error?.message || 'Error al enviar el correo de prueba.'; return of(null); }),
+      finalize(() => { this.probandoCorreo = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe((res) => {
+      if (res) {
+        this.mensajeExitoConfig = res.mensaje;
+        setTimeout(() => { this.mensajeExitoConfig = ''; }, 5000);
+      }
+    });
   }
 
   ngOnDestroy(): void {
