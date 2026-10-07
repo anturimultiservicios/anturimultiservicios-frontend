@@ -23,6 +23,13 @@ export const rutasAdmin: Routes = [
           import('./afiliados/formulario-afiliado/formulario-afiliado.component').then((m) => m.FormularioAfiliadoComponent),
       },
       {
+        // Debe ir ANTES de 'afiliados/:id' - si no, Nest/Angular la matchea
+        // como si 'papelera' fuera un id (mismo motivo que en el backend).
+        path: 'afiliados/papelera',
+        loadComponent: () =>
+          import('./afiliados/papelera-afiliados/papelera-afiliados.component').then((m) => m.PapeleraAfiliadosComponent),
+      },
+      {
         path: 'afiliados/:id',
         loadComponent: () =>
           import('./afiliados/detalle-afiliado/detalle-afiliado.component').then((m) => m.DetalleAfiliadoComponent),

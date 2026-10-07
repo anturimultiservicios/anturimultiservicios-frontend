@@ -135,6 +135,10 @@ export class AfiliadosServicio {
     return this.http.post(`${this.URL}/${id}/restaurar`, {});
   }
 
+  listarPapelera(): Observable<(Afiliado & { eliminadoEn: string; eliminadoPor: { id: number; nombre: string; apellido: string } | null; motivoEliminacion: string | null })[]> {
+    return this.http.get<any>(`${this.URL}/papelera`);
+  }
+
   estadisticas(): Observable<any> {
     return this.http.get(`${this.URL}/estadisticas`);
   }

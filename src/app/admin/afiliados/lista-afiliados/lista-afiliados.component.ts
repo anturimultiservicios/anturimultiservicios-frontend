@@ -14,13 +14,24 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
       <!-- Encabezado -->
       <div class="pagina-encabezado">
         <h2 class="pagina-titulo">Afiliados</h2>
-        <a [routerLink]="[prefijo, 'afiliados', 'nuevo']" class="boton boton-primario">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          Nuevo afiliado
-        </a>
+        <div class="pagina-acciones">
+          <a *ngIf="prefijo === '/admin'" [routerLink]="[prefijo, 'afiliados', 'papelera']" class="boton boton-secundario">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+              <path d="M10 11v6"></path><path d="M14 11v6"></path>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+            Papelera
+          </a>
+          <a [routerLink]="[prefijo, 'afiliados', 'nuevo']" class="boton boton-primario">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Nuevo afiliado
+          </a>
+        </div>
       </div>
 
       <!-- Chips de estadísticas -->
@@ -181,6 +192,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .pagina-encabezado { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--espacio-3); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
+    .pagina-acciones { display: flex; gap: var(--espacio-2); align-items: center; }
 
     /* Chips de estadísticas */
     .estadisticas-chips { display: flex; gap: var(--espacio-2); flex-wrap: wrap; }
