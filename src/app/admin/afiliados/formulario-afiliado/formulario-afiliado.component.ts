@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -278,8 +278,13 @@ const TIPOS: TipoAfiliacionInfo[] = [
         </div>
       </div>
 
-      <!-- Mensaje de error global -->
-      <div *ngIf="errorGlobal" class="alerta-error">
+      <!-- Mensaje de error global - 2026-10-07 (bug real encontrado por
+           Cristopher en vivo): el formulario tiene 5 secciones largas, y
+           este mensaje solo aparecía acá arriba - al guardar desde la
+           sección 4/5 el error quedaba fuera de la vista, parecía que
+           "no pasó nada" hasta un segundo clic. Ahora hace scroll automático
+           hacia sí mismo apenas aparece. -->
+      <div *ngIf="errorGlobal" #errorGlobalRef class="alerta-error">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -347,9 +352,27 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Teléfono</label>
               <input type="tel" class="campo-input" [(ngModel)]="form.telefono" name="telefono" placeholder="Número de teléfono">
             </div>
-            <div class="campo-grupo">
+            <div class="campo-grupo campo-grupo--ancho">
               <label class="campo-etiqueta">Fecha de nacimiento</label>
-              <input type="date" class="campo-input" [(ngModel)]="form.fechaNacimiento" name="fechaNacimiento">
+              <!-- 2026-10-07 (bug real reportado por Cristopher en vivo): el
+                   calendario nativo (type="date") obliga a retroceder mes a
+                   mes/año a año para llegar a una fecha de nacimiento real -
+                   muy lento para gente adulta. 3 desplegables directos,
+                   mismo patrón ya usado en otros formularios de este tipo. -->
+              <div class="fecha-dmy">
+                <select class="campo-input" [(ngModel)]="fechaNacDia" name="fechaNacDia" (ngModelChange)="actualizarFechaNacimiento()">
+                  <option [ngValue]="null">Día</option>
+                  <option *ngFor="let d of diasDelMes" [ngValue]="d">{{ d }}</option>
+                </select>
+                <select class="campo-input" [(ngModel)]="fechaNacMes" name="fechaNacMes" (ngModelChange)="actualizarFechaNacimiento()">
+                  <option [ngValue]="null">Mes</option>
+                  <option *ngFor="let m of meses" [ngValue]="m.valor">{{ m.nombre }}</option>
+                </select>
+                <select class="campo-input" [(ngModel)]="fechaNacAnio" name="fechaNacAnio" (ngModelChange)="actualizarFechaNacimiento()">
+                  <option [ngValue]="null">Año</option>
+                  <option *ngFor="let a of aniosNacimiento" [ngValue]="a">{{ a }}</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -521,14 +544,16 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <span class="campo-ayuda">Sobre este valor se calculan los aportes reales (salud/pensión/ARL/caja).</span>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Comisión Anturi</label>
-              <input type="number" class="campo-input" [(ngModel)]="form.comision" name="comision"
-                placeholder="0" min="0" (ngModelChange)="calcularTotal()">
+              <label class="campo-etiqueta">Comisión Anturi{{ resultadoSimulacion ? ' (calculada)' : '' }}</label>
+              <input type="number" class="campo-input" [class.campo-input--readonly]="!!resultadoSimulacion"
+                [(ngModel)]="form.comision" name="comision"
+                placeholder="0" min="0" [readonly]="!!resultadoSimulacion" (ngModelChange)="calcularTotal()">
+              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Ya viene incluida en el total - la calcula el motor real, no se suma aparte.</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Total a pagar (calculado)</label>
               <input type="number" class="campo-input campo-input--readonly" [value]="totalPago" readonly>
-              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Aportes reales ({{ resultadoSimulacion.totalAPagar | number }}) + comisión Anturi.</span>
+              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Aportes + comisión Anturi, ya todo incluido.</span>
               <span class="campo-ayuda" *ngIf="!resultadoSimulacion && !simulando && puedeSimular">Complete clase de riesgo{{ (tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' || tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA') ? ', caja' : '' }} y base de cotización para ver el cálculo real.</span>
               <span class="campo-ayuda" *ngIf="!puedeSimular">La simulación del cálculo real solo está disponible para Admin/Super Admin - un administrador puede revisarla luego en el detalle.</span>
             </div>
@@ -557,15 +582,15 @@ const TIPOS: TipoAfiliacionInfo[] = [
                 <tr *ngFor="let linea of resultadoSimulacion.lineas">
                   <td>{{ linea.concepto }}</td>
                   <td>{{ linea.base | number }}</td>
-                  <td>{{ linea.tarifa | number:'1.0-3' }}%</td>
+                  <td>{{ linea.tarifa * 100 | number:'1.0-3' }}%</td>
                   <td>{{ linea.valor | number }}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr><td colspan="3">Seguridad social + mora</td><td>{{ resultadoSimulacion.totalValorSeguridadSocial | number }}</td></tr>
                 <tr><td colspan="3">4x1000</td><td>{{ resultadoSimulacion.valorCuatroXMil | number }}</td></tr>
-                <tr><td colspan="3">Administración</td><td>{{ resultadoSimulacion.valorAdministracion | number }}</td></tr>
-                <tr class="fila-total"><td colspan="3">Total aportes (sin comisión Anturi)</td><td>{{ resultadoSimulacion.totalAPagar | number }}</td></tr>
+                <tr><td colspan="3">Administración Anturi</td><td>{{ resultadoSimulacion.valorAdministracion | number }}</td></tr>
+                <tr class="fila-total"><td colspan="3">Total a pagar (todo incluido)</td><td>{{ resultadoSimulacion.totalAPagar | number }}</td></tr>
               </tfoot>
             </table>
           </div>
@@ -690,6 +715,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
     .campos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--espacio-4); }
     .campo-grupo { display: flex; flex-direction: column; gap: var(--espacio-1); }
     .campo-grupo--ancho { grid-column: 1 / -1; }
+    .fecha-dmy { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: var(--espacio-2); max-width: 420px; }
 
     .campo-input--readonly { background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.04)); cursor: not-allowed; color: var(--texto-secundario); }
 
@@ -781,6 +807,22 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     estado: 'ACTIVO',
     fechaIngreso: new Date().toISOString().substring(0, 10),
   };
+
+  @ViewChild('errorGlobalRef') errorGlobalRef?: ElementRef<HTMLElement>;
+
+  // Fecha de nacimiento por 3 desplegables (ver nota arriba en el template)
+  fechaNacDia: number | null = null;
+  fechaNacMes: number | null = null;
+  fechaNacAnio: number | null = null;
+  readonly diasDelMes = Array.from({ length: 31 }, (_, i) => i + 1);
+  readonly meses = [
+    { valor: 1, nombre: 'Enero' }, { valor: 2, nombre: 'Febrero' }, { valor: 3, nombre: 'Marzo' },
+    { valor: 4, nombre: 'Abril' }, { valor: 5, nombre: 'Mayo' }, { valor: 6, nombre: 'Junio' },
+    { valor: 7, nombre: 'Julio' }, { valor: 8, nombre: 'Agosto' }, { valor: 9, nombre: 'Septiembre' },
+    { valor: 10, nombre: 'Octubre' }, { valor: 11, nombre: 'Noviembre' }, { valor: 12, nombre: 'Diciembre' },
+  ];
+  // Más reciente primero - quien se afilia casi siempre es adulto, no bebé.
+  readonly aniosNacimiento = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 16 - i);
 
   errores: ErroresCampo = {};
   errorGlobal = '';
@@ -936,19 +978,24 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     return TIPOS.find(t => t.valor === tipo)?.descripcion ?? '';
   }
 
-  // 2026-10-07: antes esto era SIEMPRE valor+comisión, aunque el "valor"
-  // tecleado no tuviera ninguna relación con lo que de verdad corresponde
-  // pagar por ley. Ahora, si ya hay un resultado real del motor K→Q
-  // (ejecutarSimulacion()), el total usa ESE cálculo real + la comisión de
-  // Anturi encima - la comisión nunca se mezcla con los aportes, se suma
-  // aparte. Si todavía no hay simulación (faltan datos, o falló), cae al
-  // comportamiento anterior para no dejar el campo vacío sin sentido.
+  // 2026-10-07 - BUG REAL encontrado por Cristopher en vivo y corregido:
+  // `resultadoSimulacion.totalAPagar` YA INCLUYE la "Administración Anturi"
+  // (parámetro COMISION_INDEPENDIENTE/COMISION_EMPRESA, $32.000 fijo hoy -
+  // confirmado por SQL directo) - el motor la suma él mismo dentro de Q.
+  // La primera versión de este código SUMABA el campo "Comisión" (manual)
+  // OTRA VEZ encima de totalAPagar → doble conteo real de la comisión, y
+  // la tabla de desglose decía (mal) "sin comisión Anturi" cuando sí la
+  // traía. Ahora: si hay simulación real, el campo "Comisión" se autollena
+  // desde el propio motor (valorAdministracion) en vez de sumarse aparte -
+  // sigue siendo editable por si algún día hay que ajustarlo a mano, pero
+  // ya no se duplica.
   calcularTotal(): void {
-    const comision = Number(this.form.comision) || 0;
     if (this.resultadoSimulacion) {
-      this.totalPago = this.resultadoSimulacion.totalAPagar + comision;
+      this.form.comision = this.resultadoSimulacion.valorAdministracion;
+      this.totalPago = this.resultadoSimulacion.totalAPagar;
     } else {
       const valor = Number(this.form.valor) || 0;
+      const comision = Number(this.form.comision) || 0;
       this.totalPago = valor + comision;
     }
     this.form.totalPago = this.totalPago;
@@ -995,8 +1042,16 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       && !this.errores.genero && !this.errores.confirmarCorreo;
   }
 
+  // 2026-10-07 - bug real encontrado por Cristopher en vivo: si faltaba un
+  // campo obligatorio (ej. género) en la sección 1, al hacer clic en
+  // "Guardar" desde más abajo (sección 4/5) no pasaba NADA visible en su
+  // pantalla - los errores de campo son inline, arriba, fuera de la vista.
+  // Parecía que el botón no hacía nada hasta un segundo clic.
   guardar(): void {
-    if (!this.validarTodo()) return;
+    if (!this.validarTodo()) {
+      this.mostrarErrorGlobal(this.errorGlobal || 'Revise los campos obligatorios marcados en rojo (sección 1).');
+      return;
+    }
 
     this.guardando = true;
     this.errorGlobal = '';
@@ -1045,12 +1100,29 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.guardando = false;
-        this.errorGlobal = err?.error?.message || 'Error al crear el afiliado. Verifique los datos e intente nuevamente.';
+        this.mostrarErrorGlobal(err?.error?.message || 'Error al crear el afiliado. Verifique los datos e intente nuevamente.');
       }
     });
   }
 
   volver(): void {
     this.router.navigate([this.prefijo, 'afiliados']);
+  }
+
+  actualizarFechaNacimiento(): void {
+    if (this.fechaNacDia && this.fechaNacMes && this.fechaNacAnio) {
+      const dd = String(this.fechaNacDia).padStart(2, '0');
+      const mm = String(this.fechaNacMes).padStart(2, '0');
+      this.form.fechaNacimiento = `${this.fechaNacAnio}-${mm}-${dd}`;
+    } else {
+      this.form.fechaNacimiento = '';
+    }
+  }
+
+  private mostrarErrorGlobal(mensaje: string): void {
+    this.errorGlobal = mensaje;
+    setTimeout(() => {
+      this.errorGlobalRef?.nativeElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 }
