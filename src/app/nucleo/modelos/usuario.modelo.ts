@@ -38,4 +38,5 @@ export interface PermisoSecretaria {
   puedeSubirEvidenciasHallazgo: boolean;
   puedeEditarHallazgosReconciliacion: boolean;
   puedeEliminarEvidenciasHallazgo: boolean;
+  puedeCalcularLiquidacion: boolean;
 }

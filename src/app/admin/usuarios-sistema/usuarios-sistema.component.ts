@@ -285,6 +285,11 @@ interface FormUsuario {
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEditarHallazgosReconciliacion"> Puede pedir editar hallazgos/documentos</label>
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeEliminarEvidenciasHallazgo"> Puede pedir eliminar documentos</label>
           </div>
+          <div class="permisos-grupo">
+            <h4 class="permisos-grupo__titulo">Liquidación</h4>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeCalcularLiquidacion"> Puede calcular/registrar cuánto paga un afiliado</label>
+            <p style="font-size: var(--tamano-xs); color: var(--texto-terciario); margin: var(--espacio-1) 0 0;">Las tasas/porcentajes legales en sí solo las cambia Admin/Super Admin - esto es solo calcular con las tasas ya vigentes.</p>
+          </div>
           <div class="campo-grupo" style="margin-top: var(--espacio-2);">
             <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
             <input type="text" class="campo-input" [(ngModel)]="motivoPermisos" placeholder="Ej: empieza a encargarse también de las solicitudes de afiliados">
@@ -739,6 +744,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeSubirEvidenciasHallazgo: this.formPermisos.puedeSubirEvidenciasHallazgo,
       puedeEditarHallazgosReconciliacion: this.formPermisos.puedeEditarHallazgosReconciliacion,
       puedeEliminarEvidenciasHallazgo: this.formPermisos.puedeEliminarEvidenciasHallazgo,
+      puedeCalcularLiquidacion: this.formPermisos.puedeCalcularLiquidacion,
     };
     this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload).pipe(
       catchError(err => {
@@ -901,6 +907,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeSubirEvidenciasHallazgo: false,
       puedeEditarHallazgosReconciliacion: false,
       puedeEliminarEvidenciasHallazgo: false,
+      puedeCalcularLiquidacion: false,
     };
   }
 }

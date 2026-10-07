@@ -555,7 +555,6 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <input type="number" class="campo-input campo-input--readonly" [value]="totalPago" readonly>
               <span class="campo-ayuda" *ngIf="resultadoSimulacion">Aportes + comisión Anturi, ya todo incluido.</span>
               <span class="campo-ayuda" *ngIf="!resultadoSimulacion && !simulando && puedeSimular">Complete clase de riesgo{{ (tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' || tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA') ? ', caja' : '' }} y base de cotización para ver el cálculo real.</span>
-              <span class="campo-ayuda" *ngIf="!puedeSimular">La simulación del cálculo real solo está disponible para Admin/Super Admin - un administrador puede revisarla luego en el detalle.</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">4 x Mil</label>
@@ -829,11 +828,14 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   guardando = false;
   totalPago = 0;
 
-  // El motor /simular/* es ADMIN/SUPER_ADMIN-only por diseño del backend
-  // (misma razón que ParametrosLegales - valores que afectan cuánto se le
-  // cobra a un cliente). Secretaria SÍ puede crear afiliados, pero no ve
-  // la simulación en vivo - mismo criterio, no se cambia el permiso del
-  // backend desde el frontend.
+  // 2026-10-07 (aclarado por Cristopher): calcular/registrar cuánto paga
+  // una persona SÍ es trabajo de Secretaria - lo que sigue siendo exclusivo
+  // de ADMIN/SUPER_ADMIN es cambiar las TASAS/PORCENTAJES legales en sí
+  // (ParametrosLegales, módulo aparte). El control fino real (permiso
+  // granular puedeCalcularLiquidacion, por cuenta) vive en el backend -
+  // acá solo se filtra por rol para no mostrar la UI a quien ni siquiera
+  // puede crear/editar afiliados; si una Secretaria puntual no tiene el
+  // permiso, el backend responde 403 y se muestra un mensaje claro.
   puedeSimular = false;
 
   constructor(
@@ -842,7 +844,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     private auth: AutenticacionServicio,
     private router: Router
   ) {
-    this.puedeSimular = this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
+    this.puedeSimular = this.auth.tieneRol(['SECRETARIA', 'ADMIN', 'SUPER_ADMIN']);
   }
 
   private get prefijo(): string {
@@ -920,7 +922,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.simulando = false;
           this.resultadoSimulacion = null;
-          this.errorSimulacion = err?.error?.message || 'No se pudo simular el cálculo real.';
+          this.errorSimulacion = this.mensajeErrorSimulacion(err);
           this.calcularTotal();
         },
       });
@@ -940,10 +942,20 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.simulando = false;
         this.resultadoSimulacion = null;
-        this.errorSimulacion = err?.error?.message || 'No se pudo simular el cálculo real.';
+        this.errorSimulacion = this.mensajeErrorSimulacion(err);
         this.calcularTotal();
       },
     });
+  }
+
+  // Distingue "no tenés el permiso" (403 real del backend, cuenta puntual
+  // sin puedeCalcularLiquidacion) de cualquier otro error - mensaje
+  // orientado a qué hacer, no un error técnico crudo.
+  private mensajeErrorSimulacion(err: any): string {
+    if (err?.status === 403) {
+      return 'Tu cuenta no tiene el permiso para calcular liquidaciones - pedile a un Admin/Super Admin que lo active desde "Gestionar permisos".';
+    }
+    return err?.error?.message || 'No se pudo simular el cálculo real.';
   }
 
   seleccionarTipo(tipo: TipoAfiliacion): void {
