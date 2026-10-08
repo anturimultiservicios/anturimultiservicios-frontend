@@ -239,7 +239,7 @@ export class InicioSesionComponent {
       },
       error: () => {
         this.cargando = false;
-        this.error = 'Error al enviar el correo. Verifique la dirección.';
+        this.error = 'No se pudo enviar la solicitud. Intente de nuevo en un momento.';
       },
     });
   }

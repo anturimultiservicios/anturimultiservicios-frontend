@@ -162,6 +162,9 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
     } else if (n.referenciaId && n.tipo === 'empresa_creada') {
       this.abierta = false;
       this.router.navigate([prefijo, 'empresas', n.referenciaId]);
+    } else if (n.tipo === 'recuperar_contrasena' && prefijo === '/admin') {
+      this.abierta = false;
+      this.router.navigate(['/admin', 'usuarios']);
     } else if (n.tipo === 'dispositivo_pendiente' && prefijo === '/admin') {
       this.abierta = false;
       this.router.navigate(['/admin', 'dispositivos']);

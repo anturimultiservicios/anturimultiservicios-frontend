@@ -109,10 +109,10 @@
     "ingresar": "Ingresar",
     "olvidoContrasena": "¿Olvidó su contraseña?",
     "recuperar": "Recuperar contraseña",
-    "recuperarTexto": "Ingrese su correo y le enviaremos las instrucciones para restablecer su contraseña.",
-    "enviar": "Enviar instrucciones",
+    "recuperarTexto": "Escriba su correo de usuario y le avisaremos al administrador para que le asigne una clave temporal.",
+    "enviar": "Pedir nueva contraseña",
     "volver": "Volver al login",
-    "correoEnviado": "Hemos enviado las instrucciones a su correo."
+    "correoEnviado": "Listo. El administrador recibió su solicitud: le asignará la clave temporal Anturi123 y al entrar deberá crear una nueva."
   },
   "comun": {
     "cargando": "Cargando...",

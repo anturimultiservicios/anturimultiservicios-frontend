@@ -220,7 +220,7 @@ interface FormUsuario {
             <div class="campo-grupo campo-grupo--ancho" *ngIf="modoEditar">
               <label class="campo-etiqueta">Contraseña</label>
               <p style="font-size: var(--tamano-sm); color: var(--texto-terciario); margin: 0;">
-                No se cambia desde acá - usá el botón "Restablecer contraseña" de la lista.
+                No se cambia desde acá: use el botón "Restablecer contraseña" de la lista.
               </p>
             </div>
             <div class="campo-grupo campo-grupo--ancho">
@@ -250,7 +250,7 @@ interface FormUsuario {
           <h3 class="modal-titulo">Contraseña temporal generada</h3>
         </div>
         <div class="modal-cuerpo">
-          <p>Para <strong>{{ contrasenaTemporalGenerada.usuario }}</strong>. Copiala ahora - no se puede volver a consultar:</p>
+          <p>Para <strong>{{ contrasenaTemporalGenerada.usuario }}</strong>. Esta es la contraseña temporal. Al entrar deberá crear una nueva:</p>
           <p style="font-family: monospace; font-size: var(--tamano-lg); background: rgba(0,0,0,0.05); padding: var(--espacio-3); border-radius: var(--radio-md); text-align: center; user-select: all;">
             {{ contrasenaTemporalGenerada.valor }}
           </p>
@@ -744,7 +744,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
   // que genera una temporal aleatoria y la devuelve UNA sola vez - no se
   // puede "elegir" la contraseña de otra persona por diseño.
   restablecerContrasena(u: UsuarioSistema): void {
-    if (!confirm(`¿Restablecer la contraseña de ${u.nombre} ${u.apellido}? Se generará una temporal nueva.`)) return;
+    if (!confirm(`¿Restablecer la contraseña de ${u.nombre} ${u.apellido}? Quedará con la temporal Anturi123 y deberá crear una nueva al entrar.`)) return;
     this.restableciendoId = u.id;
     this.usuariosServicio.forzarReset(u.id).pipe(
       catchError(err => {

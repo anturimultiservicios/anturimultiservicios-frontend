@@ -109,10 +109,10 @@
     "ingresar": "Login",
     "olvidoContrasena": "Forgot your password?",
     "recuperar": "Reset password",
-    "recuperarTexto": "Enter your email and we will send you instructions to reset your password.",
-    "enviar": "Send instructions",
+    "recuperarTexto": "Enter your user email and we will notify the administrator to assign you a temporary password.",
+    "enviar": "Request new password",
     "volver": "Back to login",
-    "correoEnviado": "We have sent the instructions to your email."
+    "correoEnviado": "Done. The administrator received your request: you will get the temporary password Anturi123 and must create a new one when you sign in."
   },
   "comun": {
     "cargando": "Loading...",
