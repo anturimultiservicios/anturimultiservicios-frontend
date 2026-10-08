@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.component';
+import { CampanaNotificacionesComponent } from '../../compartido/campana-notificaciones/campana-notificaciones.component';
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
@@ -19,6 +20,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
     RouterLinkActive,
     RouterOutlet,
     CalculadoraComponent,
+    CampanaNotificacionesComponent,
   ],
   template: `
     <div class="escritorio" [class.barra-contraida]="!barraExpandida">
@@ -175,6 +177,9 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
           </button>
 
           <div class="barra-superior__derecha">
+            <!-- Notificaciones (2026-10-08) - ej. "Vence hoy, toca llamar" -->
+            <anturi-campana-notificaciones></anturi-campana-notificaciones>
+
             <!-- Tiempo de sesión -->
             <div class="sesion-tiempo" title="Tiempo de sesión activa">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
