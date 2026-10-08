@@ -616,6 +616,8 @@
   width: 100%;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
   transition: all var(--transicion-normal);
 }
 

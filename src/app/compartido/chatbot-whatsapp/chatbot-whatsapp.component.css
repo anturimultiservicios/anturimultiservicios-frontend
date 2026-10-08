@@ -7,6 +7,17 @@
   flex-direction: column;
   align-items: flex-end;
   gap: var(--espacio-3);
+  /* 2026-10-08 (bug real en celular): el panel cerrado es invisible pero
+     ocupa casi toda la pantalla de abajo (100vw x ~500px) - el contenedor
+     se tragaba los toques y no funcionaban los botones de WhatsApp,
+     Google Maps ni Waze que quedaban debajo. Solo el bot y el panel
+     abierto reciben toques. */
+  pointer-events: none;
+}
+
+.wa-flotante > .wa-robot,
+.wa-flotante > .wa-boton-cerrar {
+  pointer-events: auto;
 }
 
 /* Panel de chat */

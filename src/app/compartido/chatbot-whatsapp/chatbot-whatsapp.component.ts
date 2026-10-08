@@ -79,7 +79,7 @@ export class ChatbotWhatsappComponent {
     const texto = mensaje
       ? encodeURIComponent(mensaje)
       : encodeURIComponent('Hola, me comunico desde el sitio web de Anturi Multiservicios. Quisiera más información sobre sus servicios.');
-    window.open(`https://wa.me/${this.NUMERO_WA}?text=${texto}`, '_blank');
+    this.abrirEnlace(`https://wa.me/${this.NUMERO_WA}?text=${texto}`);
   }
 
   abrirWhatsAppConTranscript(): void {
@@ -89,7 +89,16 @@ export class ChatbotWhatsappComponent {
     const texto = encodeURIComponent(
       `Hola, me contacto desde el sitio web de Anturi Multiservicios.\n\nConversación con el bot:\n${transcript}\n\nNecesito hablar con un asesor.`
     );
-    window.open(`https://wa.me/${this.NUMERO_WA}?text=${texto}`, '_blank');
+    this.abrirEnlace(`https://wa.me/${this.NUMERO_WA}?text=${texto}`);
+  }
+
+  // 2026-10-08: el navegador de la app de Google (y Safari) bloquea
+  // window.open cuando no viene directo de un toque (ej. tras un
+  // setTimeout) - si lo bloquea, se abre en la misma pestaña.
+  private abrirEnlace(url: string): void {
+    const ventana = window.open(url, '_blank');
+    if (ventana) ventana.opener = null;
+    else window.location.href = url;
   }
 
   private agregarMensajeBot(texto: string): void {

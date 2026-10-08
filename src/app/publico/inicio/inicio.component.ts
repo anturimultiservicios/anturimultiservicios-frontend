@@ -73,12 +73,11 @@ export class InicioComponent implements OnInit, OnDestroy {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  abrirWhatsApp(): void {
-    const texto = encodeURIComponent(
-      'Hola, quisiera más información sobre sus servicios de seguridad social.'
-    );
-    window.open(`https://wa.me/573162852138?text=${texto}`, '_blank');
-  }
+  // Enlace real (<a href>), no window.open: en el navegador de la app de
+  // Google un window.open se puede bloquear y el botón "no hace nada".
+  readonly enlaceWhatsApp = `https://wa.me/573162852138?text=${encodeURIComponent(
+    'Hola, quisiera más información sobre sus servicios de seguridad social.'
+  )}`;
 
   // Carrusel
   private iniciarCarrusel(): void {
