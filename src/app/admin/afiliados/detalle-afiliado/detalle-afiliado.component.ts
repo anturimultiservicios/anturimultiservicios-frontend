@@ -91,6 +91,25 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
         {{ mensajeError }}
       </div>
 
+      <!-- 2026-10-08: cédula duplicada (misma persona en 2 fichas) -->
+      <div *ngIf="duplicadosFicha.length > 0 && !modoEdicion" class="aviso-pendiente aviso-pendiente--eliminar">
+        <strong>Cédula duplicada: esta persona tiene otra ficha con el mismo número</strong>
+        <span *ngFor="let d of duplicadosFicha">
+          Ficha #{{ d.id }}: {{ d.nombres }} {{ d.apellidos }} · documento "{{ d.cedula }}" · {{ d.estado }} ·
+          <a [routerLink]="[prefijo, 'afiliados', d.id]" class="aviso-pendiente__enlace">ver esa ficha</a>
+        </span>
+        <span>Esta ficha: documento "{{ afiliadoBase?.cedula }}" · {{ afiliadoBase?.estado }}.</span>
+        <ng-container *ngIf="!esSecretaria">
+          <span>Si <b>esta</b> es la ficha correcta, unifíquela: los documentos y pagos de la otra pasan aquí, la otra va a la papelera y el número queda limpio.</span>
+          <div style="display: flex; gap: var(--espacio-2); flex-wrap: wrap;">
+            <button *ngFor="let d of duplicadosFicha" class="boton boton-primario boton-sm" [disabled]="unificando" (click)="unificarDuplicado(d)">
+              {{ unificando ? 'Unificando...' : 'Conservar esta ficha y retirar la #' + d.id }}
+            </button>
+          </div>
+        </ng-container>
+        <span *ngIf="esSecretaria">Avísele a Anturi para que la unifique.</span>
+      </div>
+
       <!-- 2026-10-08 (regla de Cristopher): lo que edita/elimina Secretaria
            se ve como hecho, pero NO queda en la base general hasta que
            Anturi (Admin/Super Admin) lo confirma en Solicitudes. -->
@@ -327,12 +346,16 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
             </span>
           </div>
           <div class="campo-grupo">
+            <label class="campo-etiqueta">Número de documento <span style="color: var(--color-error);">*</span></label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.cedula" name="edit-cedula" placeholder="Solo el número, sin CC/CE">
+          </div>
+          <div class="campo-grupo">
             <label class="campo-etiqueta">Tipo de documento</label>
             <select class="campo-input" [(ngModel)]="edicionForm.tipoDocumento" name="edit-tipoDocumento" [disabled]="!afiliado?.personaId">
               <option *ngFor="let t of tiposIdentificacion" [value]="t.valor">{{ t.nombre }}</option>
             </select>
             <span *ngIf="!afiliado?.personaId" class="mensaje-error" style="font-size: var(--tamano-sm); color: var(--color-error);">
-              Este afiliado tiene un duplicado sin resolver - no se puede editar hasta que se solucione.
+              Esta ficha es la copia de un duplicado: unifíquela desde el aviso rojo de arriba (en la ficha correcta).
             </span>
           </div>
           <div class="campo-grupo">
@@ -769,9 +792,11 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   readonly sigla = siglaDocumento;
   // Dato real de la base - `afiliado` puede mostrar encima los cambios
   // pendientes de la Secretaria (solo para ella), nunca se pierde el real.
-  private afiliadoBase: Afiliado | null = null;
+  afiliadoBase: Afiliado | null = null;
   edicionesPendientes: { solicitud: SolicitudCambio; cambios: { etiqueta: string; antes: string; despues: string }[] }[] = [];
   eliminacionPendiente: SolicitudCambio | null = null;
+  duplicadosFicha: { id: number; nombres: string; apellidos: string; cedula: string; estado: string }[] = [];
+  unificando = false;
   documentos: Documento[] = [];
   cargando = false;
   cargandoDocs = false;
@@ -873,7 +898,36 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         this.cargarDocumentos();
         this.cargarPagos();
         this.cargarPendientes();
+        this.cargarDuplicados();
       }
+    });
+  }
+
+  cargarDuplicados(): void {
+    this.afiliadosServicio.duplicados(this.afiliadoId).pipe(
+      catchError(() => of([])),
+      takeUntil(this.destruir$),
+    ).subscribe((lista) => (this.duplicadosFicha = lista));
+  }
+
+  unificarDuplicado(d: { id: number; nombres: string; apellidos: string; cedula: string }): void {
+    const actual = this.afiliadoBase;
+    if (!actual) return;
+    const ok = confirm(
+      `Se conservará ESTA ficha (#${actual.id}, "${actual.cedula}") y la ficha #${d.id} ("${d.cedula}") se enviará a la papelera.\n\n` +
+      `Sus documentos y pagos pasan a esta ficha y el número queda limpio. ¿Continuar?`,
+    );
+    if (!ok) return;
+    this.unificando = true;
+    this.afiliadosServicio.resolverDuplicado(actual.id, d.id).pipe(
+      finalize(() => (this.unificando = false)),
+    ).subscribe({
+      next: (r) => {
+        this.mensajeExito = `Duplicado resuelto: queda ${r.tipoDocumento} ${r.numero}` +
+          (r.documentosMovidos || r.pagosMovidos ? ` (se pasaron ${r.documentosMovidos} documentos y ${r.pagosMovidos} pagos).` : '.');
+        this.cargarAfiliado();
+      },
+      error: (err) => (this.mensajeError = err?.error?.message || 'No se pudo unificar.'),
     });
   }
 

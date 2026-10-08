@@ -144,6 +144,15 @@ export class AfiliadosServicio {
     return this.http.delete(`${this.URL}/${id}`);
   }
 
+  // 2026-10-08: misma cédula en 2 fichas ("CE 766854" y "766854")
+  duplicados(id: number): Observable<{ id: number; nombres: string; apellidos: string; cedula: string; estado: string; personaId: number | null; fechaIngreso: string | null; totalPago: number | null }[]> {
+    return this.http.get<any[]>(`${this.URL}/${id}/duplicados`);
+  }
+
+  resolverDuplicado(conservarId: number, retirarId: number): Observable<{ mensaje: string; tipoDocumento: string; numero: string; documentosMovidos: number; pagosMovidos: number; segurosMovidos: number }> {
+    return this.http.post<any>(`${this.URL}/${conservarId}/resolver-duplicado`, { retirarId });
+  }
+
   restaurar(id: number): Observable<any> {
     return this.http.post(`${this.URL}/${id}/restaurar`, {});
   }
