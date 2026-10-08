@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { PagosServicio, DiaCalendario, AfiliadoDiaCalendario } from '../../nucleo/servicios/pagos.servicio';
+import { siglaDocumento } from '../../nucleo/utilidades/tipos-documento';
 
 // 2026-09-29 (decisión de Cristopher): calendario visual de vencimientos,
 // para los 3 roles - verde quien está al día, rojo quien está vencido,
@@ -30,8 +31,9 @@ import { PagosServicio, DiaCalendario, AfiliadoDiaCalendario } from '../../nucle
       </div>
 
       <div class="calendario-leyenda">
-        <span class="leyenda-item"><span class="punto punto--verde"></span> Al día</span>
-        <span class="leyenda-item"><span class="punto punto--rojo"></span> Vencido</span>
+        <span class="leyenda-item"><span class="punto punto--verde"></span> Ya pagó</span>
+        <span class="leyenda-item"><span class="punto punto--rojo"></span> Sin pagar</span>
+        <span class="leyenda-nota">Cada persona vence en su fecha límite de la PILA (según los dos últimos dígitos del documento).</span>
       </div>
 
       <div *ngIf="cargando" class="estado-carga">
@@ -63,20 +65,21 @@ import { PagosServicio, DiaCalendario, AfiliadoDiaCalendario } from '../../nucle
       <div class="tarjeta detalle-dia" *ngIf="diaSeleccionado">
         <h3 class="seccion-titulo">{{ diaSeleccionadoFormato }}</h3>
         <div *ngIf="afiliadosDelDia.length === 0" class="estado-vacio-chico">Nadie vence este día.</div>
+        <p *ngIf="afiliadosDelDia.length > 0" class="resumen-dia">{{ afiliadosDelDia.length }} vencen este día · <span class="txt-rojo">{{ contarSinPagar() }} sin pagar</span> · <span class="txt-verde">{{ afiliadosDelDia.length - contarSinPagar() }} ya pagaron</span></p>
         <div class="tabla-scroll" *ngIf="afiliadosDelDia.length > 0">
           <table class="tabla">
             <thead>
-              <tr><th>Afiliado</th><th>Cédula</th><th>Celular</th><th>Correo</th><th>Estado</th><th></th></tr>
+              <tr><th>Afiliado</th><th>Documento</th><th>Celular</th><th>Valor mes</th><th>Estado</th><th></th></tr>
             </thead>
             <tbody>
               <tr *ngFor="let item of afiliadosDelDia">
                 <td>{{ item.afiliado.nombres }} {{ item.afiliado.apellidos }}</td>
-                <td>{{ item.afiliado.cedula }}</td>
+                <td>{{ sigla(item.afiliado.tipoDocumento) }} {{ item.afiliado.cedula }}</td>
                 <td>{{ item.afiliado.telefono || '—' }}</td>
-                <td>{{ item.afiliado.correo || '—' }}</td>
+                <td>{{ item.valorMes != null ? ('$' + (item.valorMes | number:'1.0-0')) : '—' }}</td>
                 <td>
-                  <span class="badge-estado" [ngClass]="item.estado === 'AL_DIA' ? 'badge-activo' : 'badge-inactivo-rojo'">
-                    {{ item.estado === 'AL_DIA' ? 'Al día' : 'Vencido' }}
+                  <span class="badge-estado" [ngClass]="item.estado === 'PAGADO' ? 'badge-activo' : 'badge-inactivo-rojo'">
+                    {{ item.estado === 'PAGADO' ? 'Ya pagó' : (item.vencido ? 'Sin pagar · vencido' : 'Sin pagar') }}
                   </span>
                 </td>
                 <td>
@@ -101,6 +104,10 @@ import { PagosServicio, DiaCalendario, AfiliadoDiaCalendario } from '../../nucle
     .calendario-leyenda { display: flex; gap: var(--espacio-4); font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .leyenda-item { display: flex; align-items: center; gap: var(--espacio-1); }
     .punto { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .leyenda-nota { font-size: var(--tamano-xs); color: var(--texto-terciario); }
+    .resumen-dia { margin: 0 0 var(--espacio-3); font-size: var(--tamano-sm); color: var(--texto-secundario); }
+    .txt-rojo { color: #b91c1c; font-weight: 600; }
+    .txt-verde { color: #15803d; font-weight: 600; }
     .punto--verde { background: #22c55e; }
     .punto--rojo { background: #ef4444; }
 
@@ -222,11 +229,17 @@ export class CalendarioPagosComponent implements OnInit {
       const fecha = new Date(this.anio, this.mes, dia);
       const clave = this.fechaLocal(fecha);
       const datosDia = this.datosPorDia.get(clave);
-      const alDia = datosDia?.afiliados.filter(a => a.estado === 'AL_DIA').length ?? 0;
-      const vencidos = datosDia?.afiliados.filter(a => a.estado === 'VENCIDO').length ?? 0;
+      const alDia = datosDia?.afiliados.filter(a => a.estado === 'PAGADO').length ?? 0;
+      const vencidos = datosDia?.afiliados.filter(a => a.estado === 'SIN_PAGAR').length ?? 0;
       celdas.push({ fecha: clave, numero: dia, esHoy: clave === hoyStr, alDia, vencidos });
     }
     this.celdas = celdas;
+  }
+
+  readonly sigla = siglaDocumento;
+
+  contarSinPagar(): number {
+    return this.afiliadosDelDia.filter((a) => a.estado === 'SIN_PAGAR').length;
   }
 
   seleccionarDia(celda: { fecha: string }): void {

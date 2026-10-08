@@ -3,11 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { entorno } from '../../../environments/entorno';
 
+// 2026-10-08: un renglón por afiliado activo, en su fecha límite PILA
+// (dos últimos dígitos del documento). PAGADO = verde, SIN_PAGAR = rojo.
 export interface AfiliadoDiaCalendario {
-  seguroId: number;
-  tipo: string;
-  estado: 'AL_DIA' | 'VENCIDO';
-  afiliado: { id: number; nombres: string; apellidos: string; cedula: string; telefono?: string; correo?: string };
+  estado: 'PAGADO' | 'SIN_PAGAR';
+  vencido: boolean; // sin pagar y la fecha ya pasó
+  valorMes: number | null;
+  afiliado: { id: number; nombres: string; apellidos: string; cedula: string; telefono?: string; correo?: string; tipoDocumento?: string };
 }
 
 export interface DiaCalendario {
