@@ -295,6 +295,21 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
             </span>
           </div>
           <div class="campo-grupo">
+            <label class="campo-etiqueta">Tipo de documento</label>
+            <select class="campo-input" [(ngModel)]="edicionForm.tipoDocumento" name="edit-tipoDocumento" [disabled]="!afiliado?.personaId">
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="TI">Tarjeta de identidad</option>
+              <option value="CE">Cédula de extranjería</option>
+              <option value="PP">Pasaporte</option>
+              <option value="PE">Permiso especial de permanencia</option>
+              <option value="PPT">Permiso por protección temporal</option>
+              <option value="CD">Carnet diplomático</option>
+            </select>
+            <span *ngIf="!afiliado?.personaId" class="mensaje-error" style="font-size: var(--tamano-sm); color: var(--color-error);">
+              Este afiliado tiene un duplicado sin resolver - no se puede editar hasta que se solucione.
+            </span>
+          </div>
+          <div class="campo-grupo">
             <label class="campo-etiqueta">Correo</label>
             <input type="email" class="campo-input" [(ngModel)]="edicionForm.correo" name="edit-correo">
           </div>
@@ -947,7 +962,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   // ── EDICIÓN ──────────────────────────────────────────────
   activarEdicion(): void {
     if (!this.afiliado) return;
-    this.edicionForm = { ...this.afiliado };
+    this.edicionForm = { ...this.afiliado, tipoDocumento: (this.afiliado as any).persona?.tipoDocumento ?? 'CC' };
     this.motivoEdicion = '';
     this.modoEdicion = true;
     this.mensajeExito = '';

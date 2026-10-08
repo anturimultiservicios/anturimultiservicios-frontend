@@ -54,6 +54,12 @@ export interface Afiliado {
   estado: 'ACTIVO' | 'RETIRADO' | 'SUSPENDIDO';
   fechaIngreso?: string;
   fechaRetiro?: string;
+  // 2026-10-07 (backfill real de Migración B): tipoDocumento vive en
+  // Persona, no en Afiliado - personaId es null solo para los 4 registros
+  // duplicados sin resolver (ver notificación a Secretaria/Admin).
+  personaId?: number | null;
+  persona?: { id: number; tipoDocumento: string } | null;
+  tipoDocumento?: string;
   sucursalId?: number;
   sucursal?: any;
   seguros?: any[];
