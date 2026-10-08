@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.component';
 import { CampanaNotificacionesComponent } from '../../compartido/campana-notificaciones/campana-notificaciones.component';
+import { CredencialesPilaComponent } from '../../compartido/credenciales-pila/credenciales-pila.component';
 import { CorreoRecuperacionComponent } from '../../compartido/correo-recuperacion/correo-recuperacion.component';
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
@@ -22,6 +23,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
     RouterOutlet,
     CalculadoraComponent,
     CampanaNotificacionesComponent,
+    CredencialesPilaComponent,
     CorreoRecuperacionComponent,
   ],
   template: `
@@ -272,6 +274,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
 
       <!-- Calculadora flotante -->
       <anturi-calculadora></anturi-calculadora>
+      <anturi-credenciales-pila></anturi-credenciales-pila>
 
       <!-- Overlay -->
       <div class="escritorio__overlay" *ngIf="menuPerfil" (click)="menuPerfil = false"></div>
