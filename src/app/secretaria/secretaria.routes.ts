@@ -39,6 +39,13 @@ export const rutasSecretaria: Routes = [
           ),
       },
       {
+        path: 'afiliados/:id/incapacidades',
+        loadComponent: () =>
+          import('../admin/afiliados/incapacidades-afiliado/incapacidades-afiliado.component').then(
+            (m) => m.IncapacidadesAfiliadoComponent
+          ),
+      },
+      {
         path: 'empresas',
         loadComponent: () =>
           import('../admin/empresas/lista-empresas/lista-empresas.component').then(

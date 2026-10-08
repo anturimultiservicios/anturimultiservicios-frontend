@@ -30,6 +30,12 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
           <span *ngIf="afiliado" class="badge-estado" [ngClass]="claseBadge(afiliado.estado)">{{ afiliado.estado }}</span>
         </div>
         <div class="detalle-acciones" *ngIf="afiliado && !modoEdicion">
+          <a [routerLink]="[prefijo, 'afiliados', afiliadoId, 'incapacidades']" class="boton boton-secundario">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+            </svg>
+            Incapacidades
+          </a>
           <button class="boton boton-secundario" (click)="activarEdicion()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -780,7 +786,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   guardandoPago = false;
 
   private destruir$ = new Subject<void>();
-  private afiliadoId!: number;
+  protected afiliadoId!: number;
 
   get esSecretaria(): boolean {
     return this.auth.tieneRol(['SECRETARIA']);
@@ -800,7 +806,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     private pagosServicio: PagosServicio
   ) {}
 
-  private get prefijo(): string {
+  protected get prefijo(): string {
     return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
   }
 

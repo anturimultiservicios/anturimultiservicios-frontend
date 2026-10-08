@@ -35,6 +35,11 @@ export const rutasAdmin: Routes = [
           import('./afiliados/detalle-afiliado/detalle-afiliado.component').then((m) => m.DetalleAfiliadoComponent),
       },
       {
+        path: 'afiliados/:id/incapacidades',
+        loadComponent: () =>
+          import('./afiliados/incapacidades-afiliado/incapacidades-afiliado.component').then((m) => m.IncapacidadesAfiliadoComponent),
+      },
+      {
         path: 'empresas',
         loadComponent: () =>
           import('./empresas/lista-empresas/lista-empresas.component').then((m) => m.ListaEmpresasComponent),
