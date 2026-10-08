@@ -1,12 +1,6 @@
 <!-- Botón flotante del bot (Anturi) -->
 <div class="wa-flotante">
 
-  <!-- Burbuja de saludo - 2026-10-01: invita a hacer clic, solo visible
-       con el panel cerrado. -->
-  <div class="wa-saludo" *ngIf="!abierto" (click)="abrir()">
-    {{ 'chatbot.saludo' | translate }}
-  </div>
-
   <!-- Panel de chat -->
   <div class="wa-panel" [class.abierto]="abierto">
     <!-- Encabezado -->

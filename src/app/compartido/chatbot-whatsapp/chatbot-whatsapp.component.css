@@ -202,12 +202,19 @@
 
 .wa-robot__video {
   display: block;
-  height: 92px;
-  width: 92px;
+  height: 150px;
+  width: 150px;
   object-fit: cover;
   border-radius: 50%;
   mix-blend-mode: multiply;
   background: transparent;
+}
+
+@media (max-width: 480px) {
+  .wa-robot__video {
+    height: 110px;
+    width: 110px;
+  }
 }
 
 .wa-robot__img {
@@ -256,54 +263,6 @@
 @media (max-width: 480px) {
   .wa-robot__img {
     height: 74px;
-  }
-}
-
-/* Burbuja de saludo */
-.wa-saludo {
-  position: relative;
-  background: var(--fondo-tarjeta);
-  color: var(--texto-principal);
-  padding: var(--espacio-3) var(--espacio-4);
-  border-radius: var(--radio-lg);
-  box-shadow: var(--sombra-lg);
-  font-size: var(--tamano-sm);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  animation: saludoAparecer 0.5s ease 0.6s both, saludoFlotar 2.4s ease-in-out 1.2s infinite;
-}
-
-/* 2026-10-01: colita apuntando al robot, para que se lea como una nube
-   de diálogo de verdad y no solo un cartel flotando. */
-.wa-saludo::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  right: 24px;
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid var(--fondo-tarjeta);
-}
-
-@keyframes saludoAparecer {
-  from { opacity: 0; transform: translateY(10px) scale(0.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes saludoFlotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-@media (max-width: 480px) {
-  .wa-saludo {
-    font-size: var(--tamano-xs);
-    white-space: normal;
-    max-width: 180px;
-    text-align: center;
   }
 }
 
