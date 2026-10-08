@@ -6,6 +6,7 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl, GeneroAfiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { MotorLiquidacionServicio, PlantillaLiquidacion, ResultadoMotorLiquidacion } from '../../../nucleo/servicios/motor-liquidacion.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
+import { TIPOS_DOCUMENTO } from '../../../nucleo/utilidades/tipos-documento';
 
 interface ErroresCampo {
   nombres?: string;
@@ -406,9 +407,15 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <span *ngIf="errores.apellidos" class="mensaje-error">{{ errores.apellidos }}</span>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Cédula <span class="requerido">*</span></label>
+              <label class="campo-etiqueta">Tipo de documento <span class="requerido">*</span></label>
+              <select class="campo-input" [(ngModel)]="form.tipoDocumento" name="tipoDocumento">
+                <option *ngFor="let t of tiposDocumento" [value]="t.valor">{{ t.nombre }}</option>
+              </select>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Número de documento <span class="requerido">*</span></label>
               <input type="text" class="campo-input" [class.campo-error]="errores.cedula"
-                [(ngModel)]="form.cedula" name="cedula" placeholder="Número de cédula"
+                [(ngModel)]="form.cedula" name="cedula" placeholder="Número de documento"
                 (blur)="validarCampo('cedula')">
               <span *ngIf="errores.cedula" class="mensaje-error">{{ errores.cedula }}</span>
             </div>
@@ -880,6 +887,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
 })
 export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   readonly tipos = TIPOS;
+  readonly tiposDocumento = TIPOS_DOCUMENTO;
 
   tipoSeleccionado: TipoAfiliacion | null = null;
 
@@ -904,6 +912,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   form: Omit<CrearAfiliadoDto, 'genero'> & { genero: GeneroAfiliado | ''; confirmarCorreo?: string; caja?: string; cesantias?: number; cuatroXMil?: number } = {
     nombres: '',
     apellidos: '',
+    tipoDocumento: 'CC',
     cedula: '',
     genero: '',
     correo: '',
@@ -1302,7 +1311,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
         this.errores.apellidos = this.form.apellidos?.trim() ? '' : 'Los apellidos son requeridos';
         break;
       case 'cedula':
-        this.errores.cedula = this.form.cedula?.trim() ? '' : 'La cédula es requerida';
+        this.errores.cedula = this.form.cedula?.trim() ? '' : 'El número de documento es requerido';
         break;
       case 'genero':
         this.errores.genero = this.form.genero ? '' : 'El género es requerido';
@@ -1359,6 +1368,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     const dto: CrearAfiliadoDto = {
       nombres: this.form.nombres.trim(),
       apellidos: this.form.apellidos.trim(),
+      tipoDocumento: this.form.tipoDocumento || 'CC',
       cedula: this.form.cedula.trim(),
       genero: this.form.genero as GeneroAfiliado, // ya validado en validarTodo()
       correo: this.form.correo || undefined,

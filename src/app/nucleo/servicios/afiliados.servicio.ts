@@ -74,6 +74,7 @@ export interface Afiliado {
 export interface CrearAfiliadoDto {
   nombres: string;
   apellidos: string;
+  tipoDocumento?: string; // CC por defecto - ver nucleo/utilidades/tipos-documento.ts
   cedula: string;
   genero: GeneroAfiliado;
   correo?: string;

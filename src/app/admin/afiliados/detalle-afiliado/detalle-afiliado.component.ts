@@ -9,6 +9,7 @@ import { DocumentosServicio, Documento, TipoDocumento, TipoDocumentoRequerido } 
 import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
+import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
@@ -116,8 +117,8 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
           <h3 class="seccion-titulo">Datos personales y laborales</h3>
           <div class="datos-grid">
             <div class="dato-item">
-              <span class="dato-etiqueta">Cédula</span>
-              <span class="dato-valor">{{ afiliado.cedula }}</span>
+              <span class="dato-etiqueta">Documento</span>
+              <span class="dato-valor">{{ sigla(afiliado.persona?.tipoDocumento) }} {{ afiliado.cedula }}</span>
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Correo</span>
@@ -324,13 +325,7 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
           <div class="campo-grupo">
             <label class="campo-etiqueta">Tipo de documento</label>
             <select class="campo-input" [(ngModel)]="edicionForm.tipoDocumento" name="edit-tipoDocumento" [disabled]="!afiliado?.personaId">
-              <option value="CC">Cédula de ciudadanía</option>
-              <option value="TI">Tarjeta de identidad</option>
-              <option value="CE">Cédula de extranjería</option>
-              <option value="PP">Pasaporte</option>
-              <option value="PE">Permiso especial de permanencia</option>
-              <option value="PPT">Permiso por protección temporal</option>
-              <option value="CD">Carnet diplomático</option>
+              <option *ngFor="let t of tiposIdentificacion" [value]="t.valor">{{ t.nombre }}</option>
             </select>
             <span *ngIf="!afiliado?.personaId" class="mensaje-error" style="font-size: var(--tamano-sm); color: var(--color-error);">
               Este afiliado tiene un duplicado sin resolver - no se puede editar hasta que se solucione.
@@ -766,6 +761,8 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 })
 export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   afiliado: Afiliado | null = null;
+  readonly tiposIdentificacion = TIPOS_DOCUMENTO;
+  readonly sigla = siglaDocumento;
   // Dato real de la base - `afiliado` puede mostrar encima los cambios
   // pendientes de la Secretaria (solo para ella), nunca se pierde el real.
   private afiliadoBase: Afiliado | null = null;
@@ -878,7 +875,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
 
   // ── CAMBIOS PENDIENTES DE CONFIRMACIÓN (2026-10-08) ─────────
   private static readonly ETIQUETAS: Record<string, string> = {
-    nombres: 'Nombres', apellidos: 'Apellidos', cedula: 'Cédula', correo: 'Correo', telefono: 'Teléfono',
+    nombres: 'Nombres', apellidos: 'Apellidos', cedula: 'Número de documento', correo: 'Correo', telefono: 'Teléfono',
     fechaNacimiento: 'Fecha de nacimiento', genero: 'Género', cargo: 'Cargo', claseAportante: 'Clase aportante',
     asopagos: 'Asopagos', diasPago: 'Días de pago', tipoAfiliacion: 'Tipo de afiliación', claseRiesgoArl: 'Clase de riesgo ARL',
     valor: 'Base de cotización (IBC)', comision: 'Comisión', totalPago: 'Total a pagar', eps: 'EPS', afp: 'AFP', arl: 'ARL',

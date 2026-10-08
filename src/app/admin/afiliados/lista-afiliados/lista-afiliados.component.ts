@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
+import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 
 @Component({
   selector: 'anturi-lista-afiliados',
@@ -68,7 +69,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
           <input
             type="text"
             class="campo-input filtro-busqueda__input"
-            placeholder="Buscar por nombre, apellido o cédula..."
+            placeholder="Buscar por nombre, apellido o documento..."
             [(ngModel)]="terminoBusqueda"
             (ngModelChange)="alCambiarBusqueda($event)"
           >
@@ -144,7 +145,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
                   </div>
                 </div>
               </td>
-              <td class="celda-cedula">{{ af.cedula }}</td>
+              <td class="celda-cedula"><span class="sigla-doc">{{ sigla(af.persona?.tipoDocumento) }}</span> {{ af.cedula }}</td>
               <td>{{ af.claseAportante || '—' }}</td>
               <td>
                 <div class="celda-seguros">
@@ -243,6 +244,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
     .celda-seguros { display: flex; flex-direction: column; gap: 2px; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .celda-acciones { white-space: nowrap; }
 
+    .sigla-doc { font-size: 0.7rem; font-weight: 700; color: var(--texto-terciario); margin-right: 2px; }
     .badge-pendiente { display: inline-flex; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 600; background: rgba(234,179,8,0.15); color: #a16207; border: 1px solid rgba(234,179,8,0.4); white-space: nowrap; }
     .badge-pendiente--eliminar { background: rgba(239,68,68,0.1); color: #b91c1c; border-color: rgba(239,68,68,0.35); }
     .badge-estado { display: inline-flex; align-items: center; padding: 2px var(--espacio-2); border-radius: var(--radio-sm); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -279,6 +281,7 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   // 2026-10-08: afiliado → tipo de solicitud pendiente (lo que la Secretaria
   // ya editó/eliminó y Anturi todavía no confirma).
   pendientes = new Map<number, 'EDICION' | 'ELIMINACION'>();
+  readonly sigla = siglaDocumento;
 
   constructor(
     private afiliadosServicio: AfiliadosServicio,
