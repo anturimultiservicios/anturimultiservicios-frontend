@@ -334,6 +334,25 @@
     </div>
 
     <!-- ===== DISPOSITIVO PENDIENTE DE APROBACIÓN ===== -->
+    <!-- 2026-10-08: equipos autorizados por Anturi (sin llave de seguridad) -->
+    <div class="login-formulario login-enviado" *ngIf="vista === 'equipo-pendiente'">
+      <div class="login-enviado__icono">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      </div>
+      <h2 class="login-enviado__titulo">{{ equipoBloqueado ? 'Equipo sin permiso' : 'Equipo esperando autorización' }}</h2>
+      <p class="login-enviado__texto">{{ mensajeEquipo }}</p>
+      <p class="login-enviado__texto" *ngIf="!equipoBloqueado" style="font-size: var(--tamano-xs);">
+        Por seguridad, solo se puede entrar desde equipos que Anturi haya autorizado.
+      </p>
+      <button class="boton boton-primario login-btn-ingresar" (click)="cambiarVista('login')">
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
     <div class="login-formulario login-enviado" *ngIf="vista === 'dispositivo-pendiente'">
       <div class="login-enviado__icono">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

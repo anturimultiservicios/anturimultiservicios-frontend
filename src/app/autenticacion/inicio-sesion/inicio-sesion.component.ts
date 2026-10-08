@@ -20,6 +20,7 @@ import {
 type VistaLogin =
   | 'login'
   | 'recuperar'
+  | 'equipo-pendiente'
   | 'enviado'
   | 'cambiar-contrasena'
   | 'verificar-dispositivo'
@@ -49,6 +50,8 @@ export class InicioSesionComponent {
   // correcta pero el horario de acceso (7:00-19:00 hora Colombia) no deja
   // entrar en este momento.
   fueraDeHorarioMensaje: string | null = null;
+  mensajeEquipo = '';
+  equipoBloqueado = false;
   // Respuesta de "Olvidó su contraseña": enlace al correo personal, o aviso
   // al administrador si todavía no registró uno (2026-10-08).
   mensajeEnviado = '';
@@ -119,6 +122,11 @@ export class InicioSesionComponent {
           // incorrectas", por eso pantalla completa propia en vez del
           // mensaje de error genérico del formulario.
           this.fueraDeHorarioMensaje = mensaje;
+        } else if (err.status === 403 && mensaje?.startsWith('EQUIPO_')) {
+          // 2026-10-08: equipos autorizados - nuevo, pendiente o bloqueado.
+          this.mensajeEquipo = mensaje.replace(/^EQUIPO_[A-Z_]+:\s*/, '');
+          this.equipoBloqueado = mensaje.startsWith('EQUIPO_BLOQUEADO') || mensaje.startsWith('EQUIPO_SIN_ID');
+          this.vista = 'equipo-pendiente';
         } else if (err.status === 401) {
           this.error = 'Correo o contraseña incorrectos.';
         } else {

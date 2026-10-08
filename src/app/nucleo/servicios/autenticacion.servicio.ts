@@ -58,7 +58,25 @@ export class AutenticacionServicio {
   // El componente de login decide que hacer segun `esLoginCompleto()` y
   // llama guardarSesion() el solo cuando de verdad hay una sesion real.
   iniciarSesion(correo: string, contrasena: string): Observable<RespuestaLogin> {
-    return this.http.post<RespuestaLogin>(`${this.URL}/ingresar`, { correo, contrasena });
+    return this.http.post<RespuestaLogin>(`${this.URL}/ingresar`, { correo, contrasena, equipo: this.identificacionEquipo() });
+  }
+
+  // 2026-10-08: identificación propia de ESTE navegador (equipos autorizados
+  // por Anturi). Se crea una sola vez y queda guardada; si se borran los
+  // datos del navegador, el equipo cuenta como nuevo y hay que autorizarlo otra vez.
+  identificacionEquipo(): string | undefined {
+    try {
+      let id = localStorage.getItem('anturi_equipo');
+      if (!id) {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        id = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem('anturi_equipo', id);
+      }
+      return id;
+    } catch {
+      return undefined;
+    }
   }
 
   guardarSesion(res: RespuestaAuth): void {
