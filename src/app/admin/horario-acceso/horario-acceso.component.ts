@@ -36,20 +36,38 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
           <div class="campo-grupo campo-grupo--inline">
             <label class="campo-check">
               <input type="checkbox" [(ngModel)]="config.activo">
-              Horario activo (si lo apagás, nadie queda restringido)
+              Horario activo (si lo apaga, nadie queda restringido)
             </label>
           </div>
 
           <div class="campos-grid">
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Hora de inicio (Colombia)</label>
-              <input type="number" class="campo-input" min="0" max="23" [(ngModel)]="config.horaInicio">
+              <label class="campo-etiqueta">Lunes a viernes: abre (hora Colombia)</label>
+              <select class="campo-input" [(ngModel)]="config.horaInicio">
+                <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+              </select>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Hora de cierre (Colombia)</label>
-              <input type="number" class="campo-input" min="0" max="23" [(ngModel)]="config.horaFin">
+              <label class="campo-etiqueta">Lunes a viernes: cierra</label>
+              <select class="campo-input" [(ngModel)]="config.horaFin">
+                <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+              </select>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-check"><input type="checkbox" [(ngModel)]="config.sabadoActivo"> Abre los sábados</label>
+              <label class="campo-etiqueta" *ngIf="config.sabadoActivo">Sábado: cierra</label>
+              <select *ngIf="config.sabadoActivo" class="campo-input" [(ngModel)]="config.sabadoHoraFin">
+                <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+              </select>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-check"><input type="checkbox" [(ngModel)]="config.domingoActivo"> Abre los domingos</label>
+              <label class="campo-check"><input type="checkbox" [(ngModel)]="config.bloquearFestivos"> Cerrado los festivos de Colombia</label>
             </div>
           </div>
+          <p class="resumen-horario">
+            Así queda: <b>{{ resumenHorario() }}</b>. Usted (Super Admin) siempre puede entrar.
+          </p>
 
           <div *ngIf="errorConfig" class="mensaje-error" style="margin-top: var(--espacio-3);">{{ errorConfig }}</div>
           <div *ngIf="exitoConfig" class="alerta-exito" style="margin-top: var(--espacio-3);">Guardado.</div>
@@ -144,6 +162,7 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
     </div>
   `,
   styles: [`
+    .resumen-horario { margin: var(--espacio-3) 0 0; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .pagina-contenedor { display: flex; flex-direction: column; gap: var(--espacio-2); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
     .pagina-subtitulo { color: var(--texto-secundario); margin: 0 0 var(--espacio-4); }
@@ -228,6 +247,25 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
     });
   }
 
+  readonly horas = Array.from({ length: 24 }, (_, i) => i);
+
+  textoHora(h: number): string {
+    if (h === 0) return '12:00 a. m.';
+    if (h === 12) return '12:00 m.';
+    return `${h % 12}:00 ${h < 12 ? 'a. m.' : 'p. m.'}`;
+  }
+
+  resumenHorario(): string {
+    const c = this.config;
+    if (!c) return '';
+    if (!c.activo) return 'sin restricción de horario';
+    let t = `lunes a viernes de ${this.textoHora(c.horaInicio)} a ${this.textoHora(c.horaFin)}`;
+    t += c.sabadoActivo ? `; sábados de ${this.textoHora(c.horaInicio)} a ${this.textoHora(c.sabadoHoraFin)}` : '; sábados cerrado';
+    t += c.domingoActivo ? `; domingos de ${this.textoHora(c.horaInicio)} a ${this.textoHora(c.horaFin)}` : '; domingos cerrado';
+    if (c.bloquearFestivos) t += '; festivos cerrado';
+    return t;
+  }
+
   guardarConfiguracion(): void {
     if (!this.config) return;
     this.guardandoConfig = true;
@@ -237,6 +275,10 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
       activo: this.config.activo,
       horaInicio: Number(this.config.horaInicio),
       horaFin: Number(this.config.horaFin),
+      sabadoActivo: this.config.sabadoActivo,
+      sabadoHoraFin: Number(this.config.sabadoHoraFin),
+      domingoActivo: this.config.domingoActivo,
+      bloquearFestivos: this.config.bloquearFestivos,
     }).pipe(takeUntil(this.destruir$)).subscribe({
       next: (config) => {
         this.guardandoConfig = false;

@@ -7,6 +7,7 @@ export interface EstadoHorarioAcceso {
   minutosParaCierre: number | null;
   horaInicio: number;
   horaFin: number;
+  mensaje?: string;
 }
 
 export interface ConfiguracionHorarioAcceso {
@@ -14,6 +15,11 @@ export interface ConfiguracionHorarioAcceso {
   activo: boolean;
   horaInicio: number;
   horaFin: number;
+  // 2026-10-08: sábado medio día, domingo y festivos
+  sabadoActivo: boolean;
+  sabadoHoraFin: number;
+  domingoActivo: boolean;
+  bloquearFestivos: boolean;
   actualizadoEn: string;
 }
 
@@ -56,7 +62,7 @@ export class HorarioAccesoServicio {
     return this.http.get<ConfiguracionHorarioAcceso>(`${this.URL}/configuracion`);
   }
 
-  actualizarConfiguracion(datos: { activo?: boolean; horaInicio?: number; horaFin?: number }): Observable<ConfiguracionHorarioAcceso> {
+  actualizarConfiguracion(datos: Partial<Pick<ConfiguracionHorarioAcceso, 'activo' | 'horaInicio' | 'horaFin' | 'sabadoActivo' | 'sabadoHoraFin' | 'domingoActivo' | 'bloquearFestivos'>>): Observable<ConfiguracionHorarioAcceso> {
     return this.http.patch<ConfiguracionHorarioAcceso>(`${this.URL}/configuracion`, datos);
   }
 
