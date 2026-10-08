@@ -1,8 +1,8 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subscription, interval, startWith, switchMap, catchError, of } from 'rxjs';
-import { NotificacionesSistemaServicio, NotificacionSistema } from '../../nucleo/servicios/notificaciones-sistema.servicio';
+import { Subscription, interval, startWith, switchMap, catchError, of, forkJoin } from 'rxjs';
+import { NotificacionesSistemaServicio, NotificacionSistema, PendienteSistema } from '../../nucleo/servicios/notificaciones-sistema.servicio';
 
 // Tipos cuyo referenciaId es un afiliado - al hacer clic se abre su ficha.
 const TIPOS_AFILIADO = [
@@ -24,7 +24,7 @@ const TIPOS_AFILIADO = [
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
         </svg>
-        <span *ngIf="sinLeer > 0" class="campana__contador">{{ sinLeer > 99 ? '99+' : sinLeer }}</span>
+        <span *ngIf="sinLeer + pendientes.length > 0" class="campana__contador">{{ sinLeer + pendientes.length > 99 ? '99+' : sinLeer + pendientes.length }}</span>
       </button>
 
       <div *ngIf="abierta" class="campana__panel">
@@ -32,6 +32,17 @@ const TIPOS_AFILIADO = [
           <strong>Notificaciones</strong>
           <button *ngIf="sinLeer > 0" class="campana__enlace" (click)="marcarTodas()">Marcar todas como leídas</button>
         </div>
+        <div *ngIf="pendientes.length > 0" class="campana__seccion">Por resolver ({{ pendientes.length }})</div>
+        <ul *ngIf="pendientes.length > 0" class="campana__lista campana__lista--pendientes">
+          <li *ngFor="let p of pendientes" class="campana__item campana__item--pendiente" (click)="abrirPendiente(p)">
+            <span class="campana__punto campana__punto--pendiente"></span>
+            <div class="campana__texto">
+              <span class="campana__titulo">{{ p.titulo }}</span>
+              <span class="campana__mensaje">{{ p.mensaje }}</span>
+            </div>
+          </li>
+        </ul>
+        <div *ngIf="pendientes.length > 0" class="campana__seccion">Avisos</div>
         <div *ngIf="cargando" class="campana__vacio">Cargando...</div>
         <div *ngIf="!cargando && lista.length === 0" class="campana__vacio">No hay notificaciones.</div>
         <ul *ngIf="!cargando && lista.length > 0" class="campana__lista">
@@ -61,6 +72,10 @@ const TIPOS_AFILIADO = [
     .campana__item:hover { background: rgba(0,0,0,0.03); }
     .campana__item--nueva { background: rgba(30,58,138,0.05); }
     .campana__punto { position: absolute; left: 10px; top: 16px; width: 7px; height: 7px; border-radius: 50%; background: var(--color-primario, #1e3a8a); }
+    .campana__seccion { padding: 8px 14px 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-terciario, #6b7280); }
+    .campana__lista--pendientes { overflow: visible; }
+    .campana__item--pendiente { background: rgba(234,179,8,0.08); }
+    .campana__punto--pendiente { background: #eab308; }
     .campana__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .campana__titulo { font-weight: 600; font-size: var(--tamano-sm, 14px); color: var(--texto-principal, #111827); }
     .campana__mensaje { font-size: var(--tamano-xs, 12px); color: var(--texto-secundario, #4b5563); overflow-wrap: anywhere; }
@@ -72,6 +87,7 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
   cargando = false;
   sinLeer = 0;
   lista: NotificacionSistema[] = [];
+  pendientes: PendienteSistema[] = [];
   private sondeo?: Subscription;
 
   constructor(private servicio: NotificacionesSistemaServicio, private router: Router) {}
@@ -79,8 +95,14 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.sondeo = interval(60_000).pipe(
       startWith(0),
-      switchMap(() => this.servicio.contarSinLeer().pipe(catchError(() => of(this.sinLeer)))),
-    ).subscribe((n) => (this.sinLeer = Number(n) || 0));
+      switchMap(() => forkJoin({
+        sinLeer: this.servicio.contarSinLeer().pipe(catchError(() => of(this.sinLeer))),
+        pendientes: this.servicio.pendientes().pipe(catchError(() => of(this.pendientes))),
+      })),
+    ).subscribe(({ sinLeer, pendientes }) => {
+      this.sinLeer = Number(sinLeer) || 0;
+      this.pendientes = pendientes;
+    });
   }
 
   ngOnDestroy(): void {
@@ -110,6 +132,18 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
       this.lista = this.lista.map((n) => ({ ...n, leida: true }));
       this.sinLeer = 0;
     });
+  }
+
+  abrirPendiente(p: PendienteSistema): void {
+    const prefijo = this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
+    this.abierta = false;
+    if (p.tipo === 'duplicado_cedula' && p.referenciaId) {
+      this.router.navigate([prefijo, 'afiliados', p.referenciaId]);
+    } else if (p.tipo === 'solicitud_pendiente') {
+      this.router.navigate(['/admin', 'solicitudes']);
+    } else if (p.tipo === 'dispositivo_pendiente') {
+      this.router.navigate(['/admin', 'dispositivos']);
+    }
   }
 
   abrir(n: NotificacionSistema): void {

@@ -17,6 +17,16 @@ export interface NotificacionSistema {
   creadoEn: string;
 }
 
+// Tarea abierta calculada en vivo por el backend - no se marca como leída,
+// desaparece sola cuando se resuelve (ej. cédula duplicada).
+export interface PendienteSistema {
+  clave: string;
+  tipo: string;
+  titulo: string;
+  mensaje: string;
+  referenciaId: number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NotificacionesSistemaServicio {
   private readonly URL = `${entorno.urlApi}/notificaciones`;
@@ -25,6 +35,10 @@ export class NotificacionesSistemaServicio {
 
   listar(): Observable<NotificacionSistema[]> {
     return this.http.get<NotificacionSistema[]>(this.URL);
+  }
+
+  pendientes(): Observable<PendienteSistema[]> {
+    return this.http.get<PendienteSistema[]>(`${this.URL}/pendientes`);
   }
 
   contarSinLeer(): Observable<number> {
