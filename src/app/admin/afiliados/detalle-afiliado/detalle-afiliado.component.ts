@@ -11,11 +11,12 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 import { formatearValor } from '../../../nucleo/utilidades/comparar-datos';
+import { CredencialesTitularComponent } from '../../../compartido/credenciales-titular/credenciales-titular.component';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent],
   template: `
     <div class="detalle-contenedor">
 
@@ -462,6 +463,12 @@ import { formatearValor } from '../../../nucleo/utilidades/comparar-datos';
             {{ guardandoEdicion ? 'Guardando...' : (esSecretaria ? 'Enviar solicitud' : 'Guardar cambios') }}
           </button>
         </div>
+      </div>
+
+      <!-- 2026-10-08: usuarios y claves de portales (operador PILA, EPS, pensión, ARL, caja...) -->
+      <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
+        <h3 class="seccion-titulo">Usuarios y claves de portales</h3>
+        <anturi-credenciales-titular titularTipo="AFILIADO" [titularId]="afiliadoId"></anturi-credenciales-titular>
       </div>
 
       <!-- SECCIÓN DOCUMENTOS -->

@@ -6,6 +6,7 @@ import { catchError, of, finalize } from 'rxjs';
 import { EmpresasServicio, Empresa, PersonalEmpresa } from '../../../nucleo/servicios/empresas.servicio';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
+import { CredencialesTitularComponent } from '../../../compartido/credenciales-titular/credenciales-titular.component';
 import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
 import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
@@ -19,7 +20,7 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 @Component({
   selector: 'anturi-detalle-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent],
   template: `
     <div class="detalle-contenedor">
       <div class="detalle-encabezado">
@@ -110,6 +111,12 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
               <span class="dato-valor">{{ empresa.creadoEn | date:'d MMM y' }}</span>
             </div>
           </div>
+        </div>
+
+        <!-- 2026-10-08: usuarios y claves de portales de la empresa -->
+        <div class="tarjeta seccion-datos">
+          <h3 class="seccion-titulo">Usuarios y claves de portales</h3>
+          <anturi-credenciales-titular titularTipo="EMPRESA" [titularId]="empresa.id"></anturi-credenciales-titular>
         </div>
 
         <!-- 2026-10-08: personal de la empresa (antes solo se veían sucursales) -->

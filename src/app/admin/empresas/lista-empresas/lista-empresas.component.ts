@@ -2,13 +2,15 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of, forkJoin } from 'rxjs';
 import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.servicio';
+import { CredencialesNuevasComponent, credencialesValidas } from '../../../compartido/credenciales-nuevas/credenciales-nuevas.component';
+import { CredencialesServicio, NuevaCredencial } from '../../../nucleo/servicios/credenciales.servicio';
 
 @Component({
   selector: 'anturi-lista-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent],
   template: `
     <div class="pagina-lista">
       <div class="pagina-encabezado">
@@ -164,6 +166,10 @@ import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.se
               <input type="text" class="campo-input" [(ngModel)]="formEmpresa.direccion">
             </div>
           </div>
+          <!-- 2026-10-08: usuarios y claves de portales (opcional) -->
+          <div style="margin-top: var(--espacio-4);">
+            <anturi-credenciales-nuevas [(lista)]="credencialesNuevas"></anturi-credenciales-nuevas>
+          </div>
         </div>
         <div class="modal-pie">
           <button class="boton boton-secundario" (click)="cerrarModalCrear()" [disabled]="guardandoCrear">Cancelar</button>
@@ -258,8 +264,11 @@ export class ListaEmpresasComponent implements OnInit, OnDestroy {
   private busqueda$ = new Subject<string>();
   private destruir$ = new Subject<void>();
 
+  credencialesNuevas: NuevaCredencial[] = [];
+
   constructor(
     private empresasServicio: EmpresasServicio,
+    private credencialesServicio: CredencialesServicio,
     private router: Router
   ) {}
 
@@ -351,12 +360,18 @@ export class ListaEmpresasComponent implements OnInit, OnDestroy {
     this.empresasServicio.crear(this.formEmpresa).pipe(
       catchError((err) => { this.errorModal = err?.error?.message || 'Error al crear la empresa.'; return of(null); }),
     ).subscribe((creada) => {
-      this.guardandoCrear = false;
-      if (creada) {
+      if (!creada) { this.guardandoCrear = false; return; }
+      const terminar = () => {
+        this.guardandoCrear = false;
         this.modalCrear = false;
+        this.credencialesNuevas = [];
         this.cargarEmpresas();
         this.irADetalle(creada.id);
-      }
+      };
+      const validas = credencialesValidas(this.credencialesNuevas);
+      if (validas.length === 0) { terminar(); return; }
+      // La empresa ya quedó creada: si alguna clave falla, se puede agregar después en su ficha.
+      forkJoin(validas.map((c) => this.credencialesServicio.crear('EMPRESA', creada.id, c).pipe(catchError(() => of(null))))).subscribe(terminar);
     });
   }
 }

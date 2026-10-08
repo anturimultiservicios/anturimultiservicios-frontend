@@ -2,11 +2,13 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subject, Observable, debounceTime, forkJoin, takeUntil } from 'rxjs';
+import { Subject, Observable, debounceTime, forkJoin, takeUntil, catchError, of } from 'rxjs';
 import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl, GeneroAfiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { MotorLiquidacionServicio, PlantillaLiquidacion, ResultadoMotorLiquidacion } from '../../../nucleo/servicios/motor-liquidacion.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { TIPOS_DOCUMENTO } from '../../../nucleo/utilidades/tipos-documento';
+import { CredencialesNuevasComponent, credencialesValidas } from '../../../compartido/credenciales-nuevas/credenciales-nuevas.component';
+import { CredencialesServicio, NuevaCredencial } from '../../../nucleo/servicios/credenciales.servicio';
 
 interface ErroresCampo {
   nombres?: string;
@@ -159,7 +161,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
 @Component({
   selector: 'anturi-formulario-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent],
   template: `
     <div class="pagina-formulario">
       <!-- Encabezado -->
@@ -737,6 +739,12 @@ const TIPOS: TipoAfiliacionInfo[] = [
           </div>
         </div>
 
+        <!-- 2026-10-08: usuarios y claves de portales (opcional) -->
+        <div class="tarjeta seccion-form">
+          <h3 class="seccion-titulo">Usuarios y claves de portales</h3>
+          <anturi-credenciales-nuevas [(lista)]="credencialesNuevas"></anturi-credenciales-nuevas>
+        </div>
+
         <!-- SECCIÓN 5: Estado y fechas -->
         <div class="tarjeta seccion-form">
           <h3 class="seccion-titulo">
@@ -930,6 +938,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   private diasEditadosAMano = false;
   valorAfiliacion: number | null = null;
   totalPrimerPago = 0;
+  credencialesNuevas: NuevaCredencial[] = [];
   simulando = false;
   errorSimulacion = '';
   private simular$ = new Subject<void>();
@@ -1017,6 +1026,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   constructor(
     private afiliadosServicio: AfiliadosServicio,
     private motorServicio: MotorLiquidacionServicio,
+    private credencialesServicio: CredencialesServicio,
     private auth: AutenticacionServicio,
     private router: Router
   ) {
@@ -1457,8 +1467,11 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
 
     this.afiliadosServicio.crear(dto).subscribe({
       next: (afiliado) => {
-        this.guardando = false;
-        this.router.navigate([this.prefijo, 'afiliados', afiliado.id]);
+        const ir = () => { this.guardando = false; this.router.navigate([this.prefijo, 'afiliados', afiliado.id]); };
+        const validas = credencialesValidas(this.credencialesNuevas);
+        if (validas.length === 0) { ir(); return; }
+        // El afiliado ya quedó creado: si alguna clave falla, se agrega después en su ficha.
+        forkJoin(validas.map((c) => this.credencialesServicio.crear('AFILIADO', afiliado.id, c).pipe(catchError(() => of(null))))).subscribe(ir);
       },
       error: (err) => {
         this.guardando = false;
