@@ -55,11 +55,6 @@ export class InicioComponent implements OnInit, OnDestroy {
       claveDescripcion: 'servicios.asesorias.descripcion',
     },
     {
-      icono: 'catastro',
-      claveTitulo: 'servicios.catastro.titulo',
-      claveDescripcion: 'servicios.catastro.descripcion',
-    },
-    {
       icono: 'tramites',
       claveTitulo: 'servicios.tramites.titulo',
       claveDescripcion: 'servicios.tramites.descripcion',
