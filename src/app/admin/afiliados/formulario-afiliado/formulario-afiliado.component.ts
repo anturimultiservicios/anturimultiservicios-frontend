@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, Observable, debounceTime, forkJoin, takeUntil } from 'rxjs';
 import { AfiliadosServicio, CrearAfiliadoDto, TipoAfiliacion, ClaseRiesgoArl, GeneroAfiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { MotorLiquidacionServicio, PlantillaLiquidacion, ResultadoMotorLiquidacion } from '../../../nucleo/servicios/motor-liquidacion.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
@@ -513,10 +513,6 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Asopagos</label>
               <input type="text" class="campo-input" [(ngModel)]="form.asopagos" name="asopagos" placeholder="Asopagos">
             </div>
-            <div class="campo-grupo">
-              <label class="campo-etiqueta">Días de pago</label>
-              <input type="number" class="campo-input" [(ngModel)]="form.diasPago" name="diasPago" placeholder="0" min="0">
-            </div>
             <div class="campo-grupo campo-grupo--ancho">
               <label class="campo-etiqueta">Actividad económica</label>
               <input type="text" class="campo-input" [(ngModel)]="form.actividadEconomica" name="actividadEconomica" placeholder="Descripción de la actividad económica">
@@ -667,6 +663,20 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <span class="campo-ayuda" *ngIf="esParcial">Se calcula solo: semanas × (SMMLV / 4). La ARL va sobre 1 SMMLV completo.</span>
               <span class="campo-ayuda" *ngIf="tipoSeleccionado === 'INDEPENDIENTE_RESIDENTE_EXTERIOR'">Mínimo 1 SMMLV y máximo 25 SMMLV.</span>
             </div>
+            <!-- 2026-10-08: mes comercial de 30 días; si entra a mitad de mes
+                 solo cotiza los días que faltan (ej. el 28 → 3 días). -->
+            <div class="campo-grupo" *ngIf="!esParcial">
+              <label class="campo-etiqueta">Días a cotizar el primer mes</label>
+              <input type="number" class="campo-input" [(ngModel)]="diasPrimerMes" name="diasPrimerMes"
+                min="1" max="30" (ngModelChange)="alCambiarDiasManual()">
+              <span class="campo-ayuda">Se calcula con la fecha de ingreso (mes de 30 días). Desde el mes siguiente paga los 30.</span>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Valor afiliación (cobro único)</label>
+              <input type="number" class="campo-input" [(ngModel)]="valorAfiliacion" name="valorAfiliacion"
+                placeholder="0" min="0" (ngModelChange)="resimular()">
+              <span class="campo-ayuda">Aparte de la administración de Anturi. Se cobra solo en el primer pago.</span>
+            </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Comisión Anturi{{ resultadoSimulacion ? ' (calculada)' : '' }}</label>
               <input type="number" class="campo-input" [class.campo-input--readonly]="!!resultadoSimulacion"
@@ -675,10 +685,15 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <span class="campo-ayuda" *ngIf="resultadoSimulacion">Ya viene incluida en el total - la calcula el motor real, no se suma aparte.</span>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Total a pagar (calculado)</label>
-              <input type="number" class="campo-input campo-input--readonly" [value]="totalPago" readonly>
-              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Aportes + comisión Anturi, ya todo incluido.</span>
+              <label class="campo-etiqueta">Primer pago</label>
+              <input type="number" class="campo-input campo-input--readonly campo-input--destacado" [value]="totalPrimerPago" readonly>
+              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Días del primer mes + afiliación + administración, todo incluido.</span>
               <span class="campo-ayuda" *ngIf="!resultadoSimulacion && !simulando && puedeSimular">{{ ayudaSimulacion }}</span>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Total mensual (desde el mes siguiente)</label>
+              <input type="number" class="campo-input campo-input--readonly" [value]="totalPago" readonly>
+              <span class="campo-ayuda" *ngIf="resultadoSimulacion">Mes completo de 30 días, sin afiliación. Es el valor de los cobros de cada mes.</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">4 x Mil</label>
@@ -696,7 +711,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
           </div>
           <div *ngIf="errorSimulacion" class="alerta-error" style="margin-top: var(--espacio-3);">{{ errorSimulacion }}</div>
           <div *ngIf="resultadoSimulacion && !simulando" class="desglose-simulacion">
-            <h4 class="desglose-titulo">Desglose real (motor de liquidación)</h4>
+            <h4 class="desglose-titulo">Desglose del primer pago{{ resultadoSimulacion.diasCotizados && resultadoSimulacion.diasCotizados < 30 ? ' (' + resultadoSimulacion.diasCotizados + ' días)' : '' }}</h4>
             <table class="tabla-desglose">
               <thead>
                 <tr><th>Concepto</th><th>Base</th><th>Tarifa</th><th>Valor</th></tr>
@@ -713,7 +728,9 @@ const TIPOS: TipoAfiliacionInfo[] = [
                 <tr><td colspan="3">Seguridad social + mora</td><td>{{ resultadoSimulacion.totalValorSeguridadSocial | number }}</td></tr>
                 <tr><td colspan="3">4x1000</td><td>{{ resultadoSimulacion.valorCuatroXMil | number }}</td></tr>
                 <tr><td colspan="3">Administración Anturi</td><td>{{ resultadoSimulacion.valorAdministracion | number }}</td></tr>
-                <tr class="fila-total"><td colspan="3">Total a pagar (todo incluido)</td><td>{{ resultadoSimulacion.totalAPagar | number }}</td></tr>
+                <tr *ngIf="resultadoSimulacion.valorAfiliacion"><td colspan="3">Afiliación (cobro único)</td><td>{{ resultadoSimulacion.valorAfiliacion | number }}</td></tr>
+                <tr class="fila-total"><td colspan="3">Primer pago (todo incluido)</td><td>{{ resultadoSimulacion.totalAPagar | number }}</td></tr>
+                <tr *ngIf="resultadoMensual && resultadoMensual.totalAPagar !== resultadoSimulacion.totalAPagar"><td colspan="3">Total mensual desde el mes siguiente (30 días)</td><td>{{ resultadoMensual.totalAPagar | number }}</td></tr>
               </tfoot>
             </table>
           </div>
@@ -872,6 +889,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
     .spinner-inline { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; margin-right: var(--espacio-2); }
     @keyframes girar { to { transform: rotate(360deg); } }
 
+    .campo-input--destacado { font-weight: 700; color: var(--color-primario); }
     .simulacion-cargando { display: flex; align-items: center; gap: var(--espacio-2); margin-top: var(--espacio-4); color: var(--texto-terciario); font-size: var(--tamano-sm); }
     .simulacion-cargando .spinner-inline { border: 2px solid var(--borde-color, #e5e7eb); border-top-color: var(--color-primario); margin-right: 0; }
 
@@ -903,7 +921,14 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   coberturaIndependiente: 'SALUD_PENSION' | 'SOLO_SALUD' = 'SALUD_PENSION';
   esPensionado = false;
   diasCotizadosParcial = 30;
-  resultadoSimulacion: ResultadoMotorLiquidacion | null = null;
+  resultadoSimulacion: ResultadoMotorLiquidacion | null = null; // primer pago (días + afiliación)
+  resultadoMensual: ResultadoMotorLiquidacion | null = null;    // mes completo, sin afiliación → totalPago
+  // 2026-10-08 (Cristopher): mes de 30 días, días proporcionales al ingreso y
+  // afiliación de cobro único, aparte de la administración de Anturi.
+  diasPrimerMes = 30;
+  private diasEditadosAMano = false;
+  valorAfiliacion: number | null = null;
+  totalPrimerPago = 0;
   simulando = false;
   errorSimulacion = '';
   private simular$ = new Subject<void>();
@@ -1151,77 +1176,93 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   // cuánto daría de pagar con los datos actuales, igual que pedía Cristopher.
   private ejecutarSimulacion(): void {
     this.errorSimulacion = '';
+    const afiliacion = Math.max(0, Number(this.valorAfiliacion) || 0);
+    let llamar: ((primerPago: boolean) => Observable<ResultadoMotorLiquidacion>) | null = null;
 
     // Parcial: la base no se teclea, sale de los días → semanas (el motor
     // la devuelve en `ibc` y se copia a "Base de cotización").
     if (this.esParcial) {
       const dias = Number(this.diasCotizadosParcial);
-      if (!this.form.claseRiesgoArl || !Number.isInteger(dias) || dias < 1 || dias > 30) {
-        this.resultadoSimulacion = null;
-        this.calcularTotal();
-        return;
+      if (this.form.claseRiesgoArl && Number.isInteger(dias) && dias >= 1 && dias <= 30) {
+        const codigoCaja = this.nivelCajaFraccion === 0.006 ? 'CAJA_06'
+          : this.nivelCajaFraccion === 0.02 ? 'CAJA_2'
+          : this.nivelCajaFraccion === 0.04 ? 'CAJA_EMPRESA'
+          : undefined;
+        const clase = this.form.claseRiesgoArl;
+        llamar = (primerPago) => this.motorServicio.simularParcial({
+          diasCotizados: dias, claseRiesgoArl: clase, codigoCaja,
+          ...(primerPago && afiliacion > 0 ? { valorAfiliacion: afiliacion } : {}),
+        });
       }
-      const codigoCaja = this.nivelCajaFraccion === 0.006 ? 'CAJA_06'
-        : this.nivelCajaFraccion === 0.02 ? 'CAJA_2'
-        : this.nivelCajaFraccion === 0.04 ? 'CAJA_EMPRESA'
-        : undefined;
-      this.simulando = true;
-      this.motorServicio.simularParcial({ diasCotizados: dias, claseRiesgoArl: this.form.claseRiesgoArl, codigoCaja }).subscribe({
-        next: (r) => { this.resultadoSimulacion = r; this.form.valor = r.ibc; this.simulando = false; this.calcularTotal(); },
-        error: (err) => {
-          this.simulando = false;
-          this.resultadoSimulacion = null;
-          this.errorSimulacion = this.mensajeErrorSimulacion(err);
-          this.calcularTotal();
-        },
-      });
-      return;
+    } else {
+      const ibc = Number(this.form.valor) || 0;
+      const dias = Number(this.diasPrimerMes);
+      const diasValidos = Number.isInteger(dias) && dias >= 1 && dias <= 30;
+      const opciones = (primerPago: boolean) => primerPago
+        ? { ...(diasValidos && dias < 30 ? { diasCotizados: dias } : {}), ...(afiliacion > 0 ? { valorAfiliacion: afiliacion } : {}) }
+        : {};
+
+      if (this.tipoSeleccionado && ibc > 0 && diasValidos) {
+        if (this.tipoSeleccionado === 'EMPRESA_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_NO_EXONERADA') {
+          if (this.form.claseRiesgoArl) {
+            const modalidad = this.tipoSeleccionado;
+            const clase = this.form.claseRiesgoArl;
+            llamar = (primerPago) => this.motorServicio.simularEmpleador({ modalidad, ibc, claseRiesgoArl: clase, ...opciones(primerPago) });
+          }
+        } else {
+          // Independiente (plantillas 1-4 / Residente exterior / Voluntario ARL / Contratista)
+          const tipoPlantilla = this.buscarTipoPlantilla();
+          if (tipoPlantilla) {
+            llamar = (primerPago) => this.motorServicio.simularIndependiente({ tipoPlantilla, ibc, ...opciones(primerPago) });
+          }
+        }
+      }
     }
 
-    const ibc = Number(this.form.valor) || 0;
-
-    if (!this.tipoSeleccionado || ibc <= 0) {
+    if (!llamar) {
       this.resultadoSimulacion = null;
+      this.resultadoMensual = null;
       this.calcularTotal();
       return;
     }
 
-    if (this.tipoSeleccionado === 'EMPRESA_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_NO_EXONERADA') {
-      if (!this.form.claseRiesgoArl) { this.resultadoSimulacion = null; this.calcularTotal(); return; }
-      this.simulando = true;
-      this.motorServicio.simularEmpleador({
-        modalidad: this.tipoSeleccionado,
-        ibc,
-        claseRiesgoArl: this.form.claseRiesgoArl,
-      }).subscribe({
-        next: (r) => { this.resultadoSimulacion = r; this.simulando = false; this.calcularTotal(); },
-        error: (err) => {
-          this.simulando = false;
-          this.resultadoSimulacion = null;
-          this.errorSimulacion = this.mensajeErrorSimulacion(err);
-          this.calcularTotal();
-        },
-      });
-      return;
-    }
-
-    // Independiente (plantillas 1-4 / Residente exterior / Voluntario ARL / Contratista)
-    const tipoPlantilla = this.buscarTipoPlantilla();
-    if (!tipoPlantilla) {
-      this.resultadoSimulacion = null;
-      this.calcularTotal();
-      return;
-    }
     this.simulando = true;
-    this.motorServicio.simularIndependiente({ tipoPlantilla, ibc }).subscribe({
-      next: (r) => { this.resultadoSimulacion = r; this.simulando = false; this.calcularTotal(); },
+    forkJoin({ primer: llamar(true), mensual: llamar(false) }).subscribe({
+      next: ({ primer, mensual }) => {
+        this.resultadoSimulacion = primer;
+        this.resultadoMensual = mensual;
+        if (this.esParcial) this.form.valor = mensual.ibc;
+        this.simulando = false;
+        this.calcularTotal();
+      },
       error: (err) => {
         this.simulando = false;
         this.resultadoSimulacion = null;
+        this.resultadoMensual = null;
         this.errorSimulacion = this.mensajeErrorSimulacion(err);
         this.calcularTotal();
       },
     });
+  }
+
+  // Días del primer mes a partir de la fecha de ingreso, en mes comercial de
+  // 30 días: si entra este mes (o uno futuro) el día D, cotiza 31 - D (el 28
+  // → 3 días; el 31 cuenta como 30 → 1 día). Si ya venía de meses
+  // anteriores, mes completo.
+  private calcularDiasPrimerMes(): number {
+    if (!this.form.fechaIngreso) return 30;
+    const f = new Date(this.form.fechaIngreso + 'T00:00:00');
+    if (isNaN(f.getTime())) return 30;
+    const hoy = new Date();
+    const mesIngreso = f.getFullYear() * 12 + f.getMonth();
+    const mesActual = hoy.getFullYear() * 12 + hoy.getMonth();
+    if (mesIngreso < mesActual) return 30;
+    return 31 - Math.min(f.getDate(), 30);
+  }
+
+  alCambiarDiasManual(): void {
+    this.diasEditadosAMano = true;
+    this.simular$.next();
   }
 
   // Distingue "no tenés el permiso" (403 real del backend, cuenta puntual
@@ -1287,13 +1328,17 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   // sigue siendo editable por si algún día hay que ajustarlo a mano, pero
   // ya no se duplica.
   calcularTotal(): void {
-    if (this.resultadoSimulacion) {
-      this.form.comision = this.resultadoSimulacion.valorAdministracion;
-      this.totalPago = this.resultadoSimulacion.totalAPagar;
+    if (this.resultadoSimulacion && this.resultadoMensual) {
+      this.form.comision = this.resultadoMensual.valorAdministracion;
+      // Lo que se guarda en el afiliado (y usan los cobros de cada mes) es el
+      // mes completo SIN afiliación - el primer pago se muestra aparte.
+      this.totalPago = this.resultadoMensual.totalAPagar;
+      this.totalPrimerPago = this.resultadoSimulacion.totalAPagar;
     } else {
       const valor = Number(this.form.valor) || 0;
       const comision = Number(this.form.comision) || 0;
       this.totalPago = valor + comision;
+      this.totalPrimerPago = this.totalPago + Math.max(0, Number(this.valorAfiliacion) || 0);
     }
     this.form.totalPago = this.totalPago;
   }
@@ -1380,7 +1425,8 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       cargo: this.form.cargo || undefined,
       claseAportante: this.form.claseAportante || undefined,
       asopagos: this.form.asopagos || undefined,
-      diasPago: this.form.diasPago || undefined,
+      diasPago: this.esParcial ? (Number(this.diasCotizadosParcial) || undefined) : (Number(this.diasPrimerMes) || undefined),
+      valorAfiliacion: Number(this.valorAfiliacion) > 0 ? Number(this.valorAfiliacion) : undefined,
       tipoAfiliacion: this.form.tipoAfiliacion,
       claseRiesgoArl: this.form.claseRiesgoArl || undefined,
       porcentajeArl: this.form.porcentajeArl || undefined,
@@ -1436,6 +1482,10 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       this.form.fechaIngreso = `${this.fechaIngAnio}-${mm}-${dd}`;
     } else {
       this.form.fechaIngreso = '';
+    }
+    if (!this.diasEditadosAMano) {
+      this.diasPrimerMes = this.calcularDiasPrimerMes();
+      this.simular$.next();
     }
   }
 

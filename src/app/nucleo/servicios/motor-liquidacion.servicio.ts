@@ -27,7 +27,9 @@ export interface ResultadoMotorLiquidacion {
   totalValorSeguridadSocial: number;
   valorCuatroXMil: number;
   valorAdministracion: number;
+  valorAfiliacion?: number; // cobro único al afiliarse (2026-10-08)
   totalAPagar: number;
+  diasCotizados?: number;   // mes comercial de 30 días
   metadatos: { fecha: string; redondeoMultiplo: number; versionMotor: string; parametrosUsados: any[] };
 }
 
@@ -56,16 +58,16 @@ export class MotorLiquidacionServicio {
     return this.http.get<PlantillaLiquidacion[]>(this.URL_PLANTILLAS);
   }
 
-  simularIndependiente(dto: { tipoPlantilla: number; ibc: number; diasMora?: number }): Observable<ResultadoMotorLiquidacion> {
+  simularIndependiente(dto: { tipoPlantilla: number; ibc: number; diasMora?: number; diasCotizados?: number; valorAfiliacion?: number }): Observable<ResultadoMotorLiquidacion> {
     return this.http.post<ResultadoMotorLiquidacion>(`${this.URL}/simular/independiente`, dto);
   }
 
-  simularEmpleador(dto: { modalidad: 'EMPRESA_EXONERADA' | 'EMPRESA_NO_EXONERADA'; ibc: number; claseRiesgoArl: string; diasMora?: number }): Observable<ResultadoMotorLiquidacion> {
+  simularEmpleador(dto: { modalidad: 'EMPRESA_EXONERADA' | 'EMPRESA_NO_EXONERADA'; ibc: number; claseRiesgoArl: string; diasMora?: number; diasCotizados?: number; valorAfiliacion?: number }): Observable<ResultadoMotorLiquidacion> {
     return this.http.post<ResultadoMotorLiquidacion>(`${this.URL}/simular/empleador`, dto);
   }
 
   // Independiente parcial (< 1 SMLMV, por semanas - Decreto 2616/2013).
-  simularParcial(dto: { diasCotizados: number; claseRiesgoArl: string; codigoCaja?: 'CAJA_06' | 'CAJA_2' | 'CAJA_EMPRESA'; diasMora?: number }): Observable<ResultadoMotorLiquidacion> {
+  simularParcial(dto: { diasCotizados: number; claseRiesgoArl: string; codigoCaja?: 'CAJA_06' | 'CAJA_2' | 'CAJA_EMPRESA'; diasMora?: number; valorAfiliacion?: number }): Observable<ResultadoMotorLiquidacion> {
     return this.http.post<ResultadoMotorLiquidacion>(`${this.URL}/simular/parcial`, dto);
   }
 }
