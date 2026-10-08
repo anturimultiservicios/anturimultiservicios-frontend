@@ -10,6 +10,7 @@ import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
+import { formatearValor } from '../../../nucleo/utilidades/comparar-datos';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
@@ -102,12 +103,54 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
         <ng-container *ngIf="!esSecretaria">
           <span>Si <b>esta</b> es la ficha correcta, unifíquela: los documentos y pagos de la otra pasan aquí, la otra va a la papelera y el número queda limpio.</span>
           <div style="display: flex; gap: var(--espacio-2); flex-wrap: wrap;">
-            <button *ngFor="let d of duplicadosFicha" class="boton boton-primario boton-sm" [disabled]="unificando" (click)="unificarDuplicado(d)">
-              {{ unificando ? 'Unificando...' : 'Conservar esta ficha y retirar la #' + d.id }}
+            <button *ngFor="let d of duplicadosFicha" class="boton boton-primario boton-sm" [disabled]="unificando" (click)="abrirComparacion(d)">
+              Comparar y unificar con la ficha #{{ d.id }}
             </button>
           </div>
         </ng-container>
         <span *ngIf="esSecretaria">Avísele a Anturi para que la unifique.</span>
+      </div>
+
+      <!-- 2026-10-08: comparación lado a lado antes de unificar un duplicado -->
+      <div *ngIf="comparacion" class="modal-overlay" (click)="comparacion = null">
+        <div class="modal-comparacion" (click)="$event.stopPropagation()">
+          <h3 class="modal-comparacion__titulo">Unificar fichas de {{ afiliadoBase?.nombres }} {{ afiliadoBase?.apellidos }}</h3>
+          <p class="modal-comparacion__texto">Revise los datos de las dos fichas. Se <b>conserva esta ficha</b> y la otra se envía a la papelera.</p>
+          <div *ngIf="comparacion.cargando" class="estado-vacio-chico">Cargando la otra ficha...</div>
+          <div class="tabla-scroll" *ngIf="!comparacion.cargando">
+            <table class="tabla-comparacion">
+              <thead>
+                <tr>
+                  <th>Dato</th>
+                  <th class="col-conserva">Esta ficha #{{ afiliadoBase?.id }}<br><small>SE CONSERVA</small></th>
+                  <th class="col-retira">Ficha #{{ comparacion.otra?.id }}<br><small>SE RETIRA</small></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let f of comparacion.filas" [class.fila-distinta]="f.distinto">
+                  <td>{{ f.etiqueta }}</td>
+                  <td>{{ f.conserva }}</td>
+                  <td>{{ f.retira }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div *ngIf="!comparacion.cargando" class="modal-comparacion__resultado">
+            <strong>Al unificar:</strong>
+            <ul>
+              <li>El documento queda como <b>{{ comparacion.documentoFinal }}</b>.</li>
+              <li *ngFor="let p of comparacion.pasaran">{{ p }}</li>
+              <li>La ficha #{{ comparacion.otra?.id }} va a la papelera; todo queda en el historial.</li>
+            </ul>
+            <p class="modal-comparacion__nota">Los datos marcados en amarillo son distintos entre las dos fichas: se conservan los de <b>esta ficha</b>. Si alguno de la otra es el correcto, corríjalo después con "Editar".</p>
+          </div>
+          <div class="modal-comparacion__acciones">
+            <button class="boton boton-secundario" (click)="comparacion = null" [disabled]="unificando">Cancelar</button>
+            <button class="boton boton-primario" (click)="confirmarUnificacion()" [disabled]="unificando || comparacion.cargando">
+              {{ unificando ? 'Unificando...' : 'Conservar esta ficha y unificar' }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 2026-10-08 (regla de Cristopher): lo que edita/elimina Secretaria
@@ -773,6 +816,20 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
     .modal-confirm__texto { color: var(--texto-secundario); margin: 0; }
     .modal-confirm__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); margin-top: var(--espacio-4); }
 
+    .modal-comparacion { background: var(--fondo-tarjeta, #fff); border-radius: var(--radio-xl); width: min(760px, 100%); max-height: 90vh; overflow-y: auto; padding: var(--espacio-5); display: flex; flex-direction: column; gap: var(--espacio-3); box-shadow: var(--sombra-md); }
+    .modal-comparacion__titulo { margin: 0; font-size: var(--tamano-xl); color: var(--texto-principal); }
+    .modal-comparacion__texto, .modal-comparacion__nota { margin: 0; font-size: var(--tamano-sm); color: var(--texto-secundario); }
+    .modal-comparacion__nota { font-size: var(--tamano-xs); color: var(--texto-terciario); }
+    .modal-comparacion__resultado { font-size: var(--tamano-sm); background: rgba(27,50,112,0.05); border-radius: var(--radio-md); padding: var(--espacio-3) var(--espacio-4); }
+    .modal-comparacion__resultado ul { margin: var(--espacio-1) 0; padding-left: var(--espacio-5); }
+    .modal-comparacion__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
+    .tabla-comparacion { width: 100%; border-collapse: collapse; font-size: var(--tamano-sm); }
+    .tabla-comparacion th, .tabla-comparacion td { padding: 6px 10px; border-bottom: 1px solid var(--borde-color); text-align: left; vertical-align: top; }
+    .tabla-comparacion th small { font-size: 10px; letter-spacing: 0.04em; }
+    .tabla-comparacion .col-conserva { color: #15803d; }
+    .tabla-comparacion .col-retira { color: #b91c1c; }
+    .tabla-comparacion td:first-child { color: var(--texto-terciario); white-space: nowrap; }
+    .tabla-comparacion .fila-distinta td { background: rgba(234,179,8,0.12); }
     .badge-pendiente { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: var(--tamano-xs); font-weight: 600; background: rgba(234,179,8,0.15); color: #a16207; border: 1px solid rgba(234,179,8,0.4); }
     .badge-pendiente--eliminar { background: rgba(239,68,68,0.1); color: #b91c1c; border-color: rgba(239,68,68,0.35); }
     .aviso-pendiente { display: flex; flex-direction: column; gap: var(--espacio-1); padding: var(--espacio-3) var(--espacio-4); background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.35); border-left: 4px solid #eab308; border-radius: var(--radio-md); color: var(--texto-principal); font-size: var(--tamano-sm); }
@@ -797,6 +854,13 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   eliminacionPendiente: SolicitudCambio | null = null;
   duplicadosFicha: { id: number; nombres: string; apellidos: string; cedula: string; estado: string }[] = [];
   unificando = false;
+  comparacion: {
+    cargando: boolean;
+    otra: any | null;
+    filas: { etiqueta: string; conserva: string; retira: string; distinto: boolean }[];
+    pasaran: string[];
+    documentoFinal: string;
+  } | null = null;
   documentos: Documento[] = [];
   cargando = false;
   cargandoDocs = false;
@@ -910,26 +974,80 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     ).subscribe((lista) => (this.duplicadosFicha = lista));
   }
 
-  unificarDuplicado(d: { id: number; nombres: string; apellidos: string; cedula: string }): void {
-    const actual = this.afiliadoBase;
+  // Comparación de las dos fichas como datos normales de la persona (nada de
+  // código): qué hay en cada una y qué pasa a la que se conserva.
+  abrirComparacion(d: { id: number; cedula: string }): void {
+    const actual: any = this.afiliadoBase;
     if (!actual) return;
-    const ok = confirm(
-      `Se conservará ESTA ficha (#${actual.id}, "${actual.cedula}") y la ficha #${d.id} ("${d.cedula}") se enviará a la papelera.\n\n` +
-      `Sus documentos y pagos pasan a esta ficha y el número queda limpio. ¿Continuar?`,
-    );
-    if (!ok) return;
+    this.comparacion = { cargando: true, otra: null, filas: [], pasaran: [], documentoFinal: '' };
+    this.afiliadosServicio.obtener(d.id).pipe(takeUntil(this.destruir$)).subscribe({
+      next: (otra: any) => {
+        const seguro = (af: any, tipo: string) => af?.seguros?.find((x: any) => x.tipo === tipo)?.entidad ?? null;
+        const doc = (af: any) => {
+          const tipo = af?.persona?.tipoDocumento ?? /^\s*([A-Za-z]{1,3})\s+\d/.exec(af?.cedula ?? '')?.[1] ?? null;
+          const numero = String(af?.cedula ?? '').replace(/^\s*[A-Za-z]{1,3}\s+/, '');
+          return tipo ? `${this.sigla(String(tipo).toUpperCase())} ${numero}` : `${numero} (sin tipo)`;
+        };
+        const campos: [string, string, (af: any) => any][] = [
+          ['Nombres', 'nombres', (af) => af.nombres],
+          ['Apellidos', 'apellidos', (af) => af.apellidos],
+          ['Documento', '', (af) => doc(af)],
+          ['Documento como estaba escrito', '', (af) => af.cedula],
+          ['Estado', 'estado', (af) => af.estado],
+          ['Tipo de afiliación', 'tipoAfiliacion', (af) => af.tipoAfiliacion],
+          ['Fecha de ingreso', 'fechaIngreso', (af) => af.fechaIngreso],
+          ['Fecha de retiro', 'fechaRetiro', (af) => af.fechaRetiro],
+          ['Teléfono', 'telefono', (af) => af.telefono],
+          ['Correo', 'correo', (af) => af.correo],
+          ['EPS', '', (af) => seguro(af, 'EPS')],
+          ['Pensión', '', (af) => seguro(af, 'PENSION')],
+          ['ARL', '', (af) => seguro(af, 'ARL')],
+          ['Caja', '', (af) => seguro(af, 'CAJA_COMPENSACION')],
+          ['Base de cotización (IBC)', 'ibc', (af) => af.ibc],
+          ['Total mensual', 'totalPago', (af) => af.totalPago],
+          ['Documentos subidos', '', (af) => (af.documentos?.length ?? 0) + ''],
+        ];
+        const filas = campos.map(([etiqueta, campo, f]) => {
+          const conserva = campo ? formatearValor(campo, f(actual)) : (f(actual) ?? '—') || '—';
+          const retira = campo ? formatearValor(campo, f(otra)) : (f(otra) ?? '—') || '—';
+          return { etiqueta, conserva: String(conserva), retira: String(retira), distinto: String(conserva) !== String(retira) };
+        });
+        const tiposConserva = new Set((actual.seguros ?? []).map((x: any) => x.tipo));
+        const segurosQuePasan = (otra.seguros ?? []).filter((x: any) => !tiposConserva.has(x.tipo)).map((x: any) => `${x.tipo === 'CAJA_COMPENSACION' ? 'Caja' : x.tipo} (${x.entidad})`);
+        const pasaran: string[] = [];
+        const nDocs = otra.documentos?.length ?? 0;
+        if (nDocs) pasaran.push(`Pasan a esta ficha ${nDocs} documento(s) de la otra.`);
+        if (segurosQuePasan.length) pasaran.push(`Pasan los seguros que esta ficha no tiene: ${segurosQuePasan.join(', ')}.`);
+        pasaran.push('Pasan también los pagos registrados en la otra ficha, si los hay.');
+        const numero = String(actual.cedula ?? '').replace(/\D/g, '');
+        const tipo = actual.persona?.tipoDocumento ?? otra.persona?.tipoDocumento ?? (/^\s*([A-Za-z]{1,3})\s+\d/.exec(otra.cedula ?? '')?.[1] ?? /^\s*([A-Za-z]{1,3})\s+\d/.exec(actual.cedula ?? '')?.[1] ?? 'CC');
+        this.comparacion = { cargando: false, otra, filas, pasaran, documentoFinal: `${this.sigla(String(tipo).toUpperCase())} ${numero}` };
+      },
+      error: (err) => {
+        this.comparacion = null;
+        this.mensajeError = err?.error?.message || 'No se pudo cargar la otra ficha.';
+      },
+    });
+  }
+
+  confirmarUnificacion(): void {
+    const actual = this.afiliadoBase;
+    const otra = this.comparacion?.otra;
+    if (!actual || !otra) return;
     this.unificando = true;
-    this.afiliadosServicio.resolverDuplicado(actual.id, d.id).pipe(
+    this.afiliadosServicio.resolverDuplicado(actual.id, otra.id).pipe(
       finalize(() => (this.unificando = false)),
     ).subscribe({
       next: (r) => {
-        this.mensajeExito = `Duplicado resuelto: queda ${r.tipoDocumento} ${r.numero}` +
+        this.comparacion = null;
+        this.mensajeExito = `Fichas unificadas: queda ${r.tipoDocumento} ${r.numero}` +
           (r.documentosMovidos || r.pagosMovidos ? ` (se pasaron ${r.documentosMovidos} documentos y ${r.pagosMovidos} pagos).` : '.');
         this.cargarAfiliado();
       },
       error: (err) => (this.mensajeError = err?.error?.message || 'No se pudo unificar.'),
     });
   }
+
 
   // ── CAMBIOS PENDIENTES DE CONFIRMACIÓN (2026-10-08) ─────────
   private static readonly ETIQUETAS: Record<string, string> = {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { SolicitudesServicio, SolicitudCambio } from '../../nucleo/servicios/solicitudes.servicio';
+import { compararDatos, resumenDatos, FilaComparacion } from '../../nucleo/utilidades/comparar-datos';
 
 type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 
@@ -138,17 +139,31 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
               el {{ sol.revisadoEn | date:'dd/MM/yyyy HH:mm' }}
             </div>
 
-            <!-- Datos originales y nuevos -->
-            <div class="detalle-datos-grid">
+            <!-- 2026-10-08: datos legibles (antes salía código JSON) -->
+            <ng-container *ngIf="sol.datosNuevos; else sinCambiosTpl">
+              <h4 class="detalle-bloque__titulo">Qué cambia</h4>
+              <table class="tabla-cambios" *ngIf="cambiosDe(sol).length > 0; else igualTpl">
+                <thead><tr><th>Dato</th><th>Lo que había</th><th>Lo que queda</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let f of cambiosDe(sol)">
+                    <td>{{ f.etiqueta }}</td>
+                    <td class="valor-antes">{{ f.antes }}</td>
+                    <td class="valor-despues">{{ f.despues }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <ng-template #igualTpl><p class="sin-cambios">No hay diferencias con los datos actuales.</p></ng-template>
+            </ng-container>
+            <ng-template #sinCambiosTpl>
               <div *ngIf="sol.datosOriginales" class="detalle-bloque">
-                <h4 class="detalle-bloque__titulo">Datos originales</h4>
-                <pre class="json-viewer">{{ parsearJson(sol.datosOriginales) }}</pre>
+                <h4 class="detalle-bloque__titulo">{{ sol.tipo === 'ELIMINACION' ? 'Datos del registro que se eliminaría' : 'Datos del registro' }}</h4>
+                <dl class="resumen-registro">
+                  <ng-container *ngFor="let r of resumenDe(sol)">
+                    <dt>{{ r.etiqueta }}</dt><dd>{{ r.valor }}</dd>
+                  </ng-container>
+                </dl>
               </div>
-              <div *ngIf="sol.datosNuevos" class="detalle-bloque">
-                <h4 class="detalle-bloque__titulo">Datos nuevos (propuestos)</h4>
-                <pre class="json-viewer json-viewer--nuevo">{{ parsearJson(sol.datosNuevos) }}</pre>
-              </div>
-            </div>
+            </ng-template>
           </div>
         </div>
       </div>
@@ -241,6 +256,15 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     .detalle-datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-4); }
     .detalle-bloque { display: flex; flex-direction: column; gap: var(--espacio-2); }
     .detalle-bloque__titulo { font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-secundario); margin: 0; text-transform: uppercase; letter-spacing: 0.06em; }
+    .tabla-cambios { width: 100%; border-collapse: collapse; font-size: var(--tamano-sm); }
+    .tabla-cambios th { text-align: left; padding: 6px 10px; font-weight: 600; color: var(--texto-terciario); border-bottom: 1px solid var(--borde-color); }
+    .tabla-cambios td { padding: 6px 10px; border-bottom: 1px solid var(--borde-color); vertical-align: top; }
+    .tabla-cambios .valor-antes { color: #b91c1c; text-decoration: line-through; text-decoration-color: rgba(185,28,28,0.4); }
+    .tabla-cambios .valor-despues { color: #15803d; font-weight: 600; }
+    .sin-cambios { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 0; }
+    .resumen-registro { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: var(--tamano-sm); }
+    .resumen-registro dt { color: var(--texto-terciario); }
+    .resumen-registro dd { margin: 0; color: var(--texto-principal); }
     .json-viewer { background: var(--fondo-codigo, #1e293b); color: #e2e8f0; border-radius: var(--radio-md); padding: var(--espacio-3); font-size: 0.72rem; line-height: 1.5; overflow: auto; max-height: 300px; margin: 0; white-space: pre-wrap; word-break: break-word; }
     .json-viewer--nuevo { background: #052e16; color: #bbf7d0; }
 
@@ -348,6 +372,20 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
     } else {
       this.expandidos.add(id);
     }
+  }
+
+  // Se calculan una vez por solicitud (la plantilla los pide en cada render).
+  private cacheCambios = new Map<number, FilaComparacion[]>();
+  private cacheResumen = new Map<number, { etiqueta: string; valor: string }[]>();
+
+  cambiosDe(sol: SolicitudCambio): FilaComparacion[] {
+    if (!this.cacheCambios.has(sol.id)) this.cacheCambios.set(sol.id, compararDatos(sol.datosOriginales, sol.datosNuevos));
+    return this.cacheCambios.get(sol.id)!;
+  }
+
+  resumenDe(sol: SolicitudCambio): { etiqueta: string; valor: string }[] {
+    if (!this.cacheResumen.has(sol.id)) this.cacheResumen.set(sol.id, resumenDatos(sol.datosOriginales));
+    return this.cacheResumen.get(sol.id)!;
   }
 
   parsearJson(texto: string): string {
