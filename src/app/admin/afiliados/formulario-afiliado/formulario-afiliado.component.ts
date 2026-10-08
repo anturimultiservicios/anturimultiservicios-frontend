@@ -577,8 +577,9 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Caja de Compensación <span class="requerido">*</span></label>
               <select class="campo-input" [(ngModel)]="nivelCajaFraccion" name="nivelCajaFraccion" (change)="alCambiarCaja()">
                 <option [ngValue]="0">No cotiza (0%)</option>
-                <option [ngValue]="0.006">0.6%</option>
-                <option [ngValue]="0.02">2%</option>
+                <option [ngValue]="0.006">0.6%{{ esParcial ? ' (sin contrato)' : '' }}</option>
+                <option [ngValue]="0.02">2%{{ esParcial ? ' (sin contrato)' : '' }}</option>
+                <option *ngIf="esParcial" [ngValue]="0.04">4% (con contrato · Decreto 2616)</option>
               </select>
             </div>
 
@@ -1151,7 +1152,10 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
         this.calcularTotal();
         return;
       }
-      const codigoCaja = this.nivelCajaFraccion === 0.006 ? 'CAJA_06' : this.nivelCajaFraccion === 0.02 ? 'CAJA_2' : undefined;
+      const codigoCaja = this.nivelCajaFraccion === 0.006 ? 'CAJA_06'
+        : this.nivelCajaFraccion === 0.02 ? 'CAJA_2'
+        : this.nivelCajaFraccion === 0.04 ? 'CAJA_EMPRESA'
+        : undefined;
       this.simulando = true;
       this.motorServicio.simularParcial({ diasCotizados: dias, claseRiesgoArl: this.form.claseRiesgoArl, codigoCaja }).subscribe({
         next: (r) => { this.resultadoSimulacion = r; this.form.valor = r.ibc; this.simulando = false; this.calcularTotal(); },
@@ -1234,7 +1238,8 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     this.form.porcentajeIcbf = pct.icbf || undefined;
     this.coberturaIndependiente = 'SALUD_PENSION';
     this.esPensionado = false;
-    if (!this.usaCajaIndependiente) this.nivelCajaFraccion = 0;
+    // 4% (con contrato) solo existe en Parcial - en las plantillas no hay esa variante.
+    if (!this.usaCajaIndependiente || (!this.esParcial && this.nivelCajaFraccion === 0.04)) this.nivelCajaFraccion = 0;
     if (this.usaCajaIndependiente) this.form.porcentajeCaja = this.nivelCajaFraccion * 100 || undefined;
     if (!this.usaArl) {
       this.form.claseRiesgoArl = undefined;

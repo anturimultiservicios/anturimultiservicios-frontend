@@ -65,7 +65,7 @@ export class MotorLiquidacionServicio {
   }
 
   // Independiente parcial (< 1 SMLMV, por semanas - Decreto 2616/2013).
-  simularParcial(dto: { diasCotizados: number; claseRiesgoArl: string; codigoCaja?: 'CAJA_06' | 'CAJA_2'; diasMora?: number }): Observable<ResultadoMotorLiquidacion> {
+  simularParcial(dto: { diasCotizados: number; claseRiesgoArl: string; codigoCaja?: 'CAJA_06' | 'CAJA_2' | 'CAJA_EMPRESA'; diasMora?: number }): Observable<ResultadoMotorLiquidacion> {
     return this.http.post<ResultadoMotorLiquidacion>(`${this.URL}/simular/parcial`, dto);
   }
 }
