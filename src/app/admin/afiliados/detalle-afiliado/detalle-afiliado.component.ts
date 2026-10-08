@@ -6,7 +6,7 @@ import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { HttpEventType } from '@angular/common/http';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { DocumentosServicio, Documento, TipoDocumento, TipoDocumentoRequerido } from '../../../nucleo/servicios/documentos.servicio';
-import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
+import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 
@@ -28,6 +28,8 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
           <h2 class="pagina-titulo" *ngIf="afiliado">{{ afiliado.nombres }} {{ afiliado.apellidos }}</h2>
           <h2 class="pagina-titulo" *ngIf="!afiliado && !cargando">Detalle de afiliado</h2>
           <span *ngIf="afiliado" class="badge-estado" [ngClass]="claseBadge(afiliado.estado)">{{ afiliado.estado }}</span>
+          <span *ngIf="eliminacionPendiente" class="badge-pendiente badge-pendiente--eliminar">Eliminación pendiente</span>
+          <span *ngIf="edicionesPendientes.length && !eliminacionPendiente" class="badge-pendiente">Cambios pendientes</span>
         </div>
         <div class="detalle-acciones" *ngIf="afiliado && !modoEdicion">
           <a [routerLink]="[prefijo, 'afiliados', afiliadoId, 'incapacidades']" class="boton boton-secundario">
@@ -43,7 +45,7 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
             </svg>
             Editar
           </button>
-          <button class="boton boton-peligro" (click)="modalEliminar = true">
+          <button *ngIf="!eliminacionPendiente" class="boton boton-peligro" (click)="modalEliminar = true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
@@ -86,6 +88,25 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
           <line x1="12" y1="16" x2="12.01" y2="16"></line>
         </svg>
         {{ mensajeError }}
+      </div>
+
+      <!-- 2026-10-08 (regla de Cristopher): lo que edita/elimina Secretaria
+           se ve como hecho, pero NO queda en la base general hasta que
+           Anturi (Admin/Super Admin) lo confirma en Solicitudes. -->
+      <div *ngIf="eliminacionPendiente" class="aviso-pendiente aviso-pendiente--eliminar">
+        <strong>Marcado para eliminar · pendiente de confirmación de Anturi</strong>
+        <span>{{ eliminacionPendiente.creadoPor.nombre }} {{ eliminacionPendiente.creadoPor.apellido }} lo solicitó el {{ eliminacionPendiente.creadoEn | date:'d MMM y, h:mm a' }}. Motivo: {{ eliminacionPendiente.motivo }}</span>
+        <span>Se eliminará solo cuando Anturi lo confirme.</span>
+        <a *ngIf="!esSecretaria" [routerLink]="[prefijo, 'solicitudes']" class="aviso-pendiente__enlace">Revisar en Solicitudes →</a>
+      </div>
+      <div *ngFor="let ed of edicionesPendientes" class="aviso-pendiente">
+        <strong>Cambios guardados · pendientes de confirmación de Anturi</strong>
+        <span>{{ ed.solicitud.creadoPor.nombre }} {{ ed.solicitud.creadoPor.apellido }}, {{ ed.solicitud.creadoEn | date:'d MMM y, h:mm a' }}. Motivo: {{ ed.solicitud.motivo }}</span>
+        <ul class="aviso-pendiente__cambios">
+          <li *ngFor="let c of ed.cambios"><b>{{ c.etiqueta }}:</b> {{ c.antes || '(vacío)' }} → <b>{{ c.despues || '(vacío)' }}</b></li>
+        </ul>
+        <span *ngIf="esSecretaria">Ya ves los datos con el cambio, pero en la base general quedan como estaban hasta que Anturi lo confirme.</span>
+        <a *ngIf="!esSecretaria" [routerLink]="[prefijo, 'solicitudes']" class="aviso-pendiente__enlace">Revisar en Solicitudes →</a>
       </div>
 
       <!-- MODO VISUALIZACIÓN -->
@@ -730,6 +751,12 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
     .modal-confirm__texto { color: var(--texto-secundario); margin: 0; }
     .modal-confirm__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); margin-top: var(--espacio-4); }
 
+    .badge-pendiente { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: var(--tamano-xs); font-weight: 600; background: rgba(234,179,8,0.15); color: #a16207; border: 1px solid rgba(234,179,8,0.4); }
+    .badge-pendiente--eliminar { background: rgba(239,68,68,0.1); color: #b91c1c; border-color: rgba(239,68,68,0.35); }
+    .aviso-pendiente { display: flex; flex-direction: column; gap: var(--espacio-1); padding: var(--espacio-3) var(--espacio-4); background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.35); border-left: 4px solid #eab308; border-radius: var(--radio-md); color: var(--texto-principal); font-size: var(--tamano-sm); }
+    .aviso-pendiente--eliminar { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); border-left-color: #ef4444; }
+    .aviso-pendiente__cambios { margin: var(--espacio-1) 0; padding-left: var(--espacio-5); }
+    .aviso-pendiente__enlace { color: var(--color-primario); font-weight: 600; text-decoration: none; align-self: flex-start; }
     .alerta-exito { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: var(--radio-md); color: #15803d; font-size: var(--tamano-sm); }
     .alerta-error { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radio-md); color: var(--color-error); font-size: var(--tamano-sm); }
     .mensaje-error { font-size: var(--tamano-sm); color: var(--color-error); }
@@ -739,6 +766,11 @@ import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 })
 export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   afiliado: Afiliado | null = null;
+  // Dato real de la base - `afiliado` puede mostrar encima los cambios
+  // pendientes de la Secretaria (solo para ella), nunca se pierde el real.
+  private afiliadoBase: Afiliado | null = null;
+  edicionesPendientes: { solicitud: SolicitudCambio; cambios: { etiqueta: string; antes: string; despues: string }[] }[] = [];
+  eliminacionPendiente: SolicitudCambio | null = null;
   documentos: Documento[] = [];
   cargando = false;
   cargandoDocs = false;
@@ -835,10 +867,53 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     ).subscribe(af => {
       this.cargando = false;
       if (af) {
+        this.afiliadoBase = af;
         this.afiliado = af;
         this.cargarDocumentos();
         this.cargarPagos();
+        this.cargarPendientes();
       }
+    });
+  }
+
+  // ── CAMBIOS PENDIENTES DE CONFIRMACIÓN (2026-10-08) ─────────
+  private static readonly ETIQUETAS: Record<string, string> = {
+    nombres: 'Nombres', apellidos: 'Apellidos', cedula: 'Cédula', correo: 'Correo', telefono: 'Teléfono',
+    fechaNacimiento: 'Fecha de nacimiento', genero: 'Género', cargo: 'Cargo', claseAportante: 'Clase aportante',
+    asopagos: 'Asopagos', diasPago: 'Días de pago', tipoAfiliacion: 'Tipo de afiliación', claseRiesgoArl: 'Clase de riesgo ARL',
+    valor: 'Base de cotización (IBC)', comision: 'Comisión', totalPago: 'Total a pagar', eps: 'EPS', afp: 'AFP', arl: 'ARL',
+    estado: 'Estado', fechaIngreso: 'Fecha de ingreso', fechaRetiro: 'Fecha de retiro', direccion: 'Dirección',
+    municipio: 'Municipio', actividadEconomica: 'Actividad económica', tipoDocumento: 'Tipo de documento',
+  };
+  private static readonly IGNORAR = ['id', 'creadoEn', 'actualizadoEn', 'eliminadoEn', 'eliminacionDefinitivaEn'];
+
+  cargarPendientes(): void {
+    if (!this.afiliadoBase) return;
+    this.solicitudesServicio.pendientesDe('afiliados', this.afiliadoId).pipe(
+      catchError(() => of([] as SolicitudCambio[])),
+      takeUntil(this.destruir$),
+    ).subscribe((lista) => {
+      const base = this.afiliadoBase as any;
+      this.eliminacionPendiente = lista.find((s) => s.tipo === 'ELIMINACION') ?? null;
+      // Más vieja primero: si hay varias ediciones, la última manda.
+      const ediciones = lista.filter((s) => s.tipo === 'EDICION' && s.datosNuevos).reverse();
+      const vista: any = { ...base };
+      this.edicionesPendientes = ediciones.map((solicitud) => {
+        let nuevos: any = {};
+        try { nuevos = JSON.parse(solicitud.datosNuevos!); } catch { /* datos ilegibles: solo se muestra el aviso */ }
+        const cambios: { etiqueta: string; antes: string; despues: string }[] = [];
+        for (const [campo, valor] of Object.entries(nuevos)) {
+          if (DetalleAfiliadoComponent.IGNORAR.includes(campo)) continue;
+          if (valor !== null && typeof valor === 'object') continue; // relaciones (seguros, sucursal...), no son campos editables
+          const actual = campo === 'tipoDocumento' ? base.persona?.tipoDocumento : base[campo];
+          if (String(actual ?? '') === String(valor ?? '')) continue;
+          cambios.push({ etiqueta: DetalleAfiliadoComponent.ETIQUETAS[campo] ?? campo, antes: String(actual ?? ''), despues: String(valor ?? '') });
+          vista[campo] = valor;
+        }
+        return { solicitud, cambios };
+      }).filter((e) => e.cambios.length > 0);
+      // Solo Secretaria ve la ficha "como quedaría"; Anturi ve el dato real + el aviso.
+      this.afiliado = this.esSecretaria ? vista : base;
     });
   }
 
@@ -997,7 +1072,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         tabla: 'afiliados',
         registroId: this.afiliadoId,
         motivo: this.motivoEdicion,
-        datosOriginales: this.afiliado,
+        datosOriginales: this.afiliadoBase ?? this.afiliado,
         datosNuevos: this.edicionForm,
       }).pipe(
         catchError(err => {
@@ -1007,8 +1082,9 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         finalize(() => { this.guardandoEdicion = false; })
       ).subscribe(res => {
         if (res) {
-          this.mensajeExito = 'Solicitud de cambio enviada correctamente. Pendiente de aprobación.';
+          this.mensajeExito = 'Cambio guardado. Queda pendiente hasta que Anturi lo confirme.';
           this.modoEdicion = false;
+          this.cargarPendientes();
         }
       });
     } else {
@@ -1055,7 +1131,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         tabla: 'afiliados',
         registroId: this.afiliadoId,
         motivo: this.motivoEliminacion,
-        datosOriginales: this.afiliado,
+        datosOriginales: this.afiliadoBase ?? this.afiliado,
       }).pipe(
         catchError(err => {
           this.mensajeError = 'Error al enviar la solicitud. Intente nuevamente.';
@@ -1064,8 +1140,9 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         finalize(() => { this.eliminando = false; this.modalEliminar = false; })
       ).subscribe(res => {
         if (res) {
-          this.mensajeExito = 'Solicitud de eliminación enviada. Pendiente de aprobación del administrador.';
+          this.mensajeExito = 'Marcado para eliminar. Se elimina cuando Anturi lo confirme.';
           this.motivoEliminacion = '';
+          this.cargarPendientes();
         }
       });
     } else {

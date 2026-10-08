@@ -122,7 +122,7 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
     if (n.referenciaId && TIPOS_AFILIADO.includes(n.tipo)) {
       this.abierta = false;
       this.router.navigate([prefijo, 'afiliados', n.referenciaId]);
-    } else if (n.tipo === 'solicitud_pendiente') {
+    } else if (n.tipo === 'solicitud_pendiente' || n.tipo === 'solicitud_aprobada' || n.tipo === 'solicitud_rechazada') {
       this.abierta = false;
       this.router.navigate([prefijo, prefijo === '/admin' ? 'solicitudes' : 'mis-solicitudes']);
     } else if (n.referenciaId && n.tipo === 'empresa_creada') {

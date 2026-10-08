@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
+import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
 
 @Component({
   selector: 'anturi-lista-afiliados',
@@ -156,6 +157,10 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
                 <span class="badge-estado" [ngClass]="claseBadge(af.estado)">
                   {{ af.estado }}
                 </span>
+                <span *ngIf="pendientes.get(af.id) as p" class="badge-pendiente" [class.badge-pendiente--eliminar]="p === 'ELIMINACION'"
+                  title="Pendiente de confirmación de Anturi">
+                  {{ p === 'ELIMINACION' ? 'Eliminación pendiente' : 'Cambio pendiente' }}
+                </span>
               </td>
               <td class="celda-acciones" (click)="$event.stopPropagation()">
                 <button
@@ -238,6 +243,8 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
     .celda-seguros { display: flex; flex-direction: column; gap: 2px; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .celda-acciones { white-space: nowrap; }
 
+    .badge-pendiente { display: inline-flex; margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 600; background: rgba(234,179,8,0.15); color: #a16207; border: 1px solid rgba(234,179,8,0.4); white-space: nowrap; }
+    .badge-pendiente--eliminar { background: rgba(239,68,68,0.1); color: #b91c1c; border-color: rgba(239,68,68,0.35); }
     .badge-estado { display: inline-flex; align-items: center; padding: 2px var(--espacio-2); border-radius: var(--radio-sm); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
     .badge-activo { background: rgba(34,197,94,0.12); color: #15803d; }
     .badge-retirado { background: rgba(249,115,22,0.12); color: #c2410c; }
@@ -269,8 +276,13 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   private busqueda$ = new Subject<string>();
   private destruir$ = new Subject<void>();
 
+  // 2026-10-08: afiliado → tipo de solicitud pendiente (lo que la Secretaria
+  // ya editó/eliminó y Anturi todavía no confirma).
+  pendientes = new Map<number, 'EDICION' | 'ELIMINACION'>();
+
   constructor(
     private afiliadosServicio: AfiliadosServicio,
+    private solicitudesServicio: SolicitudesServicio,
     private router: Router
   ) {}
 
@@ -279,6 +291,19 @@ export class ListaAfiliadosComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.solicitudesServicio.listar('PENDIENTE').pipe(
+      catchError(() => of([])),
+      takeUntil(this.destruir$),
+    ).subscribe((lista) => {
+      const mapa = new Map<number, 'EDICION' | 'ELIMINACION'>();
+      for (const s of lista) {
+        if (s.tabla !== 'afiliados' || !s.registroId) continue;
+        if (s.tipo === 'ELIMINACION') mapa.set(s.registroId, 'ELIMINACION');
+        else if (s.tipo === 'EDICION' && !mapa.has(s.registroId)) mapa.set(s.registroId, 'EDICION');
+      }
+      this.pendientes = mapa;
+    });
+
     this.afiliadosServicio.estadisticas().pipe(
       catchError(() => of({ total: 0, activos: 0, retirados: 0, suspendidos: 0 }))
     ).subscribe(s => { this.stats = s; });

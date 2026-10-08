@@ -47,6 +47,13 @@ export class SolicitudesServicio {
     return this.http.get<SolicitudCambio[]>(this.URL, { params });
   }
 
+  // 2026-10-08: solicitudes pendientes de un registro puntual - para que la
+  // Secretaria vea su cambio "hecho, pendiente de confirmar por Anturi".
+  pendientesDe(tabla: string, registroId: number): Observable<SolicitudCambio[]> {
+    const params = new HttpParams().set('estado', 'PENDIENTE').set('tabla', tabla).set('registroId', String(registroId));
+    return this.http.get<SolicitudCambio[]>(this.URL, { params });
+  }
+
   obtener(id: number): Observable<SolicitudCambio> {
     return this.http.get<SolicitudCambio>(`${this.URL}/${id}`);
   }

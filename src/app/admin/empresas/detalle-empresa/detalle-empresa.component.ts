@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, finalize } from 'rxjs';
 import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.servicio';
 import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
-import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servicio';
+import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 
 // 2026-10-07: dejó de ser de solo lectura - editar/activar/desactivar
@@ -42,6 +42,14 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
       </div>
 
       <div *ngIf="mensajeExito" class="alerta-exito">{{ mensajeExito }}</div>
+
+      <!-- 2026-10-08: lo que pidió la Secretaria queda visible como pendiente
+           hasta que Anturi lo confirme en Solicitudes. -->
+      <div *ngFor="let s of pendientes" class="aviso-pendiente" [class.aviso-pendiente--eliminar]="s.tipo === 'ELIMINACION'">
+        <strong>{{ textoPendiente(s) }} · pendiente de confirmación de Anturi</strong>
+        <span>{{ s.creadoPor.nombre }} {{ s.creadoPor.apellido }}, {{ s.creadoEn | date:'d MMM y, h:mm a' }}. Motivo: {{ s.motivo }}</span>
+        <a *ngIf="!esSecretaria" [routerLink]="['/admin', 'solicitudes']" class="aviso-pendiente__enlace">Revisar en Solicitudes →</a>
+      </div>
       <div *ngIf="mensajeError" class="alerta-error">{{ mensajeError }}</div>
 
       <div *ngIf="cargando" class="estado-carga">
@@ -256,6 +264,9 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .boton-peligro-suave { color: var(--color-error); }
     .boton-exito-suave { color: #15803d; }
     .aviso-secretaria { display: flex; align-items: center; gap: var(--espacio-2); font-size: var(--tamano-sm); color: var(--color-advertencia); background: rgba(249,115,22,0.08); padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio-sm); margin-bottom: var(--espacio-4); }
+    .aviso-pendiente { display: flex; flex-direction: column; gap: var(--espacio-1); padding: var(--espacio-3) var(--espacio-4); background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.35); border-left: 4px solid #eab308; border-radius: var(--radio-md); color: var(--texto-principal); font-size: var(--tamano-sm); }
+    .aviso-pendiente--eliminar { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); border-left-color: #ef4444; }
+    .aviso-pendiente__enlace { color: var(--color-primario); font-weight: 600; text-decoration: none; align-self: flex-start; }
     .alerta-exito { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: var(--radio-md); color: #15803d; font-size: var(--tamano-sm); }
     .alerta-error { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radio-md); color: var(--color-error); font-size: var(--tamano-sm); }
     .form-acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); margin-top: var(--espacio-4); }
@@ -358,8 +369,26 @@ export class DetalleEmpresaComponent implements OnInit {
     ).subscribe(resp => {
       this.empresa = resp;
       this.cargando = false;
-      if (resp) this.cargarSucursales();
+      if (resp) {
+        this.cargarSucursales();
+        this.cargarPendientes();
+      }
     });
+  }
+
+  pendientes: SolicitudCambio[] = [];
+
+  cargarPendientes(): void {
+    this.solicitudesServicio.pendientesDe('empresas', this.id).pipe(
+      catchError(() => of([] as SolicitudCambio[])),
+    ).subscribe((lista) => { this.pendientes = lista; });
+  }
+
+  textoPendiente(s: SolicitudCambio): string {
+    if (s.tipo === 'EDICION') return 'Cambios guardados';
+    if (s.tipo === 'ELIMINACION') return 'Desactivación solicitada';
+    if (s.tipo === 'RESTAURACION') return 'Activación solicitada';
+    return 'Cambio solicitado';
   }
 
   private cargarSucursales(): void {
@@ -418,8 +447,9 @@ export class DetalleEmpresaComponent implements OnInit {
         finalize(() => { this.guardandoEdicion = false; }),
       ).subscribe((res) => {
         if (res) {
-          this.mensajeExito = 'Solicitud de cambio enviada correctamente. Pendiente de aprobación.';
+          this.mensajeExito = 'Cambio guardado. Queda pendiente hasta que Anturi lo confirme.';
           this.modoEdicion = false;
+          this.cargarPendientes();
           setTimeout(() => { this.mensajeExito = ''; }, 5000);
         }
       });
@@ -461,8 +491,9 @@ export class DetalleEmpresaComponent implements OnInit {
         finalize(() => { this.guardandoEstado = false; }),
       ).subscribe((res) => {
         if (res) {
-          this.mensajeExito = 'Solicitud enviada correctamente. Pendiente de aprobación.';
+          this.mensajeExito = 'Solicitud guardada. Queda pendiente hasta que Anturi la confirme.';
           this.modalEstado = false;
+          this.cargarPendientes();
           setTimeout(() => { this.mensajeExito = ''; }, 5000);
         }
       });
