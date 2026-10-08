@@ -174,7 +174,7 @@ export class ResumenComponent implements OnInit {
   // una redirección de guardia válida. Mismo patrón `prefijo` que ya usa
   // ListaAfiliadosComponent.
   protected get prefijo(): string {
-    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
   }
 
   protected get esAdmin(): boolean {

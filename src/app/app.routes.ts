@@ -39,12 +39,16 @@ export const rutas: Routes = [
 
   // Panel secretaria
   {
-    path: 'secretaria',
+    path: 'asistente',
     canActivate: [autenticacionGuardia, rolGuardia],
     data: { roles: ['SECRETARIA'] },
     loadChildren: () =>
       import('./secretaria/secretaria.routes').then((m) => m.rutasSecretaria),
   },
+
+  // 2026-10-08: el rol se llama "Asistente" en todo el front; la URL vieja
+  // /secretaria/... sigue funcionando por si alguien la tenía guardada.
+  { path: 'secretaria', redirectTo: 'asistente' },
 
   // Página no encontrada
   {

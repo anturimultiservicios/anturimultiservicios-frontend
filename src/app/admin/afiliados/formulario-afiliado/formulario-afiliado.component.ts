@@ -989,7 +989,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   private get prefijo(): string {
-    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
   }
 
   ngOnInit(): void {

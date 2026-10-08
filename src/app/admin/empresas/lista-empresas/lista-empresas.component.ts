@@ -327,7 +327,7 @@ export class ListaEmpresasComponent implements OnInit, OnDestroy {
   }
 
   protected get prefijo(): string {
-    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
   }
 
   irADetalle(id: number): void {

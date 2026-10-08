@@ -326,7 +326,7 @@ export class DetalleHallazgoComponent implements OnInit {
   }
 
   protected get prefijo(): string {
-    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
   }
 
   irAHallazgo(id: number): void {

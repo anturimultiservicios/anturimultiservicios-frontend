@@ -39,7 +39,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
         <nav class="barra-lateral__nav">
           <ul>
             <li>
-              <a routerLink="/secretaria/resumen" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Resumen' : ''">
+              <a routerLink="/asistente/resumen" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Resumen' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"></rect>
@@ -52,7 +52,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/afiliados" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Afiliados' : ''">
+              <a routerLink="/asistente/afiliados" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Afiliados' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -65,7 +65,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/empresas" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Empresas' : ''">
+              <a routerLink="/asistente/empresas" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Empresas' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -76,7 +76,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/calendario" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Calendario' : ''">
+              <a routerLink="/asistente/calendario" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Calendario' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -88,7 +88,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/recordatorios-llamada" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Llamadas y mensajes' : ''">
+              <a routerLink="/asistente/recordatorios-llamada" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Llamadas y mensajes' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -98,7 +98,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/registrar-pago" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Registrar pago' : ''">
+              <a routerLink="/asistente/registrar-pago" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Registrar pago' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="1" x2="12" y2="23"></line>
@@ -109,7 +109,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/mis-solicitudes" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis solicitudes' : ''">
+              <a routerLink="/asistente/mis-solicitudes" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis solicitudes' : ''">
                 <span class="barra-lateral__icono" style="position: relative;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -124,7 +124,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/hallazgos-reconciliacion" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Reconciliación empleadores' : ''">
+              <a routerLink="/asistente/hallazgos-reconciliacion" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Reconciliación empleadores' : ''">
                 <span class="barra-lateral__icono" style="position: relative;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 11l3 3L22 4"></path>
@@ -139,7 +139,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/configuracion" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Configuración' : ''">
+              <a routerLink="/asistente/configuracion" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Configuración' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"></circle>
@@ -150,7 +150,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
               </a>
             </li>
             <li>
-              <a routerLink="/secretaria/mis-dispositivos" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis dispositivos' : ''">
+              <a routerLink="/asistente/mis-dispositivos" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Mis dispositivos' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
@@ -228,7 +228,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
                 </svg>
               </button>
               <div class="perfil-menu__lista" *ngIf="menuPerfil">
-                <a class="perfil-menu__opcion" routerLink="/secretaria/configuracion" (click)="menuPerfil = false">
+                <a class="perfil-menu__opcion" routerLink="/asistente/configuracion" (click)="menuPerfil = false">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>

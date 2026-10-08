@@ -319,7 +319,7 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
   textoRol(rol: string): string {
     const mapa: Record<string, string> = {
       ADMIN: 'Administrador',
-      SECRETARIA: 'Secretaria',
+      SECRETARIA: 'Asistente',
       SUPER_ADMIN: 'Super Administrador',
     };
     return mapa[rol] ?? rol;

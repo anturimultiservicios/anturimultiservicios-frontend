@@ -136,7 +136,7 @@ export class InicioSesionComponent {
     if (rol === 'SUPER_ADMIN' || rol === 'ADMIN') {
       this.router.navigate(['/admin']);
     } else {
-      this.router.navigate(['/secretaria']);
+      this.router.navigate(['/asistente']);
     }
   }
 

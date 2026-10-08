@@ -118,7 +118,7 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
       n.leida = true;
       this.sinLeer = Math.max(0, this.sinLeer - 1);
     }
-    const prefijo = this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    const prefijo = this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
     if (n.referenciaId && TIPOS_AFILIADO.includes(n.tipo)) {
       this.abierta = false;
       this.router.navigate([prefijo, 'afiliados', n.referenciaId]);

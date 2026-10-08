@@ -839,7 +839,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   ) {}
 
   protected get prefijo(): string {
-    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
   }
 
   ngOnInit(): void {

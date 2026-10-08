@@ -150,7 +150,7 @@ export class CalendarioPagosComponent implements OnInit {
   constructor(private pagosServicio: PagosServicio, private router: Router) {}
 
   get prefijo(): string {
-    return this.router.url.startsWith('/secretaria') ? '/secretaria' : '/admin';
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
   }
 
   get nombreMes(): string {

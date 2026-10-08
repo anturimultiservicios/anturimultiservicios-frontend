@@ -20,7 +20,7 @@ export class AppComponent implements OnInit {
   // quien. Se decide acá, centralizado por ruta, en vez de en cada
   // componente - así no depende de que cada pantalla pública/login se
   // acuerde de forzarlo.
-  private readonly PREFIJOS_AUTENTICADOS = ['/admin', '/secretaria', '/super-admin'];
+  private readonly PREFIJOS_AUTENTICADOS = ['/admin', '/asistente', '/super-admin'];
 
   constructor(
     private router: Router,
