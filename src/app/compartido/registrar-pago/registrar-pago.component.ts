@@ -50,8 +50,9 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
               <input type="checkbox" [checked]="estaSeleccionado(a.id)" (change)="toggleSeleccion(a)" [disabled]="yaPagados.has(a.id)">
               <strong>{{ a.nombres }} {{ a.apellidos }}</strong>
               <span class="dato-secundario">CC {{ a.cedula }}</span>
+              <span *ngIf="mesesAdeudados(a) > 1" class="badge-mora">Debe {{ mesesAdeudados(a) }} meses</span>
             </label>
-            <span class="monto-persona">{{ (a.totalPago || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="yaPagados.has(a.id)" class="badge-pagado">Pagado ✓</span>
           </div>
         </div>
@@ -73,8 +74,9 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
                   <input type="checkbox" [checked]="estaSeleccionado(a.id)" (change)="toggleSeleccion(a)" [disabled]="yaPagados.has(a.id)">
                   <strong>{{ a.nombres }} {{ a.apellidos }}</strong>
                   <span class="dato-secundario">CC {{ a.cedula }}</span>
+                  <span *ngIf="mesesAdeudados(a) > 1" class="badge-mora">Debe {{ mesesAdeudados(a) }} meses</span>
                 </label>
-                <span class="monto-persona">{{ (a.totalPago || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                <span class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
                 <span *ngIf="yaPagados.has(a.id)" class="badge-pagado">Pagado ✓</span>
               </div>
             </div>
@@ -204,6 +206,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     .dato-secundario { color: var(--texto-terciario); font-size: var(--tamano-sm); }
     .monto-persona { font-weight: 600; color: var(--texto-principal); white-space: nowrap; }
     .badge-pagado { color: #15803d; font-size: var(--tamano-sm); font-weight: 600; white-space: nowrap; }
+    .badge-mora { color: #b45309; font-size: var(--tamano-sm); font-weight: 600; white-space: nowrap; }
 
     .empresa-bloque { border: 1px solid var(--borde-color); border-radius: var(--radio-md); overflow: hidden; }
     .empresa-encabezado { width: 100%; display: flex; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.03)); border: none; cursor: pointer; text-align: left; font-size: var(--tamano-base); color: var(--texto-principal); }
@@ -348,9 +351,36 @@ export class RegistrarPagoComponent implements OnDestroy {
     this.errorRegistro = '';
   }
 
+  // 2026-10-07 (corrección de Cristopher): si alguien no paga a tiempo y se
+  // demora varios meses, al ponerse al día debe pagar TODOS los meses
+  // atrasados, no solo 1 - de lo contrario seguiría apareciendo en mora
+  // después de "marcar como pagado". Se calcula contra el seguro MÁS
+  // atrasado del afiliado (el peor caso real), usando los datos que
+  // AfiliadosServicio.listar() ya trae anidados (afiliado.seguros).
+  mesesAdeudados(a: Afiliado): number {
+    const seguros = (a as any).seguros as { fechaVencimiento?: string | null }[] | undefined;
+    if (!seguros || seguros.length === 0) return 1;
+    const hoy = new Date();
+    let maxMeses = 1;
+    for (const s of seguros) {
+      if (!s.fechaVencimiento) continue;
+      const venc = new Date(s.fechaVencimiento);
+      if (venc > hoy) continue;
+      let meses = (hoy.getFullYear() - venc.getFullYear()) * 12 + (hoy.getMonth() - venc.getMonth());
+      if (hoy.getDate() >= venc.getDate()) meses += 1;
+      meses = Math.max(1, meses);
+      if (meses > maxMeses) maxMeses = meses;
+    }
+    return maxMeses;
+  }
+
+  montoAdeudado(a: Afiliado): number {
+    return Number(a.totalPago || 0) * this.mesesAdeudados(a);
+  }
+
   get totalSeleccionado(): number {
     let total = 0;
-    for (const a of this.seleccionados.values()) total += Number(a.totalPago || 0);
+    for (const a of this.seleccionados.values()) total += this.montoAdeudado(a);
     return total;
   }
 
@@ -362,7 +392,7 @@ export class RegistrarPagoComponent implements OnDestroy {
 
     forkJoin(
       personas.map((a) =>
-        this.pagosServicio.registrarCompleto(a.id, Number(a.totalPago || 0), this.canalSeleccionado!).pipe(
+        this.pagosServicio.registrarCompleto(a.id, this.montoAdeudado(a), this.canalSeleccionado!, this.mesesAdeudados(a)).pipe(
           catchError((err) => of({ error: true, afiliado: a, mensaje: err?.error?.message })),
         ),
       ),
@@ -382,6 +412,7 @@ export class RegistrarPagoComponent implements OnDestroy {
         this.mensajeExito = `${exitosos.length} pago(s) registrado(s) correctamente.`;
         setTimeout(() => { this.mensajeExito = ''; }, 5000);
         this.cargarResumen();
+        this.cargarResumenMensual();
       }
       if (fallidos.length > 0) {
         const nombres = fallidos.map((f: any) => `${f.afiliado.nombres} ${f.afiliado.apellidos}`).join(', ');
@@ -403,7 +434,7 @@ export class RegistrarPagoComponent implements OnDestroy {
 
   cargarResumenMensual(): void {
     this.cargandoMensual = true;
-    this.pagosServicio.resumenMensual(12).pipe(
+    this.pagosServicio.resumenMensual().pipe(
       catchError(() => of([] as ResumenMensual[])),
       finalize(() => { this.cargandoMensual = false; }),
       takeUntil(this.destruir$),

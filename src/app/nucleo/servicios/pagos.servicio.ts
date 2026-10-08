@@ -75,8 +75,8 @@ export class PagosServicio {
     return this.http.post<Pago>(this.URL, dto);
   }
 
-  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, referencia?: string): Observable<any> {
-    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos: 1, referencia });
+  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string): Observable<any> {
+    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia });
   }
 
   resumen(desde: string, hasta: string): Observable<ResumenPagos> {
@@ -84,9 +84,8 @@ export class PagosServicio {
     return this.http.get<ResumenPagos>(`${this.URL}/resumen`, { params });
   }
 
-  resumenMensual(meses = 12): Observable<ResumenMensual[]> {
-    const params = new HttpParams().set('meses', meses.toString());
-    return this.http.get<ResumenMensual[]>(`${this.URL}/resumen-mensual`, { params });
+  resumenMensual(): Observable<ResumenMensual[]> {
+    return this.http.get<ResumenMensual[]>(`${this.URL}/resumen-mensual`);
   }
 
   listarPorAfiliado(afiliadoId: number): Observable<Pago[]> {
