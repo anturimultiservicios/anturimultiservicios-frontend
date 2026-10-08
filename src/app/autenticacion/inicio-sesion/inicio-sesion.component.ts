@@ -165,13 +165,27 @@ export class InicioSesionComponent {
         this.contrasena = this.nuevaContrasena;
         this.nuevaContrasena = '';
         this.confirmarContrasena = '';
+        // Sale del formulario de cambio ya mismo: si algo demora, no queda
+        // a la vista para enviarse dos veces (bug real con Anyi, 2026-10-08).
+        this.vista = 'login';
         // El backend no devuelve sesion en este paso - hay que iniciar
         // sesion de nuevo con la contraseña ya establecida.
         this.ingresar();
       },
       error: (err) => {
         this.cargando = false;
-        this.error = err.error?.message || 'No se pudo establecer la contraseña. Intente nuevamente.';
+        if (err?.status === 403) {
+          // La clave ya se había cambiado (otra pestaña, doble envío, token
+          // viejo): no es un error de ella - volver a ingresar con la nueva.
+          this.auth.limpiarTokenTemporal();
+          this.nuevaContrasena = '';
+          this.confirmarContrasena = '';
+          this.contrasena = '';
+          this.vista = 'login';
+          this.error = 'Su contraseña ya quedó cambiada. Ingrese con la contraseña nueva que creó.';
+          return;
+        }
+        this.error = err.error?.message || 'No se pudo guardar la contraseña. Intente nuevamente.';
       },
     });
   }
