@@ -67,15 +67,28 @@
        (no tiene alpha, confirmado: códec h264/yuv420p) - se usa
        mix-blend-mode:multiply para que el blanco desaparezca visualmente
        sobre cualquier fondo de la página, sin reeditar el archivo.
-       poster = la foto vieja, se ve mientras el video carga. -->
+       2026-10-08: el video NO arrancaba en Chrome/tablet - Angular no
+       siempre pasa `muted` como propiedad y el navegador bloquea el
+       autoplay con sonido, así que se quedaba en el poster (el robot
+       viejo). Ahora se fuerza muted+play() al cargar (iniciarVideo) y el
+       poster es un cuadro del mismo video, nunca la mascota vieja. Burbuja
+       blanca en vez de multiply: el fondo blanco del video queda como parte
+       del diseño sobre cualquier sección de la página. -->
   <button *ngIf="!abierto" class="wa-robot" (click)="abrir()" [attr.aria-label]="'chatbot.titulo' | translate">
-    <video
-      class="wa-robot__video"
-      src="/assets/bot/bot-anturi.mp4"
-      poster="/assets/imagenes/bot-anturi.png"
-      autoplay loop muted playsinline
-      disablepictureinpicture
-    ></video>
+    <span class="wa-robot__burbuja">
+      <video
+        #videoBot
+        class="wa-robot__video"
+        src="/assets/bot/bot-anturi.mp4"
+        poster="/assets/bot/bot-anturi-poster.jpg"
+        autoplay loop muted playsinline
+        preload="auto"
+        disablepictureinpicture
+        [muted]="true"
+        (loadedmetadata)="iniciarVideo(videoBot)"
+        (canplay)="iniciarVideo(videoBot)"
+      ></video>
+    </span>
   </button>
 
   <button *ngIf="abierto" class="wa-boton-cerrar" (click)="cerrar()" aria-label="Cerrar chat">

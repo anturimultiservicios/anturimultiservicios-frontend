@@ -43,6 +43,14 @@ export class ChatbotWhatsappComponent {
     this.abierto = false;
   }
 
+  // Ver nota en el template: fuerza silencio + reproducción, que es lo que
+  // exigen Chrome/Safari para el autoplay. Si igual lo bloquean (ahorro de
+  // batería, etc.), queda el poster de la misma mascota.
+  iniciarVideo(video: HTMLVideoElement): void {
+    video.muted = true;
+    if (video.paused) video.play().catch(() => undefined);
+  }
+
   responder(clave: string): void {
     const textoUsuario = this.translate.instant(`chatbot.preguntas.${clave}`);
     this.mensajes.push({ tipo: 'usuario', texto: textoUsuario });
