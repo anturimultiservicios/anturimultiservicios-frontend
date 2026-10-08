@@ -236,7 +236,11 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
           <h3 class="seccion-titulo">Valores económicos</h3>
           <div class="datos-grid">
             <div class="dato-item">
-              <span class="dato-etiqueta">Valor base</span>
+              <span class="dato-etiqueta">Base de cotización (IBC)</span>
+              <span class="dato-valor">{{ $any(afiliado).ibc != null ? ('$' + ($any(afiliado).ibc | number)) : 'Sin registrar' }}</span>
+            </div>
+            <div class="dato-item">
+              <span class="dato-etiqueta">Seguridad social (mes)</span>
               <span class="dato-valor">{{ afiliado.valor != null ? ('$' + (afiliado.valor | number)) : '—' }}</span>
             </div>
             <div class="dato-item">
@@ -375,7 +379,7 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
             </select>
           </div>
           <div class="campo-grupo">
-            <label class="campo-etiqueta">Valor base</label>
+            <label class="campo-etiqueta">Seguridad social (mes)</label>
             <input type="number" class="campo-input" [(ngModel)]="edicionForm.valor" name="edit-valor">
           </div>
           <div class="campo-grupo">
@@ -878,7 +882,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     nombres: 'Nombres', apellidos: 'Apellidos', cedula: 'Número de documento', correo: 'Correo', telefono: 'Teléfono',
     fechaNacimiento: 'Fecha de nacimiento', genero: 'Género', cargo: 'Cargo', claseAportante: 'Clase aportante',
     asopagos: 'Asopagos', diasPago: 'Días de pago', tipoAfiliacion: 'Tipo de afiliación', claseRiesgoArl: 'Clase de riesgo ARL',
-    valor: 'Base de cotización (IBC)', comision: 'Comisión', totalPago: 'Total a pagar', eps: 'EPS', afp: 'AFP', arl: 'ARL',
+    valor: 'Seguridad social (mes)', ibc: 'Base de cotización (IBC)', comision: 'Comisión', totalPago: 'Total a pagar', eps: 'EPS', afp: 'AFP', arl: 'ARL',
     estado: 'Estado', fechaIngreso: 'Fecha de ingreso', fechaRetiro: 'Fecha de retiro', direccion: 'Dirección',
     municipio: 'Municipio', actividadEconomica: 'Actividad económica', tipoDocumento: 'Tipo de documento',
   };

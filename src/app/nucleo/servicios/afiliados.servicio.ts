@@ -73,6 +73,7 @@ export interface Afiliado {
 
 export interface CrearAfiliadoDto {
   valorAfiliacion?: number; // cobro único al afiliarse (2026-10-08)
+  ibc?: number;             // base de cotización - `valor` es el valor de la seguridad social
   nombres: string;
   apellidos: string;
   tipoDocumento?: string; // CC por defecto - ver nucleo/utilidades/tipos-documento.ts

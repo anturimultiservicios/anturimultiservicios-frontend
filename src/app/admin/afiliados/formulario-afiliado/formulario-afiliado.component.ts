@@ -697,7 +697,8 @@ const TIPOS: TipoAfiliacionInfo[] = [
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">4 x Mil</label>
-              <input type="number" class="campo-input" [(ngModel)]="form.cuatroXMil" name="cuatroXMil" placeholder="0" min="0">
+              <input type="number" class="campo-input" [class.campo-input--readonly]="!!resultadoMensual" [readonly]="!!resultadoMensual"
+                [(ngModel)]="form.cuatroXMil" name="cuatroXMil" placeholder="0" min="0">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Cesantías</label>
@@ -1334,6 +1335,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       // mes completo SIN afiliación - el primer pago se muestra aparte.
       this.totalPago = this.resultadoMensual.totalAPagar;
       this.totalPrimerPago = this.resultadoSimulacion.totalAPagar;
+      this.form.cuatroXMil = this.resultadoMensual.valorCuatroXMil;
     } else {
       const valor = Number(this.form.valor) || 0;
       const comision = Number(this.form.comision) || 0;
@@ -1438,7 +1440,11 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       porcentajeSena: this.form.porcentajeSena || undefined,
       porcentajeIcbf: this.form.porcentajeIcbf || undefined,
       actividadEconomica: this.form.actividadEconomica || undefined,
-      valor: this.form.valor || undefined,
+      // 2026-10-08: el campo "Base de cotización" es el IBC; `valor` guarda
+      // el valor mensual de la seguridad social (mismo sentido que en el
+      // Excel: ej. 499.100 = salud + pensión sobre el mínimo).
+      ibc: this.esParcial ? undefined : (Number(this.form.valor) || undefined),
+      valor: this.resultadoMensual ? this.resultadoMensual.valorSeguridadSocial : undefined,
       comision: this.form.comision || undefined,
       totalPago: this.totalPago || undefined,
       eps: this.form.eps || undefined,
