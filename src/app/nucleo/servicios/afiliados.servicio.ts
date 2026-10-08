@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 import { entorno } from '../../../environments/entorno';
 
 export type TipoAfiliacion =
+  | 'INDEPENDIENTE'
+  | 'INDEPENDIENTE_PARCIAL'
+  | 'INDEPENDIENTE_RESIDENTE_EXTERIOR'
   | 'INDEPENDIENTE_VOLUNTARIO_ARL'
   | 'INDEPENDIENTE_CONTRATISTA'
   | 'EMPRESA_EXONERADA'

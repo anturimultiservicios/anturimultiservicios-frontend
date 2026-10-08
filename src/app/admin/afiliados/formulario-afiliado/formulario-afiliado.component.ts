@@ -52,6 +52,28 @@ interface Porcentajes {
 // decía salud:0/pension:0 - estaba mal, nunca se había verificado contra
 // el motor real porque nunca se había llamado.
 const PORCENTAJES_POR_TIPO: Record<TipoAfiliacion, Porcentajes> = {
+  // 2026-10-08: plantillas 1-4 reales ("1. Independiente") - existían en la
+  // base desde el Excel pero nunca tuvieron tarjeta. Pensión se apaga si
+  // elige "Solo salud" (ver alCambiarCobertura()).
+  INDEPENDIENTE: {
+    salud: 12.5, pension: 16,
+    saludEmpleador: 0, pensionEmpleador: 0,
+    caja: 0, sena: 0, icbf: 0,
+  },
+  // Decreto 2616/2013: sin salud (régimen subsidiado o beneficiario), pensión
+  // 16% sobre semanas cotizadas, ARL sobre 1 SMLMV, caja opcional.
+  INDEPENDIENTE_PARCIAL: {
+    salud: 0, pension: 16,
+    saludEmpleador: 0, pensionEmpleador: 0,
+    caja: 0, sena: 0, icbf: 0,
+  },
+  // Ley 100/1993 art. 15 + Decreto 682/2014: afiliado voluntario a pensión,
+  // no cotiza salud ni ARL en Colombia (plantilla 35).
+  INDEPENDIENTE_RESIDENTE_EXTERIOR: {
+    salud: 0, pension: 16,
+    saludEmpleador: 0, pensionEmpleador: 0,
+    caja: 0, sena: 0, icbf: 0,
+  },
   INDEPENDIENTE_VOLUNTARIO_ARL: {
     salud: 12.5, pension: 16,
     saludEmpleador: 0, pensionEmpleador: 0,
@@ -76,12 +98,36 @@ const PORCENTAJES_POR_TIPO: Record<TipoAfiliacion, Porcentajes> = {
 
 const TIPOS: TipoAfiliacionInfo[] = [
   {
+    valor: 'INDEPENDIENTE',
+    titulo: 'Independiente',
+    subtitulo: 'Salud y pensión, o solo salud',
+    icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`,
+    descripcion: 'Independiente sin ARL. Cotiza salud (12.5%) y pensión (16%). "Solo salud" aplica únicamente si es pensionado, o si ya tiene la edad de pensión: mujeres desde 57 años y hombres desde 62. Caja de compensación opcional.',
+    tags: ['Salud 12.5%', 'Pensión 16%', 'Solo salud: pensionado o edad'],
+  },
+  {
+    valor: 'INDEPENDIENTE_PARCIAL',
+    titulo: 'Independiente Parcial',
+    subtitulo: 'Ingresos menores al mínimo',
+    icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+    descripcion: 'Gana menos de un salario mínimo y cotiza por semanas según los días trabajados en el mes (Decreto 2616 de 2013): de 1 a 7 días es 1 semana, de 8 a 14 son 2, de 15 a 21 son 3 y más de 21 son 4. Pensión y ARL son obligatorias, y la ARL siempre se calcula sobre 1 SMMLV completo. La caja es opcional. No cotiza EPS: debe estar en el régimen subsidiado o como beneficiario.',
+    tags: ['Pensión 16% por semanas', 'ARL sobre 1 SMMLV', 'Sin EPS · Caja opcional'],
+  },
+  {
+    valor: 'INDEPENDIENTE_RESIDENTE_EXTERIOR',
+    titulo: 'Independiente Residente Exterior',
+    subtitulo: 'Colombiano que vive fuera del país',
+    icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
+    descripcion: 'Colombiano domiciliado en el exterior, afiliado voluntario solo a pensión (Ley 100 de 1993, art. 15, y Decreto 682 de 2014). No cotiza salud ni ARL en Colombia. El IBC va de 1 a 25 SMMLV.',
+    tags: ['Solo pensión 16%', 'IBC mínimo 1 SMMLV'],
+  },
+  {
     valor: 'INDEPENDIENTE_VOLUNTARIO_ARL',
     titulo: 'Independiente Voluntario ARL',
-    subtitulo: 'Solo riesgos profesionales',
+    subtitulo: 'Salud, pensión y ARL voluntaria',
     icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
-    descripcion: 'Persona independiente que cotiza únicamente al sistema de riesgos laborales (ARL). No cotiza salud ni pensión por esta modalidad.',
-    tags: ['ARL según clase de riesgo'],
+    descripcion: 'Persona independiente que, además de salud y pensión, se afilia voluntariamente al sistema de riesgos laborales (ARL).',
+    tags: ['Salud 12.5%', 'Pensión 16%', 'ARL según clase de riesgo'],
   },
   {
     valor: 'INDEPENDIENTE_CONTRATISTA',
@@ -187,6 +233,48 @@ const TIPOS: TipoAfiliacionInfo[] = [
           Porcentajes PILA cargados automáticamente
         </h4>
         <div class="porcentajes-grid">
+          <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE'">
+            <div class="pct-item">
+              <span class="pct-label">Salud</span>
+              <span class="pct-valor">12.5%</span>
+            </div>
+            <div class="pct-item" [class.pct-item--exonerado]="coberturaIndependiente === 'SOLO_SALUD'">
+              <span class="pct-label">Pensión</span>
+              <span class="pct-valor">{{ coberturaIndependiente === 'SOLO_SALUD' ? 'No cotiza' : '16%' }}</span>
+            </div>
+            <div class="pct-item">
+              <span class="pct-label">Caja</span>
+              <span class="pct-valor">{{ nivelCajaFraccion ? (nivelCajaFraccion * 100) + '%' : 'No cotiza' }}</span>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE_PARCIAL'">
+            <div class="pct-item">
+              <span class="pct-label">Pensión ({{ semanasParcial }} sem.)</span>
+              <span class="pct-valor">16%</span>
+            </div>
+            <div class="pct-item pct-item--arl">
+              <span class="pct-label">ARL (clase {{ form.claseRiesgoArl || '?' }}, sobre 1 SMMLV)</span>
+              <span class="pct-valor">{{ form.porcentajeArl || '—' }}%</span>
+            </div>
+            <div class="pct-item">
+              <span class="pct-label">Caja (opcional)</span>
+              <span class="pct-valor">{{ nivelCajaFraccion ? (nivelCajaFraccion * 100) + '%' : 'No cotiza' }}</span>
+            </div>
+            <div class="pct-item pct-item--exonerado">
+              <span class="pct-label">Salud (EPS)</span>
+              <span class="pct-valor">No cotiza</span>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE_RESIDENTE_EXTERIOR'">
+            <div class="pct-item">
+              <span class="pct-label">Pensión</span>
+              <span class="pct-valor">16%</span>
+            </div>
+            <div class="pct-item pct-item--exonerado">
+              <span class="pct-label">Salud / ARL / Caja</span>
+              <span class="pct-valor">No aplica</span>
+            </div>
+          </ng-container>
           <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL'">
             <div class="pct-item">
               <span class="pct-label">Salud</span>
@@ -436,8 +524,34 @@ const TIPOS: TipoAfiliacionInfo[] = [
             Seguros y porcentajes PILA
           </h3>
           <div class="campos-grid">
+            <!-- 2026-10-08: Independiente (plantillas 1-4) - cobertura -->
+            <ng-container *ngIf="tipoSeleccionado === 'INDEPENDIENTE'">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta">Cobertura <span class="requerido">*</span></label>
+                <select class="campo-input" [(ngModel)]="coberturaIndependiente" name="coberturaIndependiente" (change)="alCambiarCobertura()">
+                  <option value="SALUD_PENSION">Salud y pensión</option>
+                  <option value="SOLO_SALUD">Solo salud (pensionado o edad de pensión)</option>
+                </select>
+              </div>
+              <div class="campo-grupo" *ngIf="coberturaIndependiente === 'SOLO_SALUD'">
+                <label class="campo-etiqueta">Condición para solo salud</label>
+                <label class="permiso-check">
+                  <input type="checkbox" [(ngModel)]="esPensionado" name="esPensionado" (change)="resimular()"> Ya es pensionado
+                </label>
+                <span class="campo-ayuda" [class.mensaje-error]="!puedeSoloSalud">{{ mensajeSoloSalud }}</span>
+              </div>
+            </ng-container>
+
+            <!-- 2026-10-08: Parcial - días trabajados en el mes → semanas (Decreto 2616/2013) -->
+            <div class="campo-grupo" *ngIf="tipoSeleccionado === 'INDEPENDIENTE_PARCIAL'">
+              <label class="campo-etiqueta">Días trabajados en el mes <span class="requerido">*</span></label>
+              <input type="number" class="campo-input" [(ngModel)]="diasCotizadosParcial" name="diasCotizadosParcial"
+                min="1" max="30" (ngModelChange)="resimular()">
+              <span class="campo-ayuda">Cotiza {{ semanasParcial }} semana{{ semanasParcial > 1 ? 's' : '' }} (1-7 días = 1 · 8-14 = 2 · 15-21 = 3 · más de 21 = 4)</span>
+            </div>
+
             <!-- Clase de riesgo ARL -->
-            <div class="campo-grupo">
+            <div class="campo-grupo" *ngIf="usaArl">
               <label class="campo-etiqueta">Clase de riesgo ARL <span class="requerido">*</span></label>
               <select class="campo-input" [(ngModel)]="form.claseRiesgoArl" name="claseRiesgoArl" (change)="actualizarArl()">
                 <option value="">Seleccionar clase...</option>
@@ -449,7 +563,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
               </select>
             </div>
 
-            <div class="campo-grupo">
+            <div class="campo-grupo" *ngIf="usaArl">
               <label class="campo-etiqueta">ARL (%)</label>
               <input type="number" class="campo-input campo-input--readonly" [(ngModel)]="form.porcentajeArl"
                 name="porcentajeArl" placeholder="—" min="0" max="100" step="0.001" readonly>
@@ -459,7 +573,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
                  2026-10-07: antes no existía este selector - el nivel quedaba fijo en 0% sin que
                  nadie lo eligiera, pese a que las 3 variantes (0%/0.6%/2%) son reales en las
                  plantillas (verificado por SQL directo). -->
-            <div class="campo-grupo" *ngIf="tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' || tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA'">
+            <div class="campo-grupo" *ngIf="usaCajaIndependiente">
               <label class="campo-etiqueta">Caja de Compensación <span class="requerido">*</span></label>
               <select class="campo-input" [(ngModel)]="nivelCajaFraccion" name="nivelCajaFraccion" (change)="alCambiarCaja()">
                 <option [ngValue]="0">No cotiza (0%)</option>
@@ -539,9 +653,11 @@ const TIPOS: TipoAfiliacionInfo[] = [
           <div class="campos-grid">
             <div class="campo-grupo">
               <label class="campo-etiqueta">Base de cotización - IBC</label>
-              <input type="number" class="campo-input" [(ngModel)]="form.valor" name="valor"
-                placeholder="0" min="0" (ngModelChange)="alCambiarValorOComision()">
-              <span class="campo-ayuda">Sobre este valor se calculan los aportes reales (salud/pensión/ARL/caja).</span>
+              <input type="number" class="campo-input" [class.campo-input--readonly]="esParcial" [(ngModel)]="form.valor" name="valor"
+                placeholder="0" min="0" [readonly]="esParcial" (ngModelChange)="alCambiarValorOComision()">
+              <span class="campo-ayuda" *ngIf="!esParcial">Sobre este valor se calculan los aportes reales (salud/pensión/ARL/caja).</span>
+              <span class="campo-ayuda" *ngIf="esParcial">Se calcula solo: semanas × (SMMLV / 4). La ARL va sobre 1 SMMLV completo.</span>
+              <span class="campo-ayuda" *ngIf="tipoSeleccionado === 'INDEPENDIENTE_RESIDENTE_EXTERIOR'">Mínimo 1 SMMLV y máximo 25 SMMLV.</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Comisión Anturi{{ resultadoSimulacion ? ' (calculada)' : '' }}</label>
@@ -554,7 +670,7 @@ const TIPOS: TipoAfiliacionInfo[] = [
               <label class="campo-etiqueta">Total a pagar (calculado)</label>
               <input type="number" class="campo-input campo-input--readonly" [value]="totalPago" readonly>
               <span class="campo-ayuda" *ngIf="resultadoSimulacion">Aportes + comisión Anturi, ya todo incluido.</span>
-              <span class="campo-ayuda" *ngIf="!resultadoSimulacion && !simulando && puedeSimular">Complete clase de riesgo{{ (tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' || tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA') ? ', caja' : '' }} y base de cotización para ver el cálculo real.</span>
+              <span class="campo-ayuda" *ngIf="!resultadoSimulacion && !simulando && puedeSimular">{{ ayudaSimulacion }}</span>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">4 x Mil</label>
@@ -774,6 +890,10 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   // aparte, nunca se mezcla con los aportes de seguridad social.
   plantillas: PlantillaLiquidacion[] = [];
   nivelCajaFraccion = 0; // 0 | 0.006 | 0.02 - fracción real de plantillas_liquidacion, no %
+  // 2026-10-08 - modalidades nuevas de independiente
+  coberturaIndependiente: 'SALUD_PENSION' | 'SOLO_SALUD' = 'SALUD_PENSION';
+  esPensionado = false;
+  diasCotizadosParcial = 30;
   resultadoSimulacion: ResultadoMotorLiquidacion | null = null;
   simulando = false;
   errorSimulacion = '';
@@ -896,6 +1016,86 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     this.destruir$.complete();
   }
 
+  resimular(): void {
+    this.simular$.next();
+  }
+
+  get esParcial(): boolean {
+    return this.tipoSeleccionado === 'INDEPENDIENTE_PARCIAL';
+  }
+
+  // Independiente (plantillas 1-4) y Residente exterior no cotizan ARL.
+  get usaArl(): boolean {
+    return this.tipoSeleccionado !== 'INDEPENDIENTE' && this.tipoSeleccionado !== 'INDEPENDIENTE_RESIDENTE_EXTERIOR';
+  }
+
+  // "Solo salud" no tiene variante con caja en las plantillas (tipo 1).
+  get usaCajaIndependiente(): boolean {
+    if (this.tipoSeleccionado === 'INDEPENDIENTE') return this.coberturaIndependiente === 'SALUD_PENSION';
+    return this.tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL'
+      || this.tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA'
+      || this.tipoSeleccionado === 'INDEPENDIENTE_PARCIAL';
+  }
+
+  // Decreto 2616/2013 art. 5.
+  get semanasParcial(): number {
+    const dias = Number(this.diasCotizadosParcial) || 0;
+    if (dias <= 7) return 1;
+    if (dias <= 14) return 2;
+    if (dias <= 21) return 3;
+    return 4;
+  }
+
+  get edadAfiliado(): number | null {
+    if (!this.form.fechaNacimiento) return null;
+    const nac = new Date(this.form.fechaNacimiento + 'T00:00:00');
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nac.getFullYear();
+    if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+    return edad;
+  }
+
+  // Solo salud: pensionado, o mujer desde 57 / hombre desde 62 años.
+  get puedeSoloSalud(): boolean {
+    if (this.esPensionado) return true;
+    const edad = this.edadAfiliado;
+    if (edad === null) return false;
+    return (this.form.genero === 'F' && edad >= 57) || (this.form.genero === 'M' && edad >= 62);
+  }
+
+  get mensajeSoloSalud(): string {
+    if (this.esPensionado) return 'Pensionado: puede cotizar solo salud.';
+    const edad = this.edadAfiliado;
+    if (edad === null || (this.form.genero !== 'F' && this.form.genero !== 'M')) {
+      return 'Si no es pensionado, ingrese fecha de nacimiento y género (mujer 57+ / hombre 62+).';
+    }
+    return this.puedeSoloSalud
+      ? `Tiene ${edad} años: cumple la edad para cotizar solo salud.`
+      : `Tiene ${edad} años: no cumple la edad (mujer 57+ / hombre 62+). Debe cotizar salud y pensión.`;
+  }
+
+  get ayudaSimulacion(): string {
+    switch (this.tipoSeleccionado) {
+      case 'INDEPENDIENTE': return 'Complete la cobertura, la caja y la base de cotización para ver el cálculo real.';
+      case 'INDEPENDIENTE_RESIDENTE_EXTERIOR': return 'Complete la base de cotización para ver el cálculo real.';
+      case 'INDEPENDIENTE_PARCIAL': return 'Complete los días trabajados, la clase de riesgo y la caja para ver el cálculo real.';
+      case 'INDEPENDIENTE_VOLUNTARIO_ARL':
+      case 'INDEPENDIENTE_CONTRATISTA': return 'Complete la clase de riesgo, la caja y la base de cotización para ver el cálculo real.';
+      default: return 'Complete la clase de riesgo y la base de cotización para ver el cálculo real.';
+    }
+  }
+
+  alCambiarCobertura(): void {
+    if (this.coberturaIndependiente === 'SOLO_SALUD') {
+      this.form.porcentajePension = undefined;
+      this.nivelCajaFraccion = 0;
+      this.form.porcentajeCaja = undefined;
+    } else {
+      this.form.porcentajePension = 16;
+    }
+    this.simular$.next();
+  }
+
   alCambiarCaja(): void {
     // form.porcentajeCaja se guarda en el Afiliado en escala de porcentaje
     // (0.6 = "0.6%"), igual que el resto del formulario - nivelCajaFraccion
@@ -909,6 +1109,21 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   // + clase de riesgo ARL + nivel de caja elegidos - nunca se adivina un id,
   // se busca contra el catálogo real (mismo que ya usa el motor viejo).
   private buscarTipoPlantilla(): number | null {
+    if (this.tipoSeleccionado === 'INDEPENDIENTE') {
+      const soloSalud = this.coberturaIndependiente === 'SOLO_SALUD';
+      const fila = this.plantillas.find((p) =>
+        p.activa &&
+        p.libro.startsWith('1.') &&
+        p.claseRiesgo === 0 &&
+        (soloSalud ? p.porcentajePension === 0 : p.porcentajePension > 0) &&
+        Math.abs(p.porcentajeCaja - (soloSalud ? 0 : this.nivelCajaFraccion)) < 0.0001,
+      );
+      return fila ? fila.tipo : null;
+    }
+    if (this.tipoSeleccionado === 'INDEPENDIENTE_RESIDENTE_EXTERIOR') {
+      const fila = this.plantillas.find((p) => p.activa && p.libro.includes('Exterior'));
+      return fila ? fila.tipo : null;
+    }
     if (!this.tipoSeleccionado || !this.form.claseRiesgoArl) return null;
     const claseNum = { I: 1, II: 2, III: 3, IV: 4, V: 5 }[this.form.claseRiesgoArl];
     const textoLibro = this.tipoSeleccionado === 'INDEPENDIENTE_VOLUNTARIO_ARL' ? 'Voluntario' : 'Contrato';
@@ -926,6 +1141,30 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   // cuánto daría de pagar con los datos actuales, igual que pedía Cristopher.
   private ejecutarSimulacion(): void {
     this.errorSimulacion = '';
+
+    // Parcial: la base no se teclea, sale de los días → semanas (el motor
+    // la devuelve en `ibc` y se copia a "Base de cotización").
+    if (this.esParcial) {
+      const dias = Number(this.diasCotizadosParcial);
+      if (!this.form.claseRiesgoArl || !Number.isInteger(dias) || dias < 1 || dias > 30) {
+        this.resultadoSimulacion = null;
+        this.calcularTotal();
+        return;
+      }
+      const codigoCaja = this.nivelCajaFraccion === 0.006 ? 'CAJA_06' : this.nivelCajaFraccion === 0.02 ? 'CAJA_2' : undefined;
+      this.simulando = true;
+      this.motorServicio.simularParcial({ diasCotizados: dias, claseRiesgoArl: this.form.claseRiesgoArl, codigoCaja }).subscribe({
+        next: (r) => { this.resultadoSimulacion = r; this.form.valor = r.ibc; this.simulando = false; this.calcularTotal(); },
+        error: (err) => {
+          this.simulando = false;
+          this.resultadoSimulacion = null;
+          this.errorSimulacion = this.mensajeErrorSimulacion(err);
+          this.calcularTotal();
+        },
+      });
+      return;
+    }
+
     const ibc = Number(this.form.valor) || 0;
 
     if (!this.tipoSeleccionado || ibc <= 0) {
@@ -953,7 +1192,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Independiente (Voluntario ARL / Contratista)
+    // Independiente (plantillas 1-4 / Residente exterior / Voluntario ARL / Contratista)
     const tipoPlantilla = this.buscarTipoPlantilla();
     if (!tipoPlantilla) {
       this.resultadoSimulacion = null;
@@ -993,6 +1232,14 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     this.form.porcentajeCaja = pct.caja || undefined;
     this.form.porcentajeSena = pct.sena || undefined;
     this.form.porcentajeIcbf = pct.icbf || undefined;
+    this.coberturaIndependiente = 'SALUD_PENSION';
+    this.esPensionado = false;
+    if (!this.usaCajaIndependiente) this.nivelCajaFraccion = 0;
+    if (this.usaCajaIndependiente) this.form.porcentajeCaja = this.nivelCajaFraccion * 100 || undefined;
+    if (!this.usaArl) {
+      this.form.claseRiesgoArl = undefined;
+      this.form.porcentajeArl = undefined;
+    }
     // Mantener ARL si ya se había seleccionado clase de riesgo
     if (this.form.claseRiesgoArl) this.actualizarArl();
     this.resultadoSimulacion = null;
@@ -1065,6 +1312,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   validarTodo(): boolean {
+    this.errorGlobal = '';
     if (!this.tipoSeleccionado) {
       this.errorGlobal = 'Seleccione un tipo de afiliación para continuar.';
       return false;
@@ -1074,6 +1322,17 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     this.validarCampo('cedula');
     this.validarCampo('genero');
     this.validarCampo('confirmarCorreo');
+    if (this.tipoSeleccionado === 'INDEPENDIENTE' && this.coberturaIndependiente === 'SOLO_SALUD' && !this.puedeSoloSalud) {
+      this.errorGlobal = 'Solo salud aplica únicamente a pensionados, o a mujeres desde 57 años y hombres desde 62 (sección 3).';
+      return false;
+    }
+    if (this.esParcial) {
+      const dias = Number(this.diasCotizadosParcial);
+      if (!Number.isInteger(dias) || dias < 1 || dias > 30 || !this.form.claseRiesgoArl) {
+        this.errorGlobal = 'Independiente parcial: indique los días trabajados (de 1 a 30) y la clase de riesgo ARL, que es obligatoria (sección 3).';
+        return false;
+      }
+    }
     return !this.errores.nombres && !this.errores.apellidos && !this.errores.cedula
       && !this.errores.genero && !this.errores.confirmarCorreo;
   }
