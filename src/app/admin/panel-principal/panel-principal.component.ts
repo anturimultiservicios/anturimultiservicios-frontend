@@ -5,6 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { BarraLateralComponent } from '../barra-lateral/barra-lateral.component';
 import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.component';
 import { CampanaNotificacionesComponent } from '../../compartido/campana-notificaciones/campana-notificaciones.component';
+import { CorreoRecuperacionComponent } from '../../compartido/correo-recuperacion/correo-recuperacion.component';
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
@@ -19,6 +20,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     BarraLateralComponent,
     CalculadoraComponent,
     CampanaNotificacionesComponent,
+    CorreoRecuperacionComponent,
   ],
   templateUrl: './panel-principal.component.html',
   styleUrls: ['./panel-principal.component.css'],

@@ -109,8 +109,8 @@
     "ingresar": "Anmelden",
     "olvidoContrasena": "Passwort vergessen?",
     "recuperar": "Passwort zurücksetzen",
-    "recuperarTexto": "Geben Sie Ihre Benutzer-E-Mail ein, und wir benachrichtigen den Administrator, damit er Ihnen ein temporäres Passwort zuweist.",
-    "enviar": "Neues Passwort anfordern",
+    "recuperarTexto": "Geben Sie Ihre Benutzer- oder persönliche E-Mail ein. Wir senden einen Link an Ihre persönliche E-Mail, um ein neues Passwort zu erstellen.",
+    "enviar": "Link senden",
     "volver": "Zurück zur Anmeldung",
     "correoEnviado": "Erledigt. Der Administrator hat Ihre Anfrage erhalten: Sie erhalten das temporäre Passwort Anturi123 und müssen beim Anmelden ein neues erstellen."
   },

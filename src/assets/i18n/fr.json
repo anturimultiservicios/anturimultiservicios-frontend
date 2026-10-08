@@ -109,8 +109,8 @@
     "ingresar": "Se connecter",
     "olvidoContrasena": "Mot de passe oublié?",
     "recuperar": "Récupérer le mot de passe",
-    "recuperarTexto": "Saisissez votre e-mail d'utilisateur et nous préviendrons l'administrateur pour qu'il vous attribue un mot de passe temporaire.",
-    "enviar": "Demander un nouveau mot de passe",
+    "recuperarTexto": "Saisissez votre e-mail d'utilisateur ou personnel. Nous enverrons un lien à votre e-mail personnel pour créer un nouveau mot de passe.",
+    "enviar": "Envoyer le lien",
     "volver": "Retour à la connexion",
     "correoEnviado": "C'est fait. L'administrateur a reçu votre demande : vous recevrez le mot de passe temporaire Anturi123 et devrez en créer un nouveau à la connexion."
   },

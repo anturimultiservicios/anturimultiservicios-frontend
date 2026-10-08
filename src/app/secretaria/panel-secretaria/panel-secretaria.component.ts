@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.component';
 import { CampanaNotificacionesComponent } from '../../compartido/campana-notificaciones/campana-notificaciones.component';
+import { CorreoRecuperacionComponent } from '../../compartido/correo-recuperacion/correo-recuperacion.component';
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
@@ -21,8 +22,10 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
     RouterOutlet,
     CalculadoraComponent,
     CampanaNotificacionesComponent,
+    CorreoRecuperacionComponent,
   ],
   template: `
+    <anturi-correo-recuperacion></anturi-correo-recuperacion>
     <div class="escritorio" [class.barra-contraida]="!barraExpandida">
 
       <!-- Barra lateral -->

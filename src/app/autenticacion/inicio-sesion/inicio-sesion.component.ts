@@ -49,6 +49,9 @@ export class InicioSesionComponent {
   // correcta pero el horario de acceso (7:00-19:00 hora Colombia) no deja
   // entrar en este momento.
   fueraDeHorarioMensaje: string | null = null;
+  // Respuesta de "Olvidó su contraseña": enlace al correo personal, o aviso
+  // al administrador si todavía no registró uno (2026-10-08).
+  mensajeEnviado = '';
 
   // Estado de las ramas D3+D4 (dispositivo/contraseña temporal)
   mensajePaso = '';
@@ -233,8 +236,9 @@ export class InicioSesionComponent {
     this.error = '';
 
     this.auth.recuperarContrasena(this.correoRecuperar).subscribe({
-      next: () => {
+      next: (res) => {
         this.cargando = false;
+        this.mensajeEnviado = res?.mensaje || '';
         this.vista = 'enviado';
       },
       error: () => {

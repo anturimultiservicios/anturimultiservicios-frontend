@@ -197,8 +197,8 @@
           <polyline points="22,6 12,13 2,6"></polyline>
         </svg>
       </div>
-      <h2 class="login-enviado__titulo">Correo enviado</h2>
-      <p class="login-enviado__texto">{{ 'login.correoEnviado' | translate }}</p>
+      <h2 class="login-enviado__titulo">Solicitud recibida</h2>
+      <p class="login-enviado__texto">{{ mensajeEnviado || ('login.correoEnviado' | translate) }}</p>
       <button class="boton boton-primario login-btn-ingresar" (click)="cambiarVista('login')">
         {{ 'login.volver' | translate }}
       </button>

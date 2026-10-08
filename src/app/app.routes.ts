@@ -19,6 +19,15 @@ export const rutas: Routes = [
       ),
   },
 
+  // Enlace del correo de recuperación (2026-10-08)
+  {
+    path: 'restablecer-contrasena',
+    loadComponent: () =>
+      import('./autenticacion/restablecer-contrasena/restablecer-contrasena.component').then(
+        (m) => m.RestablecerContrasenaComponent
+      ),
+  },
+
   // Panel super admin
   {
     path: 'super-admin',

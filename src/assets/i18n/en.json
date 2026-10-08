@@ -109,8 +109,8 @@
     "ingresar": "Login",
     "olvidoContrasena": "Forgot your password?",
     "recuperar": "Reset password",
-    "recuperarTexto": "Enter your user email and we will notify the administrator to assign you a temporary password.",
-    "enviar": "Request new password",
+    "recuperarTexto": "Enter your user email or your personal email. We will send a link to your personal email to create a new password.",
+    "enviar": "Send link",
     "volver": "Back to login",
     "correoEnviado": "Done. The administrator received your request: you will get the temporary password Anturi123 and must create a new one when you sign in."
   },
