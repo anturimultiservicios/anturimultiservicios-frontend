@@ -4,6 +4,7 @@ import { filter } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TemaServicio } from './nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from './nucleo/servicios/idioma.servicio';
+import { VersionServicio } from './nucleo/servicios/version.servicio';
 import { AvisoHorarioComponent } from './compartido/aviso-horario/aviso-horario.component';
 
 @Component({
@@ -26,12 +27,14 @@ export class AppComponent implements OnInit {
     private router: Router,
     private temaServicio: TemaServicio,
     private idiomaServicio: IdiomaServicio,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private version: VersionServicio
   ) {}
 
   ngOnInit(): void {
     this.temaServicio.inicializar();
     this.idiomaServicio.inicializar();
+    this.version.iniciar();
 
     this.router.events.pipe(
       filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd)

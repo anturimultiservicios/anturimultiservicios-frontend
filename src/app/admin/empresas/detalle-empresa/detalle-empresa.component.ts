@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, finalize } from 'rxjs';
-import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.servicio';
+import { EmpresasServicio, Empresa, PersonalEmpresa } from '../../../nucleo/servicios/empresas.servicio';
+import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
+import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
 import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
@@ -110,6 +112,42 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
           </div>
         </div>
 
+        <!-- 2026-10-08: personal de la empresa (antes solo se veían sucursales) -->
+        <div class="tarjeta seccion-datos">
+          <div class="seccion-titulo-fila">
+            <h3 class="seccion-titulo">Personal de la empresa ({{ personalActivo.length }})</h3>
+            <button class="boton boton-primario boton-sm" (click)="abrirAgregarPersonal()">+ Agregar persona</button>
+          </div>
+          <div *ngIf="cargandoPersonal" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">Cargando personal...</div>
+          <div *ngIf="!cargandoPersonal && personal.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">
+            Todavía no hay personas vinculadas a esta empresa. Use "Agregar persona" para buscarlas por nombre o documento.
+          </div>
+          <div class="tabla-contenedor" *ngIf="personal.length > 0">
+            <table class="tabla">
+              <thead>
+                <tr><th>Persona</th><th>Documento</th><th>Cargo</th><th>Desde</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of personal" [class.fila-retirada]="p.estadoRelacion !== 'ACTIVA'">
+                  <td>{{ p.afiliado.nombres }} {{ p.afiliado.apellidos }}</td>
+                  <td>{{ sigla(p.tipoDocumento) }} {{ p.afiliado.cedula }}</td>
+                  <td>{{ p.cargo || '—' }}</td>
+                  <td>{{ p.fechaIngreso ? (p.fechaIngreso | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td>
+                    <span class="badge-estado" [ngClass]="p.estadoRelacion === 'ACTIVA' ? 'badge-activo' : 'badge-inactivo'">
+                      {{ p.estadoRelacion === 'ACTIVA' ? 'TRABAJA AQUÍ' : 'RETIRADO' + (p.fechaRetiro ? ' ' + (p.fechaRetiro | date:'dd/MM/yyyy') : '') }}
+                    </span>
+                  </td>
+                  <td class="acciones-personal">
+                    <a [routerLink]="[prefijo, 'afiliados', p.afiliado.id]" class="boton boton-texto boton-sm">Ver</a>
+                    <button *ngIf="!esSecretaria && p.estadoRelacion === 'ACTIVA'" class="boton boton-texto boton-sm" (click)="retirarPersonal(p)">Retirar</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="tarjeta seccion-datos">
           <div class="seccion-titulo-fila">
             <h3 class="seccion-titulo">Sucursales ({{ sucursales.length }})</h3>
@@ -213,6 +251,45 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
       </div>
     </div>
 
+    <!-- MODAL: agregar persona a la empresa (2026-10-08) -->
+    <div *ngIf="modalPersonal" class="modal-overlay" (click)="modalPersonal = false">
+      <div class="modal-form" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h3 class="modal-titulo">Agregar persona a {{ empresa?.razonSocial }}</h3></div>
+        <div class="modal-cuerpo">
+        <div class="campo-grupo">
+          <label class="campo-etiqueta">Buscar afiliado por nombre o documento</label>
+          <input type="text" class="campo-input" [(ngModel)]="busquedaPersonal" name="busquedaPersonal"
+                 placeholder="Ej. 1094933466 o Pérez" (ngModelChange)="buscarPersonal()">
+        </div>
+        <div *ngIf="buscandoPersonal" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">Buscando...</div>
+        <ul class="lista-busqueda" *ngIf="resultadosPersonal.length > 0">
+          <li *ngFor="let a of resultadosPersonal" [class.seleccionado]="seleccionPersonal?.id === a.id" (click)="seleccionPersonal = a">
+            <strong>{{ a.nombres }} {{ a.apellidos }}</strong>
+            <span>{{ sigla(a.persona?.tipoDocumento) }} {{ a.cedula }} · {{ a.estado }}</span>
+          </li>
+        </ul>
+        <div *ngIf="!buscandoPersonal && busquedaPersonal.trim().length >= 3 && resultadosPersonal.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">
+          No se encontró. Si es una persona nueva, primero créela en Afiliados → Nuevo afiliado.
+        </div>
+        <div class="campo-grupo" *ngIf="seleccionPersonal">
+          <label class="campo-etiqueta">Cargo (opcional)</label>
+          <input type="text" class="campo-input" [(ngModel)]="cargoPersonal" name="cargoPersonal" placeholder="Ej. Auxiliar de bodega">
+        </div>
+        <div class="campo-grupo" *ngIf="seleccionPersonal">
+          <label class="campo-etiqueta">Fecha de ingreso a la empresa</label>
+          <input type="date" class="campo-input" [(ngModel)]="fechaIngresoPersonal" name="fechaIngresoPersonal">
+        </div>
+        <div *ngIf="errorPersonal" class="alerta-error">{{ errorPersonal }}</div>
+        </div>
+        <div class="modal-pie">
+          <button class="boton boton-secundario" (click)="modalPersonal = false">Cancelar</button>
+          <button class="boton boton-primario" [disabled]="!seleccionPersonal || guardandoPersonal" (click)="guardarPersonal()">
+            {{ guardandoPersonal ? 'Guardando...' : 'Vincular a la empresa' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL: crear/editar sucursal -->
     <div *ngIf="modalSucursal" class="modal-overlay" (click)="modalSucursal = false">
       <div class="modal-form" (click)="$event.stopPropagation()">
@@ -267,6 +344,13 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .aviso-pendiente { display: flex; flex-direction: column; gap: var(--espacio-1); padding: var(--espacio-3) var(--espacio-4); background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.35); border-left: 4px solid #eab308; border-radius: var(--radio-md); color: var(--texto-principal); font-size: var(--tamano-sm); }
     .aviso-pendiente--eliminar { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); border-left-color: #ef4444; }
     .aviso-pendiente__enlace { color: var(--color-primario); font-weight: 600; text-decoration: none; align-self: flex-start; }
+    .fila-retirada td { color: var(--texto-terciario); }
+    .acciones-personal { white-space: nowrap; display: flex; gap: var(--espacio-2); }
+    .lista-busqueda { list-style: none; margin: 0 0 var(--espacio-3); padding: 0; max-height: 260px; overflow-y: auto; border: 1px solid var(--borde-color); border-radius: var(--radio-md); }
+    .lista-busqueda li { display: flex; flex-direction: column; gap: 2px; padding: var(--espacio-2) var(--espacio-3); cursor: pointer; border-bottom: 1px solid var(--borde-color); font-size: var(--tamano-sm); }
+    .lista-busqueda li span { color: var(--texto-terciario); font-size: var(--tamano-xs); }
+    .lista-busqueda li:hover { background: rgba(0,0,0,0.03); }
+    .lista-busqueda li.seleccionado { background: rgba(27,50,112,0.08); border-left: 3px solid var(--color-primario); }
     .alerta-exito { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: var(--radio-md); color: #15803d; font-size: var(--tamano-sm); }
     .alerta-error { display: flex; align-items: center; gap: var(--espacio-2); padding: var(--espacio-3) var(--espacio-4); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radio-md); color: var(--color-error); font-size: var(--tamano-sm); }
     .form-acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); margin-top: var(--espacio-4); }
@@ -333,6 +417,97 @@ export class DetalleEmpresaComponent implements OnInit {
   motivoEstado = '';
   guardandoEstado = false;
 
+  // ── Personal de la empresa (2026-10-08) ──
+  personal: PersonalEmpresa[] = [];
+  cargandoPersonal = false;
+  modalPersonal = false;
+  busquedaPersonal = '';
+  buscandoPersonal = false;
+  resultadosPersonal: Afiliado[] = [];
+  seleccionPersonal: Afiliado | null = null;
+  cargoPersonal = '';
+  fechaIngresoPersonal = new Date().toISOString().slice(0, 10);
+  guardandoPersonal = false;
+  errorPersonal = '';
+  private temporizadorBusqueda: ReturnType<typeof setTimeout> | null = null;
+  readonly sigla = siglaDocumento;
+
+  get personalActivo(): PersonalEmpresa[] {
+    return this.personal.filter((p) => p.estadoRelacion === 'ACTIVA');
+  }
+
+  get prefijo(): string {
+    return this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
+  }
+
+  cargarPersonal(): void {
+    this.cargandoPersonal = true;
+    this.empresasServicio.personal(this.id).pipe(
+      catchError(() => of([] as PersonalEmpresa[])),
+      finalize(() => (this.cargandoPersonal = false)),
+    ).subscribe((lista) => (this.personal = lista));
+  }
+
+  abrirAgregarPersonal(): void {
+    this.modalPersonal = true;
+    this.busquedaPersonal = '';
+    this.resultadosPersonal = [];
+    this.seleccionPersonal = null;
+    this.cargoPersonal = '';
+    this.errorPersonal = '';
+    this.fechaIngresoPersonal = new Date().toISOString().slice(0, 10);
+  }
+
+  buscarPersonal(): void {
+    if (this.temporizadorBusqueda) clearTimeout(this.temporizadorBusqueda);
+    const termino = this.busquedaPersonal.trim();
+    this.seleccionPersonal = null;
+    if (termino.length < 3) { this.resultadosPersonal = []; return; }
+    this.temporizadorBusqueda = setTimeout(() => {
+      this.buscandoPersonal = true;
+      this.afiliadosServicio.listar(termino, undefined, undefined, 1, 15).pipe(
+        catchError(() => of({ datos: [] as Afiliado[] } as any)),
+        finalize(() => (this.buscandoPersonal = false)),
+      ).subscribe((r: any) => {
+        const vinculados = new Set(this.personalActivo.map((p) => p.afiliado.id));
+        this.resultadosPersonal = (r.datos ?? []).filter((a: Afiliado) => !vinculados.has(a.id));
+      });
+    }, 350);
+  }
+
+  guardarPersonal(): void {
+    if (!this.seleccionPersonal) return;
+    this.guardandoPersonal = true;
+    this.errorPersonal = '';
+    this.empresasServicio.agregarPersonal(this.id, {
+      afiliadoId: this.seleccionPersonal.id,
+      cargo: this.cargoPersonal.trim() || undefined,
+      fechaIngreso: this.fechaIngresoPersonal || undefined,
+    }).pipe(finalize(() => (this.guardandoPersonal = false))).subscribe({
+      next: () => {
+        this.modalPersonal = false;
+        this.mensajeExito = 'Persona vinculada a la empresa.';
+        setTimeout(() => (this.mensajeExito = ''), 4000);
+        this.cargarPersonal();
+      },
+      error: (err) => (this.errorPersonal = err?.error?.message || 'No se pudo vincular. Intente de nuevo.'),
+    });
+  }
+
+  retirarPersonal(p: PersonalEmpresa): void {
+    const motivo = prompt(`¿Por qué se retira ${p.afiliado.nombres} ${p.afiliado.apellidos} de la empresa? (ej. terminó contrato)`);
+    if (!motivo || motivo.trim().length < 3) return;
+    this.empresasServicio.retirarPersonal(this.id, p.relacionId, { motivo: motivo.trim() }).pipe(
+      catchError((err) => { this.mensajeError = err?.error?.message || 'No se pudo retirar.'; return of(null); }),
+    ).subscribe((r) => {
+      if (r !== null) {
+        this.mensajeExito = 'Persona retirada de la empresa (queda en el historial).';
+        setTimeout(() => (this.mensajeExito = ''), 4000);
+        this.cargarPersonal();
+      }
+    });
+  }
+
   // ── Sucursales ──
   modalSucursal = false;
   sucursalEditando: Sucursal | null = null;
@@ -344,6 +519,7 @@ export class DetalleEmpresaComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private empresasServicio: EmpresasServicio,
+    private afiliadosServicio: AfiliadosServicio,
     private sucursalesServicio: SucursalesServicio,
     private solicitudesServicio: SolicitudesServicio,
     private auth: AutenticacionServicio,
@@ -372,6 +548,7 @@ export class DetalleEmpresaComponent implements OnInit {
       if (resp) {
         this.cargarSucursales();
         this.cargarPendientes();
+        this.cargarPersonal();
       }
     });
   }

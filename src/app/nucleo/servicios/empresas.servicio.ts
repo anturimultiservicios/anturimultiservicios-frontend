@@ -62,4 +62,27 @@ export class EmpresasServicio {
   estadisticas(): Observable<{ activas: number; inactivas: number; total: number }> {
     return this.http.get<any>(`${this.URL}/estadisticas`);
   }
+
+  // 2026-10-08: personal de la empresa
+  personal(id: number): Observable<PersonalEmpresa[]> {
+    return this.http.get<PersonalEmpresa[]>(`${this.URL}/${id}/personal`);
+  }
+
+  agregarPersonal(id: number, datos: { afiliadoId: number; cargo?: string; fechaIngreso?: string }): Observable<unknown> {
+    return this.http.post(`${this.URL}/${id}/personal`, datos);
+  }
+
+  retirarPersonal(id: number, relacionId: number, datos: { motivo: string; fechaRetiro?: string }): Observable<unknown> {
+    return this.http.patch(`${this.URL}/${id}/personal/${relacionId}/retirar`, datos);
+  }
+}
+
+export interface PersonalEmpresa {
+  relacionId: number;
+  estadoRelacion: 'ACTIVA' | 'FINALIZADA' | string;
+  cargo: string | null;
+  fechaIngreso: string | null;
+  fechaRetiro: string | null;
+  tipoDocumento: string;
+  afiliado: { id: number; nombres: string; apellidos: string; cedula: string; estado: string; telefono: string | null; totalPago: number | null };
 }
