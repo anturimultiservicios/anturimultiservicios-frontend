@@ -40,20 +40,25 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 
         <div *ngIf="!buscando && terminoBusqueda && resultadosPersonas.length === 0 && resultadosEmpresas.length === 0" class="estado-vacio-inline">
           Sin resultados para "{{ terminoBusqueda }}".
+          <button *ngIf="pareceDocumento" type="button" class="boton-no-aporta" (click)="abrirNoAportaLibre()">
+            Registrar "No aporta" para el documento {{ terminoBusqueda.trim() }}
+          </button>
         </div>
 
         <!-- Resultados: personas (independientes) -->
         <div *ngIf="resultadosPersonas.length > 0" class="resultados-grupo">
           <h4 class="resultados-titulo">Personas</h4>
-          <div *ngFor="let a of resultadosPersonas" class="fila-persona">
+          <div *ngFor="let a of resultadosPersonas" class="fila-persona" [class.fila-persona--inactiva]="a.estado !== 'ACTIVO'">
             <label class="permiso-check">
-              <input type="checkbox" [checked]="estaSeleccionado(a.id)" (change)="toggleSeleccion(a)" [disabled]="yaPagados.has(a.id)">
+              <input type="checkbox" [checked]="estaSeleccionado(a.id)" (change)="toggleSeleccion(a)" [disabled]="yaPagados.has(a.id) || a.estado !== 'ACTIVO'">
               <strong>{{ a.nombres }} {{ a.apellidos }}</strong>
               <span class="dato-secundario">CC {{ a.cedula }}</span>
-              <span *ngIf="mesesAdeudados(a) > 1" class="badge-mora">Debe {{ mesesAdeudados(a) }} meses</span>
+              <span *ngIf="a.estado !== 'ACTIVO'" class="badge-estado-pago">{{ a.estado === 'RETIRADO' ? 'Retirado' : 'Inactivo' }}</span>
+              <span *ngIf="a.estado === 'ACTIVO' && mesesAdeudados(a) > 1" class="badge-mora">Debe {{ mesesAdeudados(a) }} meses</span>
             </label>
-            <span class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span *ngIf="a.estado === 'ACTIVO'" class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="yaPagados.has(a.id)" class="badge-pagado">Pagado ✓</span>
+            <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ afiliadoId: a.id, nombre: a.nombres + ' ' + a.apellidos, documento: a.cedula })" title="No paga seguridad social, solo el trámite">No aporta</button>
           </div>
         </div>
 
@@ -114,8 +119,53 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
             </label>
             <span class="monto-persona">{{ c.montoAdeudado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)" class="badge-pagado">Pagado ✓</span>
+            <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ empresaId: c.empresaId, nombre: c.razonSocial, documento: c.nit })" title="No paga seguridad social, solo el trámite">No aporta</button>
           </div>
         </ng-template>
+
+        <!-- 2026-10-09: "No aporta" - solo el trámite, sin seguridad social. No
+             cuenta como mes al día ni activa a nadie: queda el registro de
+             por qué entró esa plata (lo ve Anturi en Recaudo). -->
+        <div *ngIf="noAporta" class="panel-confirmar panel-no-aporta">
+          <p class="panel-confirmar__resumen">
+            <strong>No aporta</strong> - {{ noAporta.libre ? 'persona o empresa no registrada' : noAporta.nombre }}
+            <span class="dato-secundario" *ngIf="!noAporta.libre"> · {{ noAporta.documento }}</span>
+          </p>
+          <p class="nota-no-aporta">No paga EPS, pensión ni nada de seguridad social: solo el trámite. No se le envían correos ni cambia su estado.</p>
+          <div class="campos-no-aporta">
+            <div class="campo-grupo" *ngIf="noAporta.libre">
+              <label class="campo-etiqueta">Documento <span class="requerido">*</span></label>
+              <input type="text" class="campo-input" [(ngModel)]="noAporta.documento" maxlength="30">
+            </div>
+            <div class="campo-grupo" *ngIf="noAporta.libre">
+              <label class="campo-etiqueta">Nombre completo <span class="requerido">*</span></label>
+              <input type="text" class="campo-input" [(ngModel)]="noAporta.nombre" maxlength="150">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Valor del trámite <span class="requerido">*</span></label>
+              <input type="number" class="campo-input" min="0" step="1000" [(ngModel)]="noAporta.monto">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">¿Cómo se recibió? <span class="requerido">*</span></label>
+              <select class="campo-input" [(ngModel)]="noAporta.canal">
+                <option [ngValue]="null">Seleccione...</option>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+              </select>
+            </div>
+            <div class="campo-grupo campo-grupo--ancho">
+              <label class="campo-etiqueta">Motivo (opcional)</label>
+              <input type="text" class="campo-input" [(ngModel)]="noAporta.motivo" maxlength="300" placeholder="Ej: solo paga la planilla">
+            </div>
+          </div>
+          <div *ngIf="errorNoAporta" class="alerta-error">{{ errorNoAporta }}</div>
+          <div class="panel-confirmar__acciones">
+            <button class="boton boton-secundario" (click)="noAporta = null" [disabled]="registrandoNoAporta">Cancelar</button>
+            <button class="boton boton-primario" (click)="confirmarNoAporta()" [disabled]="registrandoNoAporta || !noAportaValido">
+              {{ registrandoNoAporta ? 'Registrando...' : 'Registrar No aporta' }}
+            </button>
+          </div>
+        </div>
 
         <!-- Panel de confirmación -->
         <div *ngIf="totalItems > 0" class="panel-confirmar">
@@ -274,6 +324,15 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     .panel-confirmar__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
 
     .nota-resumen { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 0; }
+    .boton-no-aporta { margin-left: auto; border: 1px dashed var(--color-secundario); background: none; color: var(--color-secundario); border-radius: 999px; padding: 2px 10px; font-size: var(--tamano-xs); font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .boton-no-aporta:hover { background: rgba(232,87,12,0.08); }
+    .estado-vacio-inline .boton-no-aporta { display: block; margin: var(--espacio-2) 0 0; }
+    .fila-persona--inactiva { opacity: 0.85; }
+    .badge-estado-pago { font-size: var(--tamano-xs); font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(100,116,139,0.15); color: var(--texto-secundario); }
+    .panel-no-aporta { border-color: var(--color-secundario); }
+    .nota-no-aporta { margin: 0 0 var(--espacio-3); font-size: var(--tamano-xs); color: var(--texto-terciario); }
+    .campos-no-aporta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--espacio-3); margin-bottom: var(--espacio-3); }
+    .campo-grupo--ancho { grid-column: 1 / -1; }
     .items-pago { display: flex; flex-direction: column; gap: 6px; margin: var(--espacio-2) 0 var(--espacio-3); }
     .item-pago { display: flex; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; padding: 6px 10px; border-radius: var(--radio-md); background: rgba(27,50,112,0.04); }
     .item-pago--ajustado { background: rgba(232,87,12,0.08); }
@@ -367,7 +426,8 @@ export class RegistrarPagoComponent implements OnDestroy {
         }
         this.buscando = true;
         return forkJoin({
-          personas: this.afiliadosServicio.listar(termino, 'ACTIVO', undefined, 1, 20).pipe(catchError(() => of({ datos: [] as Afiliado[] }))),
+          // 2026-10-09: todos los estados - quien hace "No aporta" suele estar inactivo o retirado
+          personas: this.afiliadosServicio.listar(termino, undefined, undefined, 1, 20).pipe(catchError(() => of({ datos: [] as Afiliado[] }))),
           empresas: this.empresasServicio.listar(termino, true).pipe(catchError(() => of([] as Empresa[]))),
         });
       }),
@@ -444,6 +504,61 @@ export class RegistrarPagoComponent implements OnDestroy {
   toggleCuenta(c: CuentaCobro): void {
     if (this.seleccionCuentas.has(c.empresaId)) this.seleccionCuentas.delete(c.empresaId);
     else this.seleccionCuentas.set(c.empresaId, c);
+  }
+
+  // ── "No aporta" (solo el trámite) ──
+  noAporta: { afiliadoId?: number; empresaId?: number; nombre: string; documento: string; libre: boolean; monto: number; canal: CanalPago | null; motivo: string } | null = null;
+  registrandoNoAporta = false;
+  errorNoAporta = '';
+  readonly VALOR_NO_APORTA = 10000;
+
+  get pareceDocumento(): boolean {
+    return /^[A-Za-z]{0,3}\s?\d{5,}$/.test(this.terminoBusqueda.trim());
+  }
+
+  abrirNoAporta(quien: { afiliadoId?: number; empresaId?: number; nombre: string; documento: string }): void {
+    this.errorNoAporta = '';
+    this.noAporta = { ...quien, libre: false, monto: this.VALOR_NO_APORTA, canal: null, motivo: '' };
+  }
+
+  abrirNoAportaLibre(): void {
+    this.errorNoAporta = '';
+    this.noAporta = { nombre: '', documento: this.terminoBusqueda.trim(), libre: true, monto: this.VALOR_NO_APORTA, canal: null, motivo: '' };
+  }
+
+  get noAportaValido(): boolean {
+    const n = this.noAporta;
+    return !!n && Number(n.monto) > 0 && !!n.canal && (!n.libre || (!!n.documento.trim() && !!n.nombre.trim()));
+  }
+
+  confirmarNoAporta(): void {
+    const n = this.noAporta;
+    if (!n || !this.noAportaValido) return;
+    this.registrandoNoAporta = true;
+    this.errorNoAporta = '';
+    this.pagosServicio.registrarNoAporta({
+      afiliadoId: n.afiliadoId,
+      empresaId: n.empresaId,
+      documento: n.libre ? n.documento.trim() : undefined,
+      nombre: n.libre ? n.nombre.trim() : undefined,
+      monto: Number(n.monto),
+      canal: n.canal!,
+      motivo: n.motivo.trim() || undefined,
+    }).pipe(
+      finalize(() => { this.registrandoNoAporta = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe({
+      next: () => {
+        this.mensajeExito = `"No aporta" de ${n.nombre || n.documento} registrado: $${Number(n.monto).toLocaleString('es-CO')}.`;
+        setTimeout(() => { this.mensajeExito = ''; }, 5000);
+        this.noAporta = null;
+        if (this.esAdmin) { this.cargarResumen(); this.cargarResumenMensual(); }
+      },
+      error: (err) => {
+        const m = err?.error?.message;
+        this.errorNoAporta = (Array.isArray(m) ? m[0] : m) || 'No se pudo registrar.';
+      },
+    });
   }
 
   // ── Valor editable por pago ──

@@ -115,6 +115,11 @@ export class PagosServicio {
     return this.http.post(`${this.URL}/empresa`, { empresaId, monto, canal, mesesCubiertos, montoEsperado, motivoAjuste });
   }
 
+  // 2026-10-09: "No aporta" - solo el trámite (ej. 10.000), sin seguridad social
+  registrarNoAporta(datos: { afiliadoId?: number; empresaId?: number; documento?: string; nombre?: string; monto: number; canal: CanalPago; motivo?: string }): Observable<any> {
+    return this.http.post(`${this.URL}/no-aporta`, datos);
+  }
+
   registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string, montoEsperado?: number, motivoAjuste?: string): Observable<any> {
     return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia, montoEsperado, motivoAjuste });
   }

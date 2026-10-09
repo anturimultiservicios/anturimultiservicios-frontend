@@ -92,6 +92,12 @@ const PORCENTAJES_POR_TIPO: Record<TipoAfiliacion, Porcentajes> = {
     saludEmpleador: 0, pensionEmpleador: 12,
     caja: 4, sena: 0, icbf: 0,
   },
+  // 2026-10-09: la cooperativa tiene su propia plantilla (cuota + comisión)
+  COOPERATIVA: {
+    salud: 0, pension: 0,
+    saludEmpleador: 0, pensionEmpleador: 0,
+    caja: 0, sena: 0, icbf: 0,
+  },
   EMPRESA_NO_EXONERADA: {
     salud: 4, pension: 4,
     saludEmpleador: 8.5, pensionEmpleador: 12,
@@ -155,6 +161,15 @@ const TIPOS: TipoAfiliacionInfo[] = [
     icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
     descripcion: 'Empresa que paga todos los aportes parafiscales. Incluye SENA, ICBF y salud empleador además de pensión y caja.',
     tags: ['Empleado: Salud 4% + Pensión 4%', 'Empleador: Salud 8.5% + Pensión 12% + Caja 4% + SENA 2% + ICBF 3%'],
+  },
+  {
+    // 2026-10-09 (pedido de Cristopher): abre su propia plantilla
+    valor: 'COOPERATIVA',
+    titulo: 'Cooperativa',
+    subtitulo: 'Cuota + comisión, sin 4x1000',
+    icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><circle cx="9" cy="7" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><path d="M15 20c0-2.2 1.3-4 3-4.5 1.7.5 3 2.3 3 4.5"></path></svg>`,
+    descripcion: 'Asociado de cooperativa: paga la cuota y la comisión. No se cobra 4x1000 ni afiliación de cliente nuevo.',
+    tags: ['Cuota + comisión', 'Sin 4x1000', 'Sin cobro de afiliación'],
   },
 ];
 
@@ -1287,6 +1302,10 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   seleccionarTipo(tipo: TipoAfiliacion): void {
+    if (tipo === 'COOPERATIVA') {
+      this.router.navigate([this.prefijo, 'afiliados', 'nuevo-cooperativa']);
+      return;
+    }
     this.tipoSeleccionado = tipo;
     this.form.tipoAfiliacion = tipo;
     const pct = PORCENTAJES_POR_TIPO[tipo];

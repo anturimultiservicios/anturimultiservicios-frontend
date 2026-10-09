@@ -11,7 +11,7 @@ import { entorno } from '../../../environments/entorno';
 export type TipoDocumento =
   | 'CEDULA' | 'REGISTRO' | 'REGISTRO_CIVIL' | 'AFILIACION'
   | 'ARL' | 'EPS' | 'CAJA_COMPENSACION' | 'PENSION' | 'CESANTIAS'
-  | 'FACTURA' | 'OTRO';
+  | 'FACTURA' | 'OTRO' | 'RECIBO_PAGO';
 
 export interface Documento {
   id: number;

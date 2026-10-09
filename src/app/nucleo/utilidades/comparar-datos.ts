@@ -33,6 +33,7 @@ const VALORES: Record<string, string> = {
   INDEPENDIENTE: 'Independiente', INDEPENDIENTE_PARCIAL: 'Independiente parcial',
   INDEPENDIENTE_RESIDENTE_EXTERIOR: 'Residente en el exterior', INDEPENDIENTE_VOLUNTARIO_ARL: 'Independiente voluntario ARL',
   INDEPENDIENTE_CONTRATISTA: 'Independiente contratista', EMPRESA_EXONERADA: 'Empresa exonerada', EMPRESA_NO_EXONERADA: 'Empresa no exonerada',
+  COOPERATIVA: 'Cooperativa',
 };
 // Datos internos que no le dicen nada a una persona
 const OCULTOS = new Set(['id', 'personaId', 'sucursalId', 'creadoEn', 'actualizadoEn', 'eliminadoEn', 'eliminacionDefinitivaEn', 'creadoPorId', 'persona', 'sucursal', 'seguros', 'documentos', 'historial', 'clave', 'asopagos']);

@@ -10,7 +10,8 @@ export type TipoAfiliacion =
   | 'INDEPENDIENTE_VOLUNTARIO_ARL'
   | 'INDEPENDIENTE_CONTRATISTA'
   | 'EMPRESA_EXONERADA'
-  | 'EMPRESA_NO_EXONERADA';
+  | 'EMPRESA_NO_EXONERADA'
+  | 'COOPERATIVA';
 
 export type ClaseRiesgoArl = 'I' | 'II' | 'III' | 'IV' | 'V';
 
@@ -109,6 +110,11 @@ export interface CrearAfiliadoDto {
   caja?: string;
   estado?: 'ACTIVO' | 'RETIRADO' | 'SUSPENDIDO';
   fechaIngreso?: string;
+  // 2026-10-09: plantilla de cooperativa
+  fechaRetiro?: string;
+  direccion?: string;
+  municipio?: string;
+  cuatroXMil?: number;
 }
 
 @Injectable({ providedIn: 'root' })

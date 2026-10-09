@@ -18,6 +18,12 @@ export const rutasAdmin: Routes = [
           import('./afiliados/lista-afiliados/lista-afiliados.component').then((m) => m.ListaAfiliadosComponent),
       },
       {
+        // 2026-10-09: plantilla de cooperativa
+        path: 'afiliados/nuevo-cooperativa',
+        loadComponent: () =>
+          import('./afiliados/formulario-cooperativa/formulario-cooperativa.component').then((m) => m.FormularioCooperativaComponent),
+      },
+      {
         path: 'afiliados/nuevo',
         loadComponent: () =>
           import('./afiliados/formulario-afiliado/formulario-afiliado.component').then((m) => m.FormularioAfiliadoComponent),
@@ -98,6 +104,12 @@ export const rutasAdmin: Routes = [
         path: 'backup',
         loadComponent: () =>
           import('./backup/backup.component').then((m) => m.BackupComponent),
+      },
+      {
+        // 2026-10-09: control del dinero - solo Administrador y Super Admin
+        path: 'recaudo',
+        loadComponent: () =>
+          import('./recaudo/recaudo.component').then((m) => m.RecaudoComponent),
       },
       {
         path: 'parametros-legales',

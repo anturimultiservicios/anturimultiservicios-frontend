@@ -38,6 +38,7 @@ const RUTAS = [
   { metodo: 'POST', patron: /^\/solicitudes-cambio$/, que: 'Solicitud de cambio' },
   { metodo: 'POST', patron: /^\/pagos\/completo$/, que: 'Pago' },
   { metodo: 'POST', patron: /^\/pagos\/empresa$/, que: 'Pago de cuenta de empresa' },
+  { metodo: 'POST', patron: /^\/pagos\/no-aporta$/, que: 'No aporta (trámite)' },
   { metodo: 'PATCH', patron: /^\/recordatorios-llamada\/\d+\/nota$/, que: 'Nota de llamada' },
   { metodo: 'PUT', patron: /^\/notificaciones\/\d+\/leida$/, que: 'Notificación leída' },
   { metodo: 'PUT', patron: /^\/notificaciones\/marcar-todas$/, que: 'Notificaciones leídas' },
@@ -217,6 +218,14 @@ export class ColaCambiosServicio {
       const e = c?.empresas.find((x) => x.id === Number(m![1]));
       if (e) Object.assign(e, cambio.cuerpo, { sinSubir: true });
       return { ...(e ?? {}), ...cambio.cuerpo };
+    }
+    if (r === '/pagos/no-aporta') {
+      c?.pagos.push({
+        id: this.nuevoIdTemporal(), afiliadoId: cambio.cuerpo.afiliadoId ?? null, empresaId: cambio.cuerpo.empresaId ?? null,
+        fechaPago: ahora, fechaPeriodo: ahora, mesesCubiertos: null, monto: cambio.cuerpo.monto, canal: cambio.cuerpo.canal,
+        concepto: 'NO_APORTA', sinSubir: true,
+      });
+      return { id: -1, ...cambio.cuerpo, concepto: 'NO_APORTA', sinInternet: true };
     }
     if (r === '/pagos/completo' || r === '/pagos/empresa') {
       c?.pagos.push({

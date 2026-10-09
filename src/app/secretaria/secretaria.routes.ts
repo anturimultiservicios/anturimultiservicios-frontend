@@ -25,6 +25,14 @@ export const rutasSecretaria: Routes = [
       },
       {
         // IMPORTANTE: la ruta 'nuevo' debe ir ANTES de ':id' para que no sea capturada como ID
+        // 2026-10-09: plantilla de cooperativa (también la usa la Asistente)
+        path: 'afiliados/nuevo-cooperativa',
+        loadComponent: () =>
+          import('../admin/afiliados/formulario-cooperativa/formulario-cooperativa.component').then(
+            (m) => m.FormularioCooperativaComponent
+          ),
+      },
+      {
         path: 'afiliados/nuevo',
         loadComponent: () =>
           import('../admin/afiliados/formulario-afiliado/formulario-afiliado.component').then(
