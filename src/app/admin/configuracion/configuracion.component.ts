@@ -6,6 +6,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 import { UsuariosServicio } from '../../nucleo/servicios/usuarios.servicio';
 import { ConfigSistemaServicio, ConfigSistema, ResumenAvisosCobro } from '../../nucleo/servicios/config-sistema.servicio';
 
+import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 @Component({
   selector: 'anturi-configuracion',
   standalone: true,
@@ -100,6 +101,16 @@ import { ConfigSistemaServicio, ConfigSistema, ResumenAvisosCobro } from '../../
             </button>
           </div>
         </form>
+      </div>
+
+      <!-- 2026-10-09: modo oscuro en blanco y negro (preferencia de cada persona) -->
+      <div class="tarjeta config-seccion">
+        <h3 class="seccion-titulo">Apariencia</h3>
+        <label class="permiso-check">
+          <input type="checkbox" [checked]="tema.blancoNegro" (change)="tema.blancoNegro = $any($event.target).checked">
+          Modo oscuro (luna) en blanco y negro
+        </label>
+        <p class="campo-ayuda">Fondo negro y letras blancas; el rojo queda solo para alertas y el bot sigue a color. Se activa con la luna de arriba.</p>
       </div>
 
       <!-- Sección: correo para recuperar la contraseña (2026-10-09) -->
@@ -317,6 +328,7 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
 
   constructor(
     public auth: AutenticacionServicio,
+    public tema: TemaServicio,
     private usuariosServicio: UsuariosServicio,
     private configSistemaServicio: ConfigSistemaServicio,
   ) {}

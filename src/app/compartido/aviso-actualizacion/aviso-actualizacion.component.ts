@@ -27,13 +27,20 @@ const AVISO_SUPER_VISTO = 'anturi_aviso_actualizacion_super_visto';
 
       <div class="aviso__nube">
         <p class="aviso__saludo">¡Hola, {{ nombre }}! {{ saludo }} 👋</p>
-        <ng-container *ngIf="!enEsquina">
+        <ng-container *ngIf="!enEsquina && debeVolverAEntrar">
+          <p class="aviso__texto">Hay una <b>nueva actualización</b>. Esta vez, por favor <b>cierre sesión y vuelva a entrar</b> con su contraseña: así la página queda lista para seguir trabajando aunque se vaya el internet.</p>
+          <p class="aviso__nota">Solo esta vez; las próximas actualizaciones son solo recargar. Si está en medio de algo, puede arrastrarme a un lado y hacerlo cuando termine. ¡{{ despedida }}!</p>
+        </ng-container>
+        <ng-container *ngIf="!enEsquina && !debeVolverAEntrar">
           <p class="aviso__texto">Hay una <b>nueva actualización</b> de la plataforma. Por favor recargue la página para tenerla.</p>
           <p class="aviso__nota">Si está en medio de algo, puede arrastrarme a un lado y recargar cuando termine. ¡{{ despedida }}!</p>
         </ng-container>
-        <p *ngIf="enEsquina" class="aviso__texto">Recuerde recargar la página 😊</p>
+        <p *ngIf="enEsquina" class="aviso__texto">{{ debeVolverAEntrar ? 'Recuerde cerrar sesión y volver a entrar 😊' : 'Recuerde recargar la página 😊' }}</p>
         <div class="aviso__acciones">
-          <button type="button" class="aviso__btn aviso__btn--recargar" (pointerdown)="$event.stopPropagation()" (click)="recargar()">
+          <button *ngIf="debeVolverAEntrar" type="button" class="aviso__btn aviso__btn--recargar" (pointerdown)="$event.stopPropagation()" (click)="cerrarYEntrar()">
+            Cerrar sesión y volver a entrar
+          </button>
+          <button *ngIf="!debeVolverAEntrar" type="button" class="aviso__btn aviso__btn--recargar" (pointerdown)="$event.stopPropagation()" (click)="recargar()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
               <polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
@@ -236,6 +243,20 @@ export class AvisoActualizacionComponent implements OnInit, OnDestroy {
 
   recargar(): void {
     this.version.recargar();
+  }
+
+  // 2026-10-09: la copia para trabajar sin internet se protege con la
+  // contraseña al entrar - quien todavía no la tiene en este equipo debe
+  // volver a entrar una vez (después, siempre es solo recargar).
+  get debeVolverAEntrar(): boolean {
+    const id = this.auth.usuarioActual?.id;
+    if (!id) return false;
+    try { return !localStorage.getItem(`anturi_llave_local_${id}`); } catch { return false; }
+  }
+
+  cerrarYEntrar(): void {
+    this.auth.cerrarSesion();
+    setTimeout(() => this.version.recargar(), 300);
   }
 
   iniciarArrastre(e: PointerEvent): void {

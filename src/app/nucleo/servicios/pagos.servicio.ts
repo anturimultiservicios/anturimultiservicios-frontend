@@ -111,12 +111,12 @@ export class PagosServicio {
     return this.http.get<CobroEmpresa>(`${this.URL}/empresa/${empresaId}/cobro`);
   }
 
-  registrarEmpresa(empresaId: number, monto: number, canal: CanalPago, mesesCubiertos: number): Observable<any> {
-    return this.http.post(`${this.URL}/empresa`, { empresaId, monto, canal, mesesCubiertos });
+  registrarEmpresa(empresaId: number, monto: number, canal: CanalPago, mesesCubiertos: number, montoEsperado?: number, motivoAjuste?: string): Observable<any> {
+    return this.http.post(`${this.URL}/empresa`, { empresaId, monto, canal, mesesCubiertos, montoEsperado, motivoAjuste });
   }
 
-  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string): Observable<any> {
-    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia });
+  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string, montoEsperado?: number, motivoAjuste?: string): Observable<any> {
+    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia, montoEsperado, motivoAjuste });
   }
 
   resumen(desde: string, hasta: string): Observable<ResumenPagos> {

@@ -77,3 +77,112 @@ body {
     background-color var(--transicion-normal),
     color var(--transicion-normal);
 }
+
+/* ── 2026-10-09: modo oscuro en BLANCO Y NEGRO (preferencia de Anyi) ──
+   Fondo negro, letras blancas, todo en grises. Los botones quedan gris
+   oscuro con sombra negra para que se vean "levantados". Solo el rojo
+   (alertas y errores) conserva su color, y el bot sigue a color. */
+body.tema-oscuro.tema-bn {
+  --fondo-pagina: #000000;
+  --fondo-tarjeta: #121212;
+  --fondo-tarjeta-hover: #1c1c1c;
+  --fondo-barra-nav: #000000;
+  --fondo-barra-lateral: #0a0a0a;
+  --fondo-input: #1a1a1a;
+  --fondo-tabla-par: #0f0f0f;
+  --fondo-tabla-impar: #141414;
+  --fondo-tabla-hover: #1f1f1f;
+  --fondo-tabla-cabecera: #1a1a1a;
+  --fondo-overlay: rgba(0, 0, 0, 0.85);
+
+  --texto-principal: #ffffff;
+  --texto-secundario: #d4d4d4;
+  --texto-terciario: #a3a3a3;
+  --texto-deshabilitado: #5c5c5c;
+  --texto-inverso: #000000;
+  --texto-enlace: #ffffff;
+  --texto-enlace-hover: #d4d4d4;
+
+  --borde-color: #2a2a2a;
+  --borde-color-fuerte: #4a4a4a;
+  --borde-input: #4a4a4a;
+  --borde-input-foco: #ffffff;
+  --separador: #222222;
+
+  --scrollbar-pista: #000000;
+  --scrollbar-pulgar: #3a3a3a;
+  --scrollbar-pulgar-hover: #5a5a5a;
+
+  /* la marca se vuelve gris: botones y destacados en gris oscuro */
+  --color-primario: #2e2e2e;
+  --color-primario-claro: #404040;
+  --color-primario-oscuro: #1a1a1a;
+  --color-secundario: #3a3a3a;
+  --color-secundario-claro: #4d4d4d;
+  --color-secundario-oscuro: #262626;
+  --color-exito: #9a9a9a;
+  --color-exito-claro: #1f1f1f;
+  --color-advertencia: #bdbdbd;
+  --color-advertencia-claro: #1f1f1f;
+  --color-info: #bdbdbd;
+  --color-info-claro: #1f1f1f;
+  /* el rojo se queda: alertas y errores */
+  --color-error: #ef4444;
+  --color-error-claro: #2a0f0f;
+}
+
+/* Botones "levantados": gris oscuro con sombra negra y borde claro sutil */
+body.tema-oscuro.tema-bn .boton,
+body.tema-oscuro.tema-bn button.boton-primario,
+body.tema-oscuro.tema-bn button.boton-secundario {
+  background: #2b2b2b;
+  color: #ffffff;
+  border: 1px solid #4a4a4a;
+  box-shadow: 0 3px 0 #000000, 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+body.tema-oscuro.tema-bn .boton:hover:not(:disabled) {
+  background: #3a3a3a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #000000, 0 6px 14px rgba(0, 0, 0, 0.7);
+}
+body.tema-oscuro.tema-bn .boton:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #000000;
+}
+body.tema-oscuro.tema-bn .boton-texto,
+body.tema-oscuro.tema-bn .boton-icono {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+/* Peligro (eliminar, alertas) conserva el rojo */
+body.tema-oscuro.tema-bn .boton-peligro,
+body.tema-oscuro.tema-bn .boton-peligro-suave {
+  background: #7f1d1d;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+/* Tarjetas con un borde para separarlas del fondo negro */
+body.tema-oscuro.tema-bn .tarjeta {
+  border: 1px solid #262626;
+  box-shadow: 0 2px 0 #000000;
+}
+/* Imágenes y fotos sin tocar; el bot y su aviso conservan sus colores */
+body.tema-oscuro.tema-bn .wa-flotante,
+body.tema-oscuro.tema-bn .aviso,
+body.tema-oscuro.tema-bn .wa-robot__nube {
+  --color-primario: #1B3270;
+  --color-primario-claro: #2A4A9A;
+  --color-primario-oscuro: #112050;
+  --color-secundario: #E8570C;
+  --color-secundario-claro: #FF6B1A;
+  --color-secundario-oscuro: #C44408;
+}
+
+/* 2026-10-09 (bug real): el panel de la Asistente usa --fondo-principal y
+   --fondo-barra-superior, que no existían - con la luna, el centro y la barra
+   de arriba se quedaban blancos. Se conectan a los colores de cada tema. */
+body {
+  --fondo-principal: var(--fondo-pagina);
+  --fondo-barra-superior: var(--fondo-barra-nav);
+}

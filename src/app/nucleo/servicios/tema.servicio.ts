@@ -37,9 +37,37 @@ export class TemaServicio {
   // (ver restaurarPreferencia()).
   forzarClaro(): void {
     const cuerpo = document.body;
-    cuerpo.classList.remove('tema-claro', 'tema-oscuro');
+    cuerpo.classList.remove('tema-claro', 'tema-oscuro', 'tema-bn');
     cuerpo.classList.add('tema-claro');
     this.temaActual$.next('tema-claro');
+  }
+
+  // 2026-10-09 (pedido de Cristopher): para Anyi, el modo oscuro es en
+  // blanco y negro (fondo negro, letras blancas, botones gris oscuro
+  // "levantados"; rojo solo para alertas; el bot sigue a color). Es una
+  // preferencia por persona: viene activada para Anyi y cualquiera puede
+  // activarla o quitarla en Configuración.
+  private readonly ANYI_ID = 16;
+
+  private claveBn(): string | null {
+    try {
+      const id = JSON.parse(localStorage.getItem('anturi_usuario') || 'null')?.id;
+      return id ? `anturi_tema_bn_${id}` : null;
+    } catch { return null; }
+  }
+
+  get blancoNegro(): boolean {
+    const clave = this.claveBn();
+    if (!clave) return false;
+    const guardado = localStorage.getItem(clave);
+    if (guardado !== null) return guardado === '1';
+    return clave === `anturi_tema_bn_${this.ANYI_ID}`;
+  }
+
+  set blancoNegro(valor: boolean) {
+    const clave = this.claveBn();
+    if (clave) localStorage.setItem(clave, valor ? '1' : '0');
+    this.aplicar(this.temaActual$.value);
   }
 
   restaurarPreferencia(): void {
@@ -51,6 +79,7 @@ export class TemaServicio {
     const cuerpo = document.body;
     cuerpo.classList.remove('tema-claro', 'tema-oscuro');
     cuerpo.classList.add(tema);
+    cuerpo.classList.toggle('tema-bn', tema === 'tema-oscuro' && this.blancoNegro);
     this.temaActual$.next(tema);
   }
 }

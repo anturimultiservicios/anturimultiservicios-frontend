@@ -123,6 +123,23 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
             <strong>{{ totalItems }}</strong> pago{{ totalItems !== 1 ? 's' : '' }} seleccionado{{ totalItems !== 1 ? 's' : '' }} -
             total <strong>{{ totalSeleccionado | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
           </p>
+          <!-- 2026-10-09: el valor de cada pago se puede cambiar (cualquier rol);
+               si no coincide con lo calculado, se pide el motivo y le llega
+               nota a Anturi y a Cristopher para revisar dónde está el problema. -->
+          <div class="items-pago">
+            <div *ngFor="let it of itemsSeleccionados; trackBy: porClave" class="item-pago" [class.item-pago--ajustado]="montoDe(it.clave, it.esperado) !== it.esperado">
+              <span class="item-pago__nombre">{{ it.nombre }}</span>
+              <span *ngIf="montoDe(it.clave, it.esperado) !== it.esperado" class="item-pago__esperado">calculado {{ it.esperado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+              <input type="number" class="campo-input item-pago__monto" min="0" step="100"
+                [ngModel]="montoDe(it.clave, it.esperado)" (ngModelChange)="cambiarMonto(it.clave, $event)" [name]="'monto-' + it.clave">
+            </div>
+          </div>
+          <div *ngIf="hayAjustes" class="campo-grupo">
+            <label class="campo-etiqueta">¿Por qué cambia el valor? <span class="requerido">*</span></label>
+            <input type="text" class="campo-input" [(ngModel)]="motivoAjuste" maxlength="300"
+              placeholder="Ej: el valor del sistema está desactualizado, pagó menos días, abonó una parte...">
+            <span class="campo-ayuda">Le llega una nota a Anturi para revisar.</span>
+          </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">¿Cómo se recibió el dinero? <span class="requerido">*</span></label>
             <select class="campo-input" [(ngModel)]="canalSeleccionado">
@@ -134,7 +151,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
           <div *ngIf="errorRegistro" class="alerta-error">{{ errorRegistro }}</div>
           <div class="panel-confirmar__acciones">
             <button class="boton boton-secundario" (click)="limpiarSeleccion()" [disabled]="registrando">Cancelar</button>
-            <button class="boton boton-primario" (click)="confirmarPagos()" [disabled]="registrando || !canalSeleccionado">
+            <button class="boton boton-primario" (click)="confirmarPagos()" [disabled]="registrando || !canalSeleccionado || (hayAjustes && !motivoAjuste.trim()) || hayMontoInvalido">
               <span *ngIf="registrando" class="spinner-inline"></span>
               {{ registrando ? 'Registrando...' : 'Marcar como pagado' }}
             </button>
@@ -257,6 +274,12 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     .panel-confirmar__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
 
     .nota-resumen { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 0; }
+    .items-pago { display: flex; flex-direction: column; gap: 6px; margin: var(--espacio-2) 0 var(--espacio-3); }
+    .item-pago { display: flex; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; padding: 6px 10px; border-radius: var(--radio-md); background: rgba(27,50,112,0.04); }
+    .item-pago--ajustado { background: rgba(232,87,12,0.08); }
+    .item-pago__nombre { flex: 1 1 200px; font-size: var(--tamano-sm); font-weight: 600; }
+    .item-pago__esperado { font-size: var(--tamano-xs); color: var(--color-secundario); text-decoration: line-through; }
+    .item-pago__monto { width: 150px; text-align: right; }
     .fila-cuenta { background: rgba(27,50,112,0.04); border-radius: var(--radio-md); }
     .nota-paga-con { margin: 0 0 var(--espacio-2); font-size: var(--tamano-sm); color: var(--color-primario); }
     .personal-sin-valor { margin-top: var(--espacio-2); font-size: var(--tamano-xs); color: var(--texto-terciario); }
@@ -423,11 +446,45 @@ export class RegistrarPagoComponent implements OnDestroy {
     else this.seleccionCuentas.set(c.empresaId, c);
   }
 
+  // ── Valor editable por pago ──
+  private montos = new Map<string, number>();
+  motivoAjuste = '';
+
+  get itemsSeleccionados(): { clave: string; nombre: string; esperado: number }[] {
+    return [
+      ...Array.from(this.seleccionados.values()).map((a) => ({ clave: 'a' + a.id, nombre: `${a.nombres} ${a.apellidos}`, esperado: this.montoAdeudado(a) })),
+      ...Array.from(this.seleccionCuentas.values()).map((c) => ({ clave: 'e' + c.empresaId, nombre: c.razonSocial, esperado: c.montoAdeudado })),
+    ];
+  }
+
+  porClave(_: number, it: { clave: string }): string {
+    return it.clave;
+  }
+
+  montoDe(clave: string, esperado: number): number {
+    return this.montos.has(clave) ? this.montos.get(clave)! : esperado;
+  }
+
+  cambiarMonto(clave: string, valor: number | string | null): void {
+    const n = Number(valor);
+    this.montos.set(clave, isFinite(n) ? n : 0);
+  }
+
+  get hayAjustes(): boolean {
+    return this.itemsSeleccionados.some((it) => this.montoDe(it.clave, it.esperado) !== it.esperado);
+  }
+
+  get hayMontoInvalido(): boolean {
+    return this.itemsSeleccionados.some((it) => !(this.montoDe(it.clave, it.esperado) > 0));
+  }
+
   get totalItems(): number {
     return this.seleccionados.size + this.seleccionCuentas.size;
   }
 
   limpiarSeleccion(): void {
+    this.montos.clear();
+    this.motivoAjuste = '';
     this.seleccionCuentas.clear();
     this.seleccionados.clear();
     this.canalSeleccionado = null;
@@ -463,8 +520,7 @@ export class RegistrarPagoComponent implements OnDestroy {
 
   get totalSeleccionado(): number {
     let total = 0;
-    for (const a of this.seleccionados.values()) total += this.montoAdeudado(a);
-    for (const c of this.seleccionCuentas.values()) total += c.montoAdeudado;
+    for (const it of this.itemsSeleccionados) total += this.montoDe(it.clave, it.esperado);
     return total;
   }
 
@@ -477,12 +533,14 @@ export class RegistrarPagoComponent implements OnDestroy {
 
     forkJoin([
       ...personas.map((a) =>
-        this.pagosServicio.registrarCompleto(a.id, this.montoAdeudado(a), this.canalSeleccionado!, this.mesesAdeudados(a)).pipe(
+        this.pagosServicio.registrarCompleto(a.id, this.montoDe('a' + a.id, this.montoAdeudado(a)), this.canalSeleccionado!, this.mesesAdeudados(a),
+          undefined, this.montoAdeudado(a), this.motivoAjuste.trim() || undefined).pipe(
           catchError((err) => of({ error: true, afiliado: a, mensaje: err?.error?.message })),
         ),
       ),
       ...cuentas.map((c) =>
-        this.pagosServicio.registrarEmpresa(c.empresaId, c.montoAdeudado, this.canalSeleccionado!, Math.max(1, c.mesesAdeudados)).pipe(
+        this.pagosServicio.registrarEmpresa(c.empresaId, this.montoDe('e' + c.empresaId, c.montoAdeudado), this.canalSeleccionado!, Math.max(1, c.mesesAdeudados),
+          c.montoAdeudado, this.motivoAjuste.trim() || undefined).pipe(
           catchError((err) => of({ error: true, cuenta: c, mensaje: err?.error?.message })),
         ),
       ),
