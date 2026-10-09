@@ -9,7 +9,8 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
 // 2026-10-09 (pedido de Cristopher): RECAUDO - cuánto entró en el día,
 // semana, mes o año, quién pagó (nombre y cédula) y de qué se compone:
 // seguridad social (se gira a las entidades), 4x1000 (bancos), comisión
-// de Anturi, afiliaciones y "No aporta" (solo trámite). Solo Administrador
+// de Anturi, afiliaciones y "No aporta" (solo trámite). Ganancia de Anturi =
+// comisiones + No aporta. Solo Administrador
 // y Super Admin - la Asistente registra pagos, pero no entra aquí.
 @Component({
   selector: 'anturi-recaudo',
@@ -55,21 +56,23 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
             <span class="dato__nota">Para los bancos</span>
           </div>
           <div class="tarjeta dato">
-            <span class="dato__etiqueta">Comisión Anturi</span>
+            <span class="dato__etiqueta">Comisiones</span>
             <span class="dato__valor">{{ datos.totales.comision | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span class="dato__nota">32.000 independientes · 15.000 cooperativa</span>
           </div>
           <div class="tarjeta dato" *ngIf="datos.totales.afiliacion > 0">
             <span class="dato__etiqueta">Afiliaciones</span>
             <span class="dato__valor">{{ datos.totales.afiliacion | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span class="dato__nota">Se va en pagos</span>
           </div>
           <div class="tarjeta dato">
             <span class="dato__etiqueta">No aporta (trámites)</span>
             <span class="dato__valor">{{ datos.totales.noAporta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
           </div>
           <div class="tarjeta dato dato--anturi">
-            <span class="dato__etiqueta">Le queda a Anturi</span>
+            <span class="dato__etiqueta">Ganancia de Anturi</span>
             <span class="dato__valor">{{ datos.totales.paraAnturi | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-            <span class="dato__nota">4x1000 + comisión + afiliaciones + no aporta</span>
+            <span class="dato__nota">Comisiones + No aporta</span>
           </div>
           <div class="tarjeta dato">
             <span class="dato__etiqueta">Efectivo / Transferencia</span>
