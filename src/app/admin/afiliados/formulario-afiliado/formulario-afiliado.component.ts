@@ -535,8 +535,9 @@ const TIPOS: TipoAfiliacionInfo[] = [
                 <label class="campo-etiqueta">Cobertura <span class="requerido">*</span></label>
                 <select class="campo-input" [(ngModel)]="coberturaIndependiente" name="coberturaIndependiente" (change)="alCambiarCobertura()">
                   <option value="SALUD_PENSION">Salud y pensión</option>
-                  <option value="SOLO_SALUD">Solo salud (pensionado o edad de pensión)</option>
+                  <option value="SOLO_SALUD">Solo salud (pensionado, edad de pensión o cédula de extranjería)</option>
                 </select>
+                <span *ngIf="esCedulaExtranjeria" class="campo-ayuda">Cédula de extranjería: la pensión es opcional - puede cotizar salud y pensión, o solo salud.</span>
               </div>
               <div class="campo-grupo" *ngIf="coberturaIndependiente === 'SOLO_SALUD'">
                 <label class="campo-etiqueta">Condición para solo salud</label>
@@ -1102,8 +1103,15 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   // Solo salud: pensionado, o mujer desde 57 / hombre desde 62 años.
+  // 2026-10-09 (pedido de Cristopher): los independientes con cédula de
+  // extranjería no están obligados a cotizar pensión - si quieren, salud y
+  // pensión; si no, solo salud. Por ahora la excepción es solo para ellos.
+  get esCedulaExtranjeria(): boolean {
+    return this.form.tipoDocumento === 'CE';
+  }
+
   get puedeSoloSalud(): boolean {
-    if (this.esPensionado) return true;
+    if (this.esPensionado || this.esCedulaExtranjeria) return true;
     const edad = this.edadAfiliado;
     if (edad === null) return false;
     return (this.form.genero === 'F' && edad >= 57) || (this.form.genero === 'M' && edad >= 62);
@@ -1111,6 +1119,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
 
   get mensajeSoloSalud(): string {
     if (this.esPensionado) return 'Pensionado: puede cotizar solo salud.';
+    if (this.esCedulaExtranjeria) return 'Cédula de extranjería: no está obligado a cotizar pensión, puede cotizar solo salud.';
     const edad = this.edadAfiliado;
     if (edad === null || (this.form.genero !== 'F' && this.form.genero !== 'M')) {
       return 'Si no es pensionado, ingrese fecha de nacimiento y género (mujer 57+ / hombre 62+).';
@@ -1394,7 +1403,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     this.validarCampo('genero');
     this.validarCampo('confirmarCorreo');
     if (this.tipoSeleccionado === 'INDEPENDIENTE' && this.coberturaIndependiente === 'SOLO_SALUD' && !this.puedeSoloSalud) {
-      this.errorGlobal = 'Solo salud aplica únicamente a pensionados, o a mujeres desde 57 años y hombres desde 62 (sección 3).';
+      this.errorGlobal = 'Solo salud aplica únicamente a pensionados, a cédula de extranjería, o a mujeres desde 57 años y hombres desde 62 (sección 3).';
       return false;
     }
     if (this.esParcial) {
