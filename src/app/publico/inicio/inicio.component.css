@@ -306,6 +306,11 @@
 .seccion-servicios {
   padding: var(--espacio-24) 0;
   background: var(--fondo-pagina);
+  /* 2026-10-09 (bug real en celular): las tarjetas que esperan turno se
+     corren a los lados y ensanchaban la página (438 px en un celular de
+     390) - todo se veía corrido y el bot medio afuera. */
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .carrusel {

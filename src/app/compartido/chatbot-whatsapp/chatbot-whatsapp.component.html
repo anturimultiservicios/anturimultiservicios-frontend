@@ -6,15 +6,21 @@
     <!-- Encabezado -->
     <div class="wa-panel__encabezado">
       <div class="wa-panel__info">
+        <!-- 2026-10-09: el mismo video del bot, en pequeño, en vez del ícono de robot -->
         <div class="wa-panel__avatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="wa-icono-robot">
-            <line x1="12" y1="2.5" x2="12" y2="6"></line>
-            <circle cx="12" cy="2" r="1" fill="currentColor" stroke="none"></circle>
-            <rect x="4" y="6" width="16" height="13" rx="4"></rect>
-            <circle cx="9" cy="12.5" r="1.3" fill="currentColor" stroke="none"></circle>
-            <circle cx="15" cy="12.5" r="1.3" fill="currentColor" stroke="none"></circle>
-            <path d="M9 16c1 .8 5 .8 6 0"></path>
-          </svg>
+          <video
+            #videoAvatar
+            class="wa-panel__avatar-video"
+            src="/assets/bot/bot-anturi.mp4"
+            poster="/assets/bot/bot-anturi-poster.jpg"
+            autoplay loop muted playsinline
+            preload="none"
+            disablepictureinpicture
+            [muted]="true"
+            (loadedmetadata)="iniciarVideo(videoAvatar)"
+            (canplay)="iniciarVideo(videoAvatar)"
+          ></video>
+          <span class="wa-panel__en-linea" aria-hidden="true"></span>
         </div>
         <div>
           <p class="wa-panel__nombre">{{ 'chatbot.titulo' | translate }}</p>
@@ -75,6 +81,14 @@
        blanca en vez de multiply: el fondo blanco del video queda como parte
        del diseño sobre cualquier sección de la página. -->
   <button *ngIf="!abierto" class="wa-robot" (click)="abrir()" [attr.aria-label]="'chatbot.titulo' | translate">
+    <!-- 2026-10-09 (pedido de Cristopher): nube pegada al bot que dice quién
+         es y que se le puede tocar - si no, la gente lo ve como un muñeco. -->
+    <span class="wa-robot__nube" aria-hidden="true">
+      <span class="wa-robot__nube-saludo">{{ 'chatbot.saludo' | translate }}</span>
+      <span class="wa-robot__nube-invitacion">
+        <span class="wa-robot__punto"></span>{{ 'chatbot.invitacion' | translate }}
+      </span>
+    </span>
     <span class="wa-robot__burbuja">
       <video
         #videoBot

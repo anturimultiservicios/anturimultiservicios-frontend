@@ -47,7 +47,9 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--espacio-4) var(--espacio-5);
-  background: #25D366;
+  /* 2026-10-09: colores de la página, ya no el verde de WhatsApp */
+  background: linear-gradient(135deg, var(--color-primario), var(--color-primario-claro));
+  border-bottom: 3px solid var(--color-secundario);
   color: white;
 }
 
@@ -58,20 +60,34 @@
 }
 
 .wa-panel__avatar {
-  width: 42px;
-  height: 42px;
-  background: rgba(255,255,255,0.2);
+  position: relative;
+  width: 46px;
+  height: 46px;
+  background: #fff;
   border-radius: var(--radio-redondo);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--color-secundario);
   flex-shrink: 0;
 }
 
-.wa-panel__avatar svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
+.wa-panel__avatar-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radio-redondo);
+  object-fit: cover;
+  background: #fff;
+}
+
+/* puntico verde de "en línea" */
+.wa-panel__en-linea {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid var(--color-primario);
 }
 
 .wa-panel__nombre {
@@ -131,8 +147,8 @@
 }
 
 .wa-mensaje--usuario {
-  background: #DCF8C6;
-  color: #1a1a1a;
+  background: var(--color-primario);
+  color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: var(--radio-sm);
 }
@@ -147,21 +163,21 @@
 
 .wa-pregunta-btn {
   background: var(--fondo-tarjeta);
-  border: 1.5px solid #25D366;
+  border: 1.5px solid var(--color-primario);
   border-radius: var(--radio-lg);
   padding: var(--espacio-2) var(--espacio-3);
   font-size: var(--tamano-xs);
   font-weight: 500;
-  color: #128C7E;
+  color: var(--color-primario);
   cursor: pointer;
   text-align: left;
   transition: all var(--transicion-rapida);
 }
 
 .wa-pregunta-btn:hover {
-  background: #25D366;
+  background: var(--color-primario);
   color: white;
-  border-color: #25D366;
+  border-color: var(--color-primario);
 }
 
 /* Botón acción - 2026-10-01: antes ocupaba el 100% del panel (se veía
@@ -176,14 +192,16 @@
 
 .wa-btn-directo {
   width: auto;
-  background: #25D366;
-  border-color: #25D366;
+  background: var(--color-secundario);
+  border-color: var(--color-secundario);
+  color: #fff;
   font-size: var(--tamano-sm);
 }
 
 .wa-btn-directo:hover {
-  background: #1DA851;
-  border-color: #1DA851;
+  background: #c94a08;
+  border-color: #c94a08;
+  color: #fff;
 }
 
 /* Ícono del bot en el encabezado del panel - trazo, no sólido */
@@ -198,6 +216,7 @@
    en vez de mover solo el brazo (imposible sin partes separadas), se
    balancea el personaje completo en loop - da sensación de saludo. */
 .wa-robot {
+  position: relative;
   background: none;
   border: none;
   cursor: pointer;
@@ -315,4 +334,107 @@
   .wa-panel {
     width: calc(100vw - 32px);
   }
+}
+
+/* ── 2026-10-09: nube "¡Hola! Soy Anturi" pegada al bot ──
+   A la izquierda del círculo, a la altura de la cara, con la colita
+   apuntando al bot. Aparece una vez con suavidad y queda quieta. */
+.wa-robot__nube {
+  position: absolute;
+  right: calc(100% - 14px);
+  top: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 14px 10px 14px;
+  min-width: 168px;
+  background: #fff;
+  border: 2px solid var(--color-primario);
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 10px 24px rgba(27, 50, 112, 0.22);
+  text-align: left;
+  white-space: nowrap;
+  animation: nubeAparecer 0.5s ease-out 0.6s both;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* colita: borde azul + relleno blanco, apuntando al bot */
+.wa-robot__nube::before,
+.wa-robot__nube::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  border-style: solid;
+}
+.wa-robot__nube::before {
+  right: -12px;
+  border-width: 8px 0 8px 12px;
+  border-color: transparent transparent transparent var(--color-primario);
+}
+.wa-robot__nube::after {
+  right: -8px;
+  top: 20px;
+  border-width: 6px 0 6px 9px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.wa-robot__nube-saludo {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-primario);
+  line-height: 1.2;
+}
+
+.wa-robot__nube-invitacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-secundario);
+}
+
+/* puntico que "late" suave: invita a tocar sin mover la nube */
+.wa-robot__punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-secundario);
+  animation: puntoLatido 1.6s ease-in-out infinite;
+}
+
+.wa-robot:hover .wa-robot__nube {
+  border-color: var(--color-secundario);
+}
+.wa-robot:hover .wa-robot__nube::before {
+  border-left-color: var(--color-secundario);
+}
+
+@keyframes nubeAparecer {
+  from { opacity: 0; transform: translateX(8px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes puntoLatido {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 87, 12, 0.55); }
+  60% { box-shadow: 0 0 0 6px rgba(232, 87, 12, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-robot__nube, .wa-robot__punto { animation: none; }
+}
+
+@media (max-width: 768px) {
+  .wa-robot__nube { top: 18px; min-width: 150px; padding: 8px 12px; }
+  .wa-robot__nube-saludo { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  .wa-robot__nube { top: 12px; min-width: 0; padding: 7px 10px; }
+  .wa-robot__nube-saludo { font-size: 13px; }
+  .wa-robot__nube-invitacion { font-size: 11px; }
+  .wa-robot__nube::before { top: 12px; }
+  .wa-robot__nube::after { top: 14px; }
 }

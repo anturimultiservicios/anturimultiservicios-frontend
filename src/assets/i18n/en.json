@@ -73,6 +73,7 @@
   "chatbot": {
     "titulo": "Anturi Bot",
     "saludo": "Hi! I'm Anturi 👋",
+    "invitacion": "Tap here, I'll answer right away",
     "subtitulo": "How can we help you?",
     "bienvenida": "Hello, welcome to Anturi Multiservicios. I am your virtual assistant. How can I help you today?",
     "preguntas": {
