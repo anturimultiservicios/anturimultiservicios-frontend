@@ -20,9 +20,10 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
         <div class="ct-item__titulo">
           <span class="ct-tipo">{{ nombreTipo(c.tipo) }}</span>
           <strong>{{ c.entidad }}</strong>
-          <span class="ct-acciones-admin" *ngIf="esAdmin">
-            <button class="ct-mini" (click)="editar(c)" title="Cambiar">Editar</button>
-            <button class="ct-mini ct-mini--peligro" (click)="quitar(c)" title="Quitar">Quitar</button>
+          <!-- 2026-10-09: Editar para todos los roles (los portales piden cambiar la clave); Quitar solo Admin -->
+          <span class="ct-acciones-admin">
+            <button class="ct-mini" (click)="editar(c)" title="Cambiar usuario o clave">Editar</button>
+            <button *ngIf="esAdmin" class="ct-mini ct-mini--peligro" (click)="quitar(c)" title="Quitar">Quitar</button>
           </span>
         </div>
         <div class="ct-fila">
