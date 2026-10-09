@@ -1,5 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Router, NavigationStart } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 // 2026-10-08 (bug real: "Afiliados no abre"): si la pestaña quedó abierta
 // mientras se publicaba una versión nueva, sus pantallas apuntan a archivos
@@ -11,6 +12,8 @@ import { Router, NavigationStart } from '@angular/router';
 export class VersionServicio {
   private hayVersionNueva = false;
   private readonly actual = this.leerMainActual();
+  // 2026-10-09: lo escucha el aviso del bot ("hay una actualización, recargue")
+  readonly versionNueva$ = new BehaviorSubject<boolean>(false);
 
   constructor(private router: Router, private zona: NgZone) {}
 
@@ -22,7 +25,7 @@ export class VersionServicio {
       }
     });
     this.zona.runOutsideAngular(() => {
-      setInterval(() => this.revisar(), 5 * 60_000);
+      setInterval(() => this.revisar(), 2 * 60_000);
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') this.revisar();
       });
@@ -41,7 +44,10 @@ export class VersionServicio {
     try {
       const html = await (await fetch(`/index.html?v=${Date.now()}`, { cache: 'no-store' })).text();
       const publicado = html.match(/main-[A-Z0-9]+\.js/i)?.[0];
-      if (publicado && publicado !== this.actual) this.hayVersionNueva = true;
+      if (publicado && publicado !== this.actual) {
+        this.hayVersionNueva = true;
+        this.zona.run(() => this.versionNueva$.next(true));
+      }
     } catch {
       /* sin conexión: se revisa en la próxima vuelta */
     }

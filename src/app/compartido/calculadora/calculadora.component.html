@@ -1,9 +1,9 @@
-<!-- Botón de acceso flotante (cuando está cerrada) -->
+<!-- Botón de acceso flotante (cerrada o minimizada: queda el ícono) -->
 <div class="calc-acceso"
-  *ngIf="estado === 'cerrada'"
+  *ngIf="estado !== 'abierta'"
   [style.right.px]="20"
   [style.bottom.px]="100">
-  <button class="calc-acceso__btn" (click)="abrir()" title="Calculadora">
+  <button class="calc-acceso__btn" (click)="abrir()" [title]="pantalla !== '0' ? 'Calculadora (' + pantalla + ')' : 'Calculadora'">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <rect x="4" y="2" width="16" height="20" rx="2"></rect>
       <line x1="8" y1="6" x2="16" y2="6"></line>
@@ -22,8 +22,7 @@
 <!-- Ventana calculadora -->
 <div class="calc-ventana"
   #ventana
-  *ngIf="estado !== 'cerrada'"
-  [class.minimizada]="estado === 'minimizada'"
+  *ngIf="estado === 'abierta'"
   [class.cientifica]="modo === 'cientifica'"
   [style.left.px]="posX"
   [style.top.px]="posY">
@@ -32,7 +31,8 @@
   <div class="calc-barra" (pointerdown)="iniciarArrastre($event)">
     <button class="calc-barra__modo" (pointerdown)="$event.stopPropagation()" (click)="alternarModo()"
       [title]="modo === 'normal' ? 'Cambiar a científica' : 'Cambiar a normal'">
-      {{ modo === 'normal' ? 'Normal' : 'Científica' }}
+      <!-- 2026-10-09: muestra el modo al que se pasa (el contrario al actual) -->
+      {{ modo === 'normal' ? 'Científica' : 'Normal' }}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
         <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
@@ -44,7 +44,7 @@
           <circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline>
         </svg>
       </button>
-      <button class="calc-barra__btn minimizar" (pointerdown)="$event.stopPropagation()" (click)="estado === 'minimizada' ? maximizar() : minimizar()" title="Minimizar/Restaurar">
+      <button class="calc-barra__btn minimizar" (pointerdown)="$event.stopPropagation()" (click)="minimizar()" title="Minimizar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
@@ -59,7 +59,7 @@
   </div>
 
   <!-- Cuerpo calculadora -->
-  <div class="calc-cuerpo" *ngIf="estado !== 'minimizada'">
+  <div class="calc-cuerpo">
 
     <!-- Pantalla -->
     <div class="calc-pantalla">
@@ -82,47 +82,47 @@
 
     <!-- Teclado científico adicional -->
     <div class="calc-teclado-cientifico" *ngIf="modo === 'cientifica'">
-      <button class="calc-btn func" (click)="presionar('sin')">sin</button>
-      <button class="calc-btn func" (click)="presionar('cos')">cos</button>
-      <button class="calc-btn func" (click)="presionar('tan')">tan</button>
-      <button class="calc-btn func" (click)="presionar('log')">log</button>
-      <button class="calc-btn func" (click)="presionar('ln')">ln</button>
-      <button class="calc-btn func" (click)="presionar('sqrt')">√x</button>
-      <button class="calc-btn func" (click)="presionar('x²')">x²</button>
-      <button class="calc-btn func" (click)="presionar('xʸ')">xʸ</button>
-      <button class="calc-btn func" (click)="presionar('1/x')">1/x</button>
-      <button class="calc-btn func" (click)="presionar('π')">π</button>
-      <button class="calc-btn func" (click)="presionar('e')">e</button>
-      <button class="calc-btn func" (click)="presionar('(')">(</button>
-      <button class="calc-btn func" (click)="presionar(')')">)</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('sin')">sin</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('cos')">cos</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('tan')">tan</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('log')">log</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('ln')">ln</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('sqrt')">√x</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('x²')">x²</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('xʸ')">xʸ</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('1/x')">1/x</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('π')">π</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('e')">e</button>
+      <button class="calc-btn func" (click)="presionarYGuardar('(')">(</button>
+      <button class="calc-btn func" (click)="presionarYGuardar(')')">)</button>
     </div>
 
     <!-- Teclado principal -->
     <div class="calc-teclado">
-      <button class="calc-btn especial" (click)="presionar('AC')">AC</button>
-      <button class="calc-btn especial" (click)="presionar('+/-')">+/-</button>
-      <button class="calc-btn especial" (click)="presionar('%')">%</button>
-      <button class="calc-btn operador" (click)="presionar('/')">÷</button>
+      <button class="calc-btn especial" (click)="presionarYGuardar('AC')">AC</button>
+      <button class="calc-btn especial" (click)="presionarYGuardar('+/-')">+/-</button>
+      <button class="calc-btn especial" (click)="presionarYGuardar('%')">%</button>
+      <button class="calc-btn operador" (click)="presionarYGuardar('/')">÷</button>
 
-      <button class="calc-btn numero" (click)="presionar('7')">7</button>
-      <button class="calc-btn numero" (click)="presionar('8')">8</button>
-      <button class="calc-btn numero" (click)="presionar('9')">9</button>
-      <button class="calc-btn operador" (click)="presionar('*')">×</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('7')">7</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('8')">8</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('9')">9</button>
+      <button class="calc-btn operador" (click)="presionarYGuardar('*')">×</button>
 
-      <button class="calc-btn numero" (click)="presionar('4')">4</button>
-      <button class="calc-btn numero" (click)="presionar('5')">5</button>
-      <button class="calc-btn numero" (click)="presionar('6')">6</button>
-      <button class="calc-btn operador" (click)="presionar('-')">-</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('4')">4</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('5')">5</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('6')">6</button>
+      <button class="calc-btn operador" (click)="presionarYGuardar('-')">-</button>
 
-      <button class="calc-btn numero" (click)="presionar('1')">1</button>
-      <button class="calc-btn numero" (click)="presionar('2')">2</button>
-      <button class="calc-btn numero" (click)="presionar('3')">3</button>
-      <button class="calc-btn operador" (click)="presionar('+')">+</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('1')">1</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('2')">2</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('3')">3</button>
+      <button class="calc-btn operador" (click)="presionarYGuardar('+')">+</button>
 
-      <button class="calc-btn numero cero" (click)="presionar('0')">0</button>
-      <button class="calc-btn numero" (click)="presionar('.')">.</button>
-      <button class="calc-btn especial" (click)="presionar('⌫')">⌫</button>
-      <button class="calc-btn igual" (click)="presionar('=')">=</button>
+      <button class="calc-btn numero cero" (click)="presionarYGuardar('0')">0</button>
+      <button class="calc-btn numero" (click)="presionarYGuardar('.')">.</button>
+      <button class="calc-btn especial" (click)="presionarYGuardar('⌫')">⌫</button>
+      <button class="calc-btn igual" (click)="presionarYGuardar('=')">=</button>
     </div>
   </div>
 

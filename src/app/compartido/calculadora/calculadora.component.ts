@@ -53,6 +53,9 @@ export class CalculadoraComponent implements OnInit {
         if (g.modo === 'normal' || g.modo === 'cientifica') this.modo = g.modo;
         if (g.estado === 'abierta' || g.estado === 'minimizada' || g.estado === 'cerrada') this.estado = g.estado;
         if (Array.isArray(g.historial)) this.historial = g.historial.slice(0, MAX_HISTORIAL);
+        // 2026-10-09: el último número queda guardado (aunque se cierre sesión)
+        if (typeof g.pantalla === 'string' && g.pantalla !== 'Error') this.pantalla = g.pantalla;
+        if (typeof g.expresion === 'string') this.expresion = g.expresion;
       }
     } catch { /* sin almacenamiento: valores por defecto */ }
     this.ajustarALaPantalla();
@@ -69,6 +72,7 @@ export class CalculadoraComponent implements OnInit {
     try {
       localStorage.setItem(CLAVE_CALC, JSON.stringify({
         posX: this.posX, posY: this.posY, modo: this.modo, estado: this.estado, historial: this.historial,
+        pantalla: this.pantalla, expresion: this.expresion,
       }));
     } catch { /* sin almacenamiento */ }
   }
@@ -137,6 +141,12 @@ export class CalculadoraComponent implements OnInit {
     }
 
     this.agregarAExpresion(valor);
+  }
+
+  // Cada tecla deja guardado el número en pantalla.
+  presionarYGuardar(valor: string): void {
+    this.presionar(valor);
+    this.guardar();
   }
 
   private agregarAExpresion(valor: string): void {
@@ -232,6 +242,7 @@ export class CalculadoraComponent implements OnInit {
     this.hayError = false;
     this.pantalla = resultado;
     this.expresion = resultado;
+    this.guardar();
   }
 
   borrarHistorial(): void {
@@ -242,6 +253,7 @@ export class CalculadoraComponent implements OnInit {
   // Control de ventana - el modo se cambia con un clic en la barra
   alternarModo(): void {
     this.modo = this.modo === 'normal' ? 'cientifica' : 'normal';
+    this.verHistorial = false;
     this.ajustarALaPantalla();
     this.guardar();
   }
