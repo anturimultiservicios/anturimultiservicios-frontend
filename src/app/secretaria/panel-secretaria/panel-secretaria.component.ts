@@ -147,6 +147,13 @@ import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servici
               </a>
             </li>
             <li>
+              <!-- 2026-10-09: recibos de caja menor -->
+              <a routerLink="/asistente/caja-menor" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Caja menor' : ''">
+                <span class="barra-lateral__icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"></rect><path d="M2 10h20M7 15h4"></path></svg></span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Caja menor</span>
+              </a>
+            </li>
+            <li>
               <!-- 2026-10-09: los Excel originales, hoja por hoja -->
               <a routerLink="/asistente/archivos-excel" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Archivos Excel' : ''">
                 <span class="barra-lateral__icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h8M8 17h8M12 11v8"></path></svg></span>

@@ -75,6 +75,12 @@ export const rutasSecretaria: Routes = [
           ),
       },
       {
+        // 2026-10-09: recibos de caja menor (todos los roles)
+        path: 'caja-menor',
+        loadComponent: () =>
+          import('../compartido/caja-menor/caja-menor.component').then((m) => m.CajaMenorComponent),
+      },
+      {
         // 2026-10-09: los Excel originales, hoja por hoja
         path: 'archivos-excel',
         loadComponent: () =>

@@ -112,6 +112,18 @@ export const rutasAdmin: Routes = [
           import('./recaudo/recaudo.component').then((m) => m.RecaudoComponent),
       },
       {
+        // 2026-10-09: nómina de los empleadores - solo Administrador y Super Admin
+        path: 'nomina',
+        loadComponent: () =>
+          import('./nomina/nomina.component').then((m) => m.NominaComponent),
+      },
+      {
+        // 2026-10-09: recibos de caja menor (todos los roles)
+        path: 'caja-menor',
+        loadComponent: () =>
+          import('../compartido/caja-menor/caja-menor.component').then((m) => m.CajaMenorComponent),
+      },
+      {
         path: 'parametros-legales',
         loadComponent: () =>
           import('./parametros-legales/parametros-legales.component').then((m) => m.ParametrosLegalesComponent),

@@ -39,6 +39,7 @@ const TIPOS_AFILIADO = [
             <div class="campana__texto">
               <span class="campana__titulo">{{ p.titulo }}</span>
               <span class="campana__mensaje">{{ p.mensaje }}</span>
+              <button *ngIf="p.tipo === 'revision_valor'" type="button" class="campana__resolver" (click)="resolverRevision(p, $event)">Ya lo revisé</button>
             </div>
           </li>
         </ul>
@@ -76,6 +77,8 @@ const TIPOS_AFILIADO = [
     .campana__lista--pendientes { overflow: visible; }
     .campana__item--pendiente { background: rgba(234,179,8,0.08); }
     .campana__punto--pendiente { background: #eab308; }
+    .campana__resolver { align-self: flex-start; margin-top: 4px; border: 1px solid #ca8a04; background: transparent; color: inherit; border-radius: 6px; padding: 2px 8px; font-size: 12px; cursor: pointer; }
+    .campana__resolver:hover { background: rgba(234,179,8,0.15); }
     .campana__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .campana__titulo { font-weight: 600; font-size: var(--tamano-sm, 14px); color: var(--texto-principal, #111827); }
     .campana__mensaje { font-size: var(--tamano-xs, 12px); color: var(--texto-secundario, #4b5563); overflow-wrap: anywhere; }
@@ -143,7 +146,25 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
       this.router.navigate(['/admin', 'solicitudes']);
     } else if (p.tipo === 'dispositivo_pendiente') {
       this.router.navigate(['/admin', 'dispositivos']);
+    } else if (p.tipo === 'revision_valor') {
+      if (p.empresaId) this.router.navigate([prefijo, 'empresas', p.empresaId]);
+      else if (p.afiliadoId) this.router.navigate([prefijo, 'afiliados', p.afiliadoId]);
     }
+  }
+
+  // 2026-10-09: revisiones para la Asistente (valores del Excel que no
+  // cuadran). Sigue en "Por resolver" hasta que alguien escribe qué encontró.
+  resolverRevision(p: PendienteSistema, ev: Event): void {
+    ev.stopPropagation();
+    if (!p.referenciaId) return;
+    const nota = prompt(`${p.titulo}
+
+¿Qué encontró o qué corrigió? (le llega a Anturi)`);
+    if (!nota || nota.trim().length < 3) return;
+    this.servicio.resolverRevision(p.referenciaId, nota.trim()).subscribe({
+      next: () => (this.pendientes = this.pendientes.filter((x) => x.clave !== p.clave)),
+      error: () => alert('No se pudo marcar como revisado. Intente de nuevo.'),
+    });
   }
 
   abrir(n: NotificacionSistema): void {

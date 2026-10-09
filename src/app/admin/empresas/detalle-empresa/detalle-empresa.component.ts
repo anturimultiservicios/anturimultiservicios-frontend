@@ -129,16 +129,34 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
           <div *ngIf="!cargandoPersonal && personal.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">
             Todavía no hay personas vinculadas a esta empresa. Use "Agregar persona" para buscarlas por nombre o documento.
           </div>
+          <!-- 2026-10-09: con sucursales, cada trabajador se asigna a una (o a la sede principal) -->
+          <div *ngIf="sucursales.length > 0 && personal.length > 0" class="filtro-sucursal">
+            <label for="filtroSucursal">Ver:</label>
+            <select id="filtroSucursal" class="campo-input campo-input--sm" [(ngModel)]="filtroSucursal">
+              <option value="todas">Todas las sedes</option>
+              <option value="principal">Sede principal ({{ cuantosEn(null) }})</option>
+              <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }} ({{ cuantosEn(s.id) }})</option>
+            </select>
+          </div>
           <div class="tabla-contenedor" *ngIf="personal.length > 0">
             <table class="tabla">
               <thead>
-                <tr><th>Persona</th><th>Documento</th><th>Cargo</th><th>Desde</th><th>Estado</th><th></th></tr>
+                <tr><th>Persona</th><th>Documento</th><th>Cargo</th><th *ngIf="sucursales.length > 0">Sucursal</th><th>Desde</th><th>Estado</th><th></th></tr>
               </thead>
               <tbody>
-                <tr *ngFor="let p of personal" [class.fila-retirada]="p.estadoRelacion !== 'ACTIVA'">
+                <tr *ngFor="let p of personalFiltrado" [class.fila-retirada]="p.estadoRelacion !== 'ACTIVA'">
                   <td>{{ p.nombre }}</td>
                   <td>{{ sigla(p.tipoDocumento) }} {{ p.documento }}</td>
                   <td>{{ p.cargo || '—' }}</td>
+                  <td *ngIf="sucursales.length > 0">
+                    <select *ngIf="p.estadoRelacion === 'ACTIVA'; else sedeFija" class="campo-input campo-input--sm"
+                            [ngModel]="p.sucursalId" (ngModelChange)="cambiarSucursal(p, $event)" [disabled]="asignandoSucursal === p.relacionId"
+                            [attr.aria-label]="'Sucursal de ' + p.nombre">
+                      <option [ngValue]="null">Sede principal</option>
+                      <option *ngFor="let s of sucursales" [ngValue]="s.id">{{ s.nombre }}{{ s.activa === false ? ' (inactiva)' : '' }}</option>
+                    </select>
+                    <ng-template #sedeFija>{{ p.sucursalNombre || 'Sede principal' }}</ng-template>
+                  </td>
                   <td>{{ p.fechaIngreso ? (p.fechaIngreso | date:'dd/MM/yyyy') : '—' }}</td>
                   <td>
                     <span class="badge-estado" [ngClass]="p.estadoRelacion === 'ACTIVA' ? 'badge-activo' : 'badge-inactivo'">
@@ -166,13 +184,13 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
           <div class="tabla-contenedor" *ngIf="sucursales.length > 0">
             <table class="tabla">
               <thead>
-                <tr><th>Nombre</th><th>Ciudad</th><th>Afiliados</th><th>Estado</th><th></th></tr>
+                <tr><th>Nombre</th><th>Ciudad</th><th>Trabajadores</th><th>Estado</th><th></th></tr>
               </thead>
               <tbody>
                 <tr *ngFor="let s of sucursales">
                   <td>{{ s.nombre }}</td>
                   <td>{{ s.ciudad || '—' }}</td>
-                  <td>{{ s._count?.afiliados ?? '—' }}</td>
+                  <td>{{ cuantosEn(s.id) }}</td>
                   <td><span class="badge-estado" [ngClass]="s.activa ? 'badge-activo' : 'badge-inactivo'">{{ s.activa ? 'ACTIVA' : 'INACTIVA' }}</span></td>
                   <td><button class="boton boton-texto boton-sm" (click)="activarEditarSucursal(s)">Editar</button></td>
                 </tr>
@@ -280,6 +298,13 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         <div *ngIf="!buscandoPersonal && busquedaPersonal.trim().length >= 3 && resultadosPersonal.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">
           No se encontró. Si es una persona nueva, primero créela en Afiliados → Nuevo afiliado.
         </div>
+        <div class="campo-grupo" *ngIf="seleccionPersonal && sucursales.length > 0">
+          <label class="campo-etiqueta" for="sucursalPersonal">Sucursal donde trabaja</label>
+          <select id="sucursalPersonal" class="campo-input" [(ngModel)]="sucursalPersonal" name="sucursalPersonal">
+            <option [ngValue]="null">Sede principal</option>
+            <option *ngFor="let s of sucursales" [ngValue]="s.id">{{ s.nombre }}</option>
+          </select>
+        </div>
         <div class="campo-grupo" *ngIf="seleccionPersonal">
           <label class="campo-etiqueta">Cargo (opcional)</label>
           <input type="text" class="campo-input" [(ngModel)]="cargoPersonal" name="cargoPersonal" placeholder="Ej. Auxiliar de bodega">
@@ -354,6 +379,9 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .aviso-pendiente--eliminar { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); border-left-color: #ef4444; }
     .aviso-pendiente__enlace { color: var(--color-primario); font-weight: 600; text-decoration: none; align-self: flex-start; }
     .fila-retirada td { color: var(--texto-terciario); }
+    .filtro-sucursal { display: flex; align-items: center; gap: var(--espacio-2); margin-bottom: var(--espacio-3); font-size: var(--tamano-sm); color: var(--texto-secundario); }
+    .filtro-sucursal select { max-width: 260px; }
+    .campo-input--sm { padding: 4px 8px; font-size: var(--tamano-sm); min-width: 150px; }
     .acciones-personal { white-space: nowrap; display: flex; gap: var(--espacio-2); align-items: center; }
     .sin-ficha { font-size: var(--tamano-xs); color: var(--texto-terciario); }
     .lista-busqueda { list-style: none; margin: 0 0 var(--espacio-3); padding: 0; max-height: 260px; overflow-y: auto; border: 1px solid var(--borde-color); border-radius: var(--radio-md); }
@@ -442,6 +470,39 @@ export class DetalleEmpresaComponent implements OnInit {
   private temporizadorBusqueda: ReturnType<typeof setTimeout> | null = null;
   readonly sigla = siglaDocumento;
 
+  sucursalPersonal: number | null = null;
+  filtroSucursal: string = 'todas';
+  asignandoSucursal: number | null = null;
+
+  get personalFiltrado(): PersonalEmpresa[] {
+    if (this.filtroSucursal === 'todas') return this.personal;
+    const id = this.filtroSucursal === 'principal' ? null : Number(this.filtroSucursal);
+    return this.personal.filter((p) => (p.sucursalId ?? null) === id);
+  }
+
+  cuantosEn(sucursalId: number | null): number {
+    return this.personalActivo.filter((p) => (p.sucursalId ?? null) === sucursalId).length;
+  }
+
+  cambiarSucursal(p: PersonalEmpresa, sucursalId: number | null): void {
+    const anterior = p.sucursalId;
+    p.sucursalId = sucursalId;
+    this.asignandoSucursal = p.relacionId;
+    this.empresasServicio.asignarSucursal(this.id, p.relacionId, sucursalId).pipe(
+      finalize(() => (this.asignandoSucursal = null)),
+    ).subscribe({
+      next: () => {
+        p.sucursalNombre = this.sucursales.find((s) => s.id === sucursalId)?.nombre ?? null;
+        this.mensajeExito = `${p.nombre}: ${p.sucursalNombre ?? 'Sede principal'}.`;
+        setTimeout(() => (this.mensajeExito = ''), 3000);
+      },
+      error: (err) => {
+        p.sucursalId = anterior;
+        this.mensajeError = err?.error?.message || 'No se pudo cambiar la sucursal.';
+      },
+    });
+  }
+
   get personalActivo(): PersonalEmpresa[] {
     return this.personal.filter((p) => p.estadoRelacion === 'ACTIVA');
   }
@@ -464,6 +525,7 @@ export class DetalleEmpresaComponent implements OnInit {
     this.resultadosPersonal = [];
     this.seleccionPersonal = null;
     this.cargoPersonal = '';
+    this.sucursalPersonal = null;
     this.errorPersonal = '';
     this.fechaIngresoPersonal = new Date().toISOString().slice(0, 10);
   }
@@ -493,6 +555,7 @@ export class DetalleEmpresaComponent implements OnInit {
       afiliadoId: this.seleccionPersonal.id,
       cargo: this.cargoPersonal.trim() || undefined,
       fechaIngreso: this.fechaIngresoPersonal || undefined,
+      sucursalId: this.sucursalPersonal,
     }).pipe(finalize(() => (this.guardandoPersonal = false))).subscribe({
       next: () => {
         this.modalPersonal = false;

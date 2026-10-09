@@ -35,6 +35,8 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'pagos', etiqueta: 'Registrar pago', ruta: '/admin/registrar-pago' },
     // 2026-10-09: control del dinero (no lo ve la Asistente)
     { icono: 'recaudo', etiqueta: 'Recaudo', ruta: '/admin/recaudo', soloAdmin: true },
+    { icono: 'nomina', etiqueta: 'Nómina', ruta: '/admin/nomina', soloAdmin: true },
+    { icono: 'caja', etiqueta: 'Caja menor', ruta: '/admin/caja-menor' },
     { icono: 'solicitudes', etiqueta: 'Solicitudes', ruta: '/admin/solicitudes', soloAdmin: true },
     { icono: 'usuarios', etiqueta: 'Usuarios del sistema', ruta: '/admin/usuarios', soloAdmin: true },
     { icono: 'mis-dispositivos', etiqueta: 'Mis dispositivos', ruta: '/admin/mis-dispositivos' },

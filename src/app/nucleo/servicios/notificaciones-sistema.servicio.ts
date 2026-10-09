@@ -25,6 +25,9 @@ export interface PendienteSistema {
   titulo: string;
   mensaje: string;
   referenciaId: number | null;
+  // revisiones (2026-10-09): a qué cuenta o ficha lleva
+  empresaId?: number | null;
+  afiliadoId?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +42,11 @@ export class NotificacionesSistemaServicio {
 
   pendientes(): Observable<PendienteSistema[]> {
     return this.http.get<PendienteSistema[]>(`${this.URL}/pendientes`);
+  }
+
+  // 2026-10-09: marcar revisada una revisión pendiente, con lo que se encontró
+  resolverRevision(id: number, nota: string): Observable<unknown> {
+    return this.http.put(`${this.URL}/revisiones/${id}/resolver`, { nota });
   }
 
   contarSinLeer(): Observable<number> {
