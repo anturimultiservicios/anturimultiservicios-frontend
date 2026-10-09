@@ -117,6 +117,12 @@ export const rutasAdmin: Routes = [
           import('./parametros-legales/parametros-legales.component').then((m) => m.ParametrosLegalesComponent),
       },
       {
+        // 2026-10-09: los Excel originales, hoja por hoja
+        path: 'archivos-excel',
+        loadComponent: () =>
+          import('../compartido/biblioteca/biblioteca.component').then((m) => m.BibliotecaComponent),
+      },
+      {
         path: 'hallazgos-reconciliacion',
         loadComponent: () =>
           import('./hallazgos-reconciliacion/lista-hallazgos/lista-hallazgos.component').then((m) => m.ListaHallazgosComponent),

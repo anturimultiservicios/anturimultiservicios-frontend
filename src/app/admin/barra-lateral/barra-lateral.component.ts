@@ -43,6 +43,7 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'backup', etiqueta: 'Backups', ruta: '/admin/backup', soloSuperAdmin: true },
     { icono: 'hallazgos', etiqueta: 'Reconciliación empleadores', ruta: '/admin/hallazgos-reconciliacion', soloAdmin: true },
     { icono: 'parametros', etiqueta: 'Parámetros legales', ruta: '/admin/parametros-legales', soloAdmin: true },
+    { icono: 'excel', etiqueta: 'Archivos Excel', ruta: '/admin/archivos-excel' },
     { icono: 'configuracion', etiqueta: 'Configuración', ruta: '/admin/configuracion' },
   ];
 

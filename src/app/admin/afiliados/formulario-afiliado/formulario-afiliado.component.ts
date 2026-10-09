@@ -173,11 +173,13 @@ const TIPOS: TipoAfiliacionInfo[] = [
   },
 ];
 
+import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/listas-entidades.component';
 @Component({
   selector: 'anturi-formulario-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ListasEntidadesComponent],
   template: `
+    <anturi-listas-entidades></anturi-listas-entidades>
     <div class="pagina-formulario">
       <!-- Encabezado -->
       <div class="form-encabezado">
@@ -649,19 +651,19 @@ const TIPOS: TipoAfiliacionInfo[] = [
 
             <div class="campo-grupo">
               <label class="campo-etiqueta">EPS</label>
-              <input type="text" class="campo-input" [(ngModel)]="form.eps" name="eps" placeholder="Nombre de la EPS">
+              <input type="text" class="campo-input" [(ngModel)]="form.eps" name="eps" list="lista-eps" placeholder="Nombre de la EPS">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">AFP (Pensión)</label>
-              <input type="text" class="campo-input" [(ngModel)]="form.afp" name="afp" placeholder="Nombre de la AFP">
+              <input type="text" class="campo-input" [(ngModel)]="form.afp" name="afp" list="lista-pension" placeholder="Nombre de la AFP">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Entidad ARL</label>
-              <input type="text" class="campo-input" [(ngModel)]="form.arl" name="arl" placeholder="Nombre de la ARL">
+              <input type="text" class="campo-input" [(ngModel)]="form.arl" name="arl" list="lista-arl" placeholder="Nombre de la ARL">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Caja de compensación</label>
-              <input type="text" class="campo-input" [(ngModel)]="form.caja" name="caja" placeholder="Nombre de la caja">
+              <input type="text" class="campo-input" [(ngModel)]="form.caja" name="caja" list="lista-caja" placeholder="Nombre de la caja">
             </div>
           </div>
         </div>

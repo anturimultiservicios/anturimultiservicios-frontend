@@ -75,6 +75,12 @@ export const rutasSecretaria: Routes = [
           ),
       },
       {
+        // 2026-10-09: los Excel originales, hoja por hoja
+        path: 'archivos-excel',
+        loadComponent: () =>
+          import('../compartido/biblioteca/biblioteca.component').then((m) => m.BibliotecaComponent),
+      },
+      {
         path: 'hallazgos-reconciliacion',
         loadComponent: () =>
           import('../admin/hallazgos-reconciliacion/lista-hallazgos/lista-hallazgos.component').then(

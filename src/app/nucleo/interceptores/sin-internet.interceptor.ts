@@ -99,7 +99,7 @@ function calendario(c: CopiaLocal, desdeTxt: string | null, hastaTxt: string | n
 
 // Pantallas cuya última respuesta (vista con internet) se guarda cifrada en
 // el equipo para mostrarla sin internet. NO incluye claves de portales.
-const RECORDAR = /^\/(afiliados\/estadisticas|afiliados\/papelera|empresas\/estadisticas|recordatorios-llamada\/pendientes|notificaciones(\/pendientes|\/sin-leer)?|solicitudes-cambio(\/\d+|\/pendientes\/cantidad)?|hallazgos-reconciliacion(\/[\w-]+)?|evidencias-hallazgo\/hallazgo\/\d+|documentos\/(afiliado\/\d+|tipos-requeridos)|eventos-incapacidad\/(afiliado\/\d+|\d+\/documentos)|parametros-legales(\/[\w-]+\/historial)?|alcance\/mi-alcance|pagos\/(resumen|resumen-mensual|afiliado\/\d+)|dispositivos\/mios|usuarios(\/me\/correo-recuperacion)?|config-sistema|liquidacion\/plantillas|horario-acceso\/(configuracion|excepciones)|sucursales\/empresa\/\d+|recaudo)$/;
+const RECORDAR = /^\/(afiliados\/estadisticas|afiliados\/papelera|empresas\/estadisticas|recordatorios-llamada\/pendientes|notificaciones(\/pendientes|\/sin-leer)?|solicitudes-cambio(\/\d+|\/pendientes\/cantidad)?|hallazgos-reconciliacion(\/[\w-]+)?|evidencias-hallazgo\/hallazgo\/\d+|documentos\/(afiliado\/\d+|tipos-requeridos)|eventos-incapacidad\/(afiliado\/\d+|\d+\/documentos)|parametros-legales(\/[\w-]+\/historial)?|alcance\/mi-alcance|pagos\/(resumen|resumen-mensual|afiliado\/\d+)|dispositivos\/mios|usuarios(\/me\/correo-recuperacion)?|config-sistema|liquidacion\/plantillas|horario-acceso\/(configuracion|excepciones)|sucursales\/empresa\/\d+|recaudo|biblioteca|biblioteca\/entidades|biblioteca\/hojas\/\d+)$/;
 
 function rutaDe(url: string): string {
   return url.slice(API.length).split('?')[0].replace(/\/$/, '');

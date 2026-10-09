@@ -15,11 +15,13 @@ import { TIPOS_DOCUMENTO } from '../../../nucleo/utilidades/tipos-documento';
 // Recaudo como los demás. La ven y la usan todos los roles.
 const COMISION_COOPERATIVA = 15000;
 
+import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/listas-entidades.component';
 @Component({
   selector: 'anturi-formulario-cooperativa',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ListasEntidadesComponent],
   template: `
+    <anturi-listas-entidades></anturi-listas-entidades>
     <div class="coop">
       <div class="coop__encabezado">
         <button class="boton boton-icono" (click)="volver()" title="Volver">‹</button>
@@ -90,11 +92,11 @@ const COMISION_COOPERATIVA = 15000;
           <div class="grid">
             <div class="campo-grupo">
               <label class="campo-etiqueta">EPS</label>
-              <input class="campo-input" name="eps" [(ngModel)]="form.eps" placeholder="Nombre de la EPS">
+              <input class="campo-input" name="eps" list="lista-eps" [(ngModel)]="form.eps" placeholder="Nombre de la EPS">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">ARL</label>
-              <input class="campo-input" name="arl" [(ngModel)]="form.arl" placeholder="Ej: ARL La Equidad">
+              <input class="campo-input" name="arl" list="lista-arl" [(ngModel)]="form.arl" placeholder="Ej: ARL La Equidad">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Clase de riesgo ARL</label>
@@ -105,11 +107,11 @@ const COMISION_COOPERATIVA = 15000;
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Pensión</label>
-              <input class="campo-input" name="afp" [(ngModel)]="form.afp" placeholder="Ej: Colpensiones">
+              <input class="campo-input" name="afp" list="lista-pension" [(ngModel)]="form.afp" placeholder="Ej: Colpensiones">
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Caja de compensación</label>
-              <input class="campo-input" name="caja" [(ngModel)]="form.caja" placeholder="Nombre de la caja">
+              <input class="campo-input" name="caja" list="lista-caja" [(ngModel)]="form.caja" placeholder="Nombre de la caja">
             </div>
           </div>
         </div>
