@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DatosLocalesServicio } from '../../nucleo/servicios/datos-locales.servicio';
 import { ColaCambiosServicio, EstadoCola } from '../../nucleo/servicios/cola-cambios.servicio';
+import { modoRespaldo$ } from '../../nucleo/servicios/modo-respaldo';
 
 // 2026-10-09 (plan "sin internet", pasos 1 y 2): avisito arriba en la mitad
 // cuando se va el internet. Si hay datos guardados en el equipo, dice desde
@@ -34,6 +35,11 @@ import { ColaCambiosServicio, EstadoCola } from '../../nucleo/servicios/cola-cam
           <b>Sin internet.</b> La página sigue abierta; para guardar cambios espere a que vuelva la conexión.
         </span>
       </ng-container>
+    </div>
+    <!-- 2026-10-09: el servidor de Anturi está caído y atiende el respaldo (Dell) -->
+    <div *ngIf="!sinInternet && respaldo" class="conexion conexion--sin" role="status">
+      <span class="conexion__punto"></span>
+      <span><b>Modo respaldo.</b> El servidor principal de Anturi no responde: puede buscar y consultar normal. Lo que registre se guarda en este equipo y se sube solo cuando vuelva<ng-container *ngIf="cola.pendientes > 0"> ({{ cola.pendientes }} cambio{{ cola.pendientes !== 1 ? 's' : '' }} esperando)</ng-container>.</span>
     </div>
     <div *ngIf="!sinInternet && cola.subiendo" class="conexion conexion--volvio" role="status">
       <span class="conexion__punto"></span>
@@ -96,6 +102,8 @@ import { ColaCambiosServicio, EstadoCola } from '../../nucleo/servicios/cola-cam
 })
 export class AvisoConexionComponent implements OnInit, OnDestroy {
   sinInternet = !navigator.onLine;
+  respaldo = false;
+  private subRespaldo?: Subscription;
   volvio = false;
   estado: 'sin-copia' | 'bloqueada' | 'lista' = 'sin-copia';
   generado: Date | null = null;
@@ -135,6 +143,7 @@ export class AvisoConexionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.subRespaldo = modoRespaldo$.subscribe((r) => this.zona.run(() => (this.respaldo = r)));
     window.addEventListener('offline', this.alPerder);
     window.addEventListener('online', this.alVolver);
     this.subs.push(this.datos.estado$.subscribe((e) => (this.estado = e)));
@@ -162,6 +171,7 @@ export class AvisoConexionComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.subRespaldo?.unsubscribe();
     window.removeEventListener('offline', this.alPerder);
     window.removeEventListener('online', this.alVolver);
     this.subs.forEach((s) => s.unsubscribe());

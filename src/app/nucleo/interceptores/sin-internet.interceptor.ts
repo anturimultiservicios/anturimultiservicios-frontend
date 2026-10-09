@@ -6,6 +6,7 @@ import { ColaCambiosServicio } from '../servicios/cola-cambios.servicio';
 import { MotorCalculo } from '../motor/motor-calculo';
 import { entorno } from '../../../environments/entorno';
 import { DatosLocalesServicio, CopiaLocal } from '../servicios/datos-locales.servicio';
+import { anotarRespaldo } from '../servicios/modo-respaldo';
 
 // 2026-10-09 (plan "sin internet", paso 2): si se fue el internet, las
 // consultas (GET) que la copia local puede responder se contestan desde ahí
@@ -259,8 +260,13 @@ export const sinInternetInterceptor: HttpInterceptorFn = (req, next) => {
   // Con internet: se recuerda la última respuesta de las pantallas de RECORDAR.
   const recordar = req.method === 'GET' && req.url.startsWith(API) && RECORDAR.test(rutaDe(req.url));
   return next(req).pipe(
-    tap((ev) => { if (recordar && ev instanceof HttpResponse && ev.status === 200) datos.guardarRespuesta(req.urlWithParams, ev.body); }),
+    tap((ev) => {
+      if (!(ev instanceof HttpResponse)) return;
+      if (req.url.startsWith(API)) anotarRespaldo(ev.headers.get('x-anturi-respaldo'));
+      if (recordar && ev.status === 200) datos.guardarRespuesta(req.urlWithParams, ev.body);
+    }),
     catchError((error: HttpErrorResponse) => {
+      if (req.url.startsWith(API) && error.status !== 0) anotarRespaldo(error.headers?.get('x-anturi-respaldo') ?? null);
       // El servidor no responde (internet del edificio caído, etc.)
       if (error.status === 0 || error.status === 502 || error.status === 503 || error.status === 504) {
         const local = desdeCopia(req, datos) ?? guardarParaDespues(req, cola);
