@@ -54,7 +54,7 @@ type AccionPendiente = 'aprobar' | 'rechazar' | 'revocar';
           <tbody>
             <tr *ngFor="let d of dispositivos" class="fila-tabla">
               <td>{{ d.usuario?.nombre }} {{ d.usuario?.apellido }}<br><span style="color: var(--texto-terciario); font-size: var(--tamano-sm);">{{ d.usuario?.correo }}</span></td>
-              <td>{{ d.usuario?.rol }}</td>
+              <td>{{ nombreRol(d.usuario?.rol) }}</td>
               <td>{{ d.nombre || '(sin nombre)' }}<br><span style="color: var(--texto-terciario); font-size: var(--tamano-sm);">{{ d.sistemaOperativo }} / {{ d.navegador }}</span></td>
               <td>{{ d.estado }}</td>
               <td>{{ d.fechaSolicitud | date:'short' }}</td>
@@ -110,6 +110,10 @@ export class AdministrarDispositivosComponent implements OnInit {
   motivo = '';
   guardando = false;
   errorModal = '';
+
+  nombreRol(rol?: string): string {
+    return rol === 'SECRETARIA' ? 'Asistente' : rol === 'ADMIN' ? 'Administrador' : rol === 'SUPER_ADMIN' ? 'Super Admin' : rol ?? '';
+  }
 
   constructor(private dispositivosServicio: DispositivosServicio, private auth: AutenticacionServicio) {}
 

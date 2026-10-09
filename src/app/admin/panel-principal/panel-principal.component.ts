@@ -11,6 +11,7 @@ import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
 import { IdiomaServicio } from '../../nucleo/servicios/idioma.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
+import { PresenciaServicio } from '../../nucleo/servicios/presencia.servicio';
 @Component({
   selector: 'anturi-panel-principal',
   standalone: true,
@@ -33,17 +34,18 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
   menuPerfil = false;
   tiempoSesion = '';
   private timerSesion: ReturnType<typeof setInterval> | null = null;
-  private inicioSesion = new Date();
 
   constructor(
     public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio,
-    public auth: AutenticacionServicio
+    public auth: AutenticacionServicio,
+    private presencia: PresenciaServicio,
   ) {}
 
   ngOnInit(): void {
+    this.presencia.iniciar();
     this.timerSesion = setInterval(() => {
-      const diff = Date.now() - this.inicioSesion.getTime();
+      const diff = Date.now() - this.auth.inicioSesion.getTime();
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);

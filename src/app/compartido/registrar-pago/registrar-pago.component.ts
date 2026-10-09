@@ -143,13 +143,18 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
         <div class="resumen-filtros">
           <div class="campo-grupo">
             <label class="campo-etiqueta">Desde</label>
-            <input type="date" class="campo-input" [(ngModel)]="resumenDesde" (ngModelChange)="cargarResumen()">
+            <input type="date" class="campo-input" [(ngModel)]="resumenDesde" (keyup.enter)="cargarResumen()">
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Hasta</label>
-            <input type="date" class="campo-input" [(ngModel)]="resumenHasta" (ngModelChange)="cargarResumen()">
+            <input type="date" class="campo-input" [(ngModel)]="resumenHasta" (keyup.enter)="cargarResumen()">
           </div>
+          <button class="boton boton-primario resumen-buscar" (click)="cargarResumen()" [disabled]="cargandoResumen || !resumenDesde || !resumenHasta">
+            {{ cargandoResumen ? 'Buscando...' : 'Buscar' }}
+          </button>
         </div>
+        <p *ngIf="!cargandoResumen && resumen && resumen.pagos.length === 0" class="estado-carga-inline">No hay pagos registrados entre esas fechas.</p>
+        <p *ngIf="!cargandoResumen && errorResumen" class="estado-carga-inline">{{ errorResumen }}</p>
 
         <div *ngIf="cargandoResumen" class="estado-carga-inline">Cargando resumen...</div>
 
@@ -218,7 +223,8 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     .panel-confirmar__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
 
     .nota-resumen { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 0; }
-    .resumen-filtros { display: flex; gap: var(--espacio-4); flex-wrap: wrap; }
+    .resumen-filtros { display: flex; gap: var(--espacio-4); flex-wrap: wrap; align-items: flex-end; }
+    .resumen-buscar { height: 40px; }
     .resumen-totales { display: flex; gap: var(--espacio-4); flex-wrap: wrap; }
     .resumen-total-item { display: flex; flex-direction: column; gap: 2px; padding: var(--espacio-3); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.03)); border-radius: var(--radio-md); min-width: 160px; }
     .resumen-total-etiqueta { font-size: var(--tamano-sm); color: var(--texto-secundario); }
@@ -277,8 +283,10 @@ export class RegistrarPagoComponent implements OnDestroy {
 
     const hoy = new Date();
     const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    this.resumenDesde = primerDiaMes.toISOString().slice(0, 10);
-    this.resumenHasta = hoy.toISOString().slice(0, 10);
+    // fecha local (toISOString daba el día siguiente después de las 7 p. m.)
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    this.resumenDesde = iso(primerDiaMes);
+    this.resumenHasta = iso(hoy);
 
     if (this.esAdmin) {
       this.cargarResumenMensual();
@@ -423,10 +431,18 @@ export class RegistrarPagoComponent implements OnDestroy {
     });
   }
 
+  errorResumen = '';
+
   cargarResumen(): void {
+    if (this.resumenDesde > this.resumenHasta) {
+      this.errorResumen = 'La fecha "desde" no puede ser posterior a "hasta".';
+      this.resumen = null;
+      return;
+    }
+    this.errorResumen = '';
     this.cargandoResumen = true;
     this.pagosServicio.resumen(this.resumenDesde, this.resumenHasta).pipe(
-      catchError(() => of(null)),
+      catchError(() => { this.errorResumen = 'No se pudo cargar el resumen.'; return of(null); }),
       finalize(() => { this.cargandoResumen = false; }),
       takeUntil(this.destruir$),
     ).subscribe((res) => { this.resumen = res; });

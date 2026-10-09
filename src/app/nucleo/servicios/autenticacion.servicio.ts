@@ -83,7 +83,19 @@ export class AutenticacionServicio {
     localStorage.setItem('anturi_token', res.acceso);
     localStorage.setItem('anturi_refresco', res.refresco);
     localStorage.setItem('anturi_usuario', JSON.stringify(res.usuario));
+    localStorage.setItem('anturi_inicio_sesion', String(Date.now()));
     this.usuario$.next(res.usuario);
+  }
+
+  // 2026-10-09: el "tiempo conectado" cuenta desde que se inició sesión, no
+  // desde que se cargó la página - recargar ya no lo pone en cero.
+  get inicioSesion(): Date {
+    let ms = Number(localStorage.getItem('anturi_inicio_sesion'));
+    if (!ms || ms > Date.now()) {
+      ms = Date.now();
+      try { localStorage.setItem('anturi_inicio_sesion', String(ms)); } catch { /* sin almacenamiento */ }
+    }
+    return new Date(ms);
   }
 
   // Guarda el tokenTemporal (alcance acotado) como si fuera el token normal
@@ -124,6 +136,7 @@ export class AutenticacionServicio {
     localStorage.removeItem('anturi_token');
     localStorage.removeItem('anturi_refresco');
     localStorage.removeItem('anturi_usuario');
+    localStorage.removeItem('anturi_inicio_sesion');
     this.usuario$.next(null);
     this.router.navigate(['/ingresar']);
   }
@@ -162,6 +175,16 @@ export class AutenticacionServicio {
           localStorage.setItem('anturi_token', res.acceso);
         })
       );
+  }
+
+  // 2026-10-09: al cambiar nombre/foto en Configuración se refleja de una
+  // vez en la barra superior y queda guardado para la próxima recarga.
+  actualizarUsuarioLocal(cambios: Partial<UsuarioSistema>): void {
+    const actual = this.usuario$.value;
+    if (!actual) return;
+    const nuevo = { ...actual, ...cambios };
+    this.usuario$.next(nuevo);
+    try { localStorage.setItem('anturi_usuario', JSON.stringify(nuevo)); } catch { /* sin espacio: queda en memoria */ }
   }
 
   tieneRol(roles: string[]): boolean {

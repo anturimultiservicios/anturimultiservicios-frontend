@@ -23,7 +23,7 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
     <div class="pagina-contenedor">
       <h2 class="pagina-titulo">Horario de acceso</h2>
       <p class="pagina-subtitulo">
-        Controla cuándo pueden entrar ADMIN y SECRETARIA. Vos (SUPER_ADMIN) nunca estás restringido.
+        Controla cuándo pueden entrar el Administrador y la Asistente. Usted (Super Admin) nunca queda restringido.
       </p>
 
       <div *ngIf="cargando" class="estado-carga"><div class="spinner"></div></div>
@@ -55,13 +55,31 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
             </div>
             <div class="campo-grupo">
               <label class="campo-check"><input type="checkbox" [(ngModel)]="config.sabadoActivo"> Abre los sábados</label>
-              <label class="campo-etiqueta" *ngIf="config.sabadoActivo">Sábado: cierra</label>
-              <select *ngIf="config.sabadoActivo" class="campo-input" [(ngModel)]="config.sabadoHoraFin">
-                <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
-              </select>
+              <ng-container *ngIf="config.sabadoActivo">
+                <label class="campo-etiqueta">Sábado: abre</label>
+                <select class="campo-input" [(ngModel)]="config.sabadoHoraInicio">
+                  <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+                </select>
+                <label class="campo-etiqueta">Sábado: cierra</label>
+                <select class="campo-input" [(ngModel)]="config.sabadoHoraFin">
+                  <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+                </select>
+              </ng-container>
             </div>
             <div class="campo-grupo">
               <label class="campo-check"><input type="checkbox" [(ngModel)]="config.domingoActivo"> Abre los domingos</label>
+              <ng-container *ngIf="config.domingoActivo">
+                <label class="campo-etiqueta">Domingo: abre</label>
+                <select class="campo-input" [(ngModel)]="config.domingoHoraInicio">
+                  <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+                </select>
+                <label class="campo-etiqueta">Domingo: cierra</label>
+                <select class="campo-input" [(ngModel)]="config.domingoHoraFin">
+                  <option *ngFor="let h of horas" [ngValue]="h">{{ textoHora(h) }}</option>
+                </select>
+              </ng-container>
+            </div>
+            <div class="campo-grupo">
               <label class="campo-check"><input type="checkbox" [(ngModel)]="config.bloquearFestivos"> Cerrado los festivos de Colombia</label>
             </div>
           </div>
@@ -84,16 +102,16 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
         <div class="tarjeta seccion-datos" style="margin-top: var(--espacio-5);">
           <h3 class="seccion-titulo">Otorgar excepción</h3>
           <p class="campo-ayuda" style="margin-bottom: var(--espacio-4);">
-            Habilita a una persona puntual fuera del horario normal, solo si te lo pidió.
+            Habilita a una persona puntual (Administrador o Asistente) fuera del horario normal.
           </p>
 
           <div class="campos-grid">
             <div class="campo-grupo">
               <label class="campo-etiqueta">Usuario</label>
               <select class="campo-input" [(ngModel)]="formExcepcion.usuarioId">
-                <option [ngValue]="null" disabled>Seleccioná un usuario</option>
+                <option [ngValue]="null" disabled>Seleccione un usuario</option>
                 <option *ngFor="let u of usuariosRestringidos" [ngValue]="u.id">
-                  {{ u.nombre }} {{ u.apellido }} ({{ u.rol }})
+                  {{ u.nombre }} {{ u.apellido }} ({{ nombreRol(u.rol) }})
                 </option>
               </select>
             </div>
@@ -140,7 +158,7 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
                 <tbody>
                   <tr *ngFor="let e of excepciones">
                     <td>{{ e.usuario.nombre }} {{ e.usuario.apellido }}</td>
-                    <td>{{ e.usuario.rol }}</td>
+                    <td>{{ nombreRol(e.usuario.rol) }}</td>
                     <td>{{ e.motivo || '—' }}</td>
                     <td>{{ e.vigenteHasta | date:'dd/MM/yyyy HH:mm' }}</td>
                     <td>{{ e.otorgadaPor.nombre }} {{ e.otorgadaPor.apellido }}</td>
@@ -247,6 +265,10 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
     });
   }
 
+  nombreRol(rol: string): string {
+    return rol === 'SECRETARIA' ? 'Asistente' : rol === 'ADMIN' ? 'Administrador' : rol === 'SUPER_ADMIN' ? 'Super Admin' : rol;
+  }
+
   readonly horas = Array.from({ length: 24 }, (_, i) => i);
 
   textoHora(h: number): string {
@@ -260,8 +282,8 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
     if (!c) return '';
     if (!c.activo) return 'sin restricción de horario';
     let t = `lunes a viernes de ${this.textoHora(c.horaInicio)} a ${this.textoHora(c.horaFin)}`;
-    t += c.sabadoActivo ? `; sábados de ${this.textoHora(c.horaInicio)} a ${this.textoHora(c.sabadoHoraFin)}` : '; sábados cerrado';
-    t += c.domingoActivo ? `; domingos de ${this.textoHora(c.horaInicio)} a ${this.textoHora(c.horaFin)}` : '; domingos cerrado';
+    t += c.sabadoActivo ? `; sábados de ${this.textoHora(c.sabadoHoraInicio ?? c.horaInicio)} a ${this.textoHora(c.sabadoHoraFin)}` : '; sábados cerrado';
+    t += c.domingoActivo ? `; domingos de ${this.textoHora(c.domingoHoraInicio ?? 8)} a ${this.textoHora(c.domingoHoraFin ?? 12)}` : '; domingos cerrado';
     if (c.bloquearFestivos) t += '; festivos cerrado';
     return t;
   }
@@ -276,8 +298,11 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
       horaInicio: Number(this.config.horaInicio),
       horaFin: Number(this.config.horaFin),
       sabadoActivo: this.config.sabadoActivo,
+      sabadoHoraInicio: Number(this.config.sabadoHoraInicio ?? this.config.horaInicio),
       sabadoHoraFin: Number(this.config.sabadoHoraFin),
       domingoActivo: this.config.domingoActivo,
+      domingoHoraInicio: Number(this.config.domingoHoraInicio ?? 8),
+      domingoHoraFin: Number(this.config.domingoHoraFin ?? 12),
       bloquearFestivos: this.config.bloquearFestivos,
     }).pipe(takeUntil(this.destruir$)).subscribe({
       next: (config) => {
@@ -295,7 +320,7 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
 
   otorgarExcepcion(): void {
     if (!this.formExcepcion.usuarioId || !this.formExcepcion.vigenteHasta || !this.formExcepcion.motivo.trim()) {
-      this.errorExcepcion = 'Completá usuario, vigencia y motivo.';
+      this.errorExcepcion = 'Complete usuario, vigencia y motivo.';
       return;
     }
     this.otorgando = true;

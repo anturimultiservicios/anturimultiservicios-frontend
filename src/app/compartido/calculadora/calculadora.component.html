@@ -1,4 +1,4 @@
-<!-- Botón de acceso flotante (cuando está cerrada o minimizada) -->
+<!-- Botón de acceso flotante (cuando está cerrada) -->
 <div class="calc-acceso"
   *ngIf="estado === 'cerrada'"
   [style.right.px]="20"
@@ -19,25 +19,6 @@
   </button>
 </div>
 
-<!-- Selector de modo -->
-<div class="calc-selector" *ngIf="modoSelector">
-  <div class="calc-selector__panel">
-    <p class="calc-selector__titulo">Tipo de calculadora</p>
-    <button class="calc-selector__opcion" (click)="seleccionarModo('normal')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="4" y="2" width="16" height="20" rx="2"></rect>
-      </svg>
-      Normal
-    </button>
-    <button class="calc-selector__opcion" (click)="seleccionarModo('cientifica')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"></path>
-      </svg>
-      Científica
-    </button>
-  </div>
-</div>
-
 <!-- Ventana calculadora -->
 <div class="calc-ventana"
   #ventana
@@ -47,16 +28,28 @@
   [style.left.px]="posX"
   [style.top.px]="posY">
 
-  <!-- Barra de título -->
-  <div class="calc-barra" (mousedown)="iniciarArrastre($event)">
-    <span class="calc-barra__titulo">{{ tituloBarra }}</span>
+  <!-- Barra de título: se arrastra desde aquí; el modo se cambia con un clic -->
+  <div class="calc-barra" (pointerdown)="iniciarArrastre($event)">
+    <button class="calc-barra__modo" (pointerdown)="$event.stopPropagation()" (click)="alternarModo()"
+      [title]="modo === 'normal' ? 'Cambiar a científica' : 'Cambiar a normal'">
+      {{ modo === 'normal' ? 'Normal' : 'Científica' }}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+        <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+      </svg>
+    </button>
     <div class="calc-barra__controles">
-      <button class="calc-barra__btn minimizar" (click)="estado === 'minimizada' ? maximizar() : minimizar()" title="Minimizar/Restaurar">
+      <button class="calc-barra__btn historial" [class.activo]="verHistorial" (pointerdown)="$event.stopPropagation()" (click)="verHistorial = !verHistorial" title="Historial">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline>
+        </svg>
+      </button>
+      <button class="calc-barra__btn minimizar" (pointerdown)="$event.stopPropagation()" (click)="estado === 'minimizada' ? maximizar() : minimizar()" title="Minimizar/Restaurar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
       </button>
-      <button class="calc-barra__btn cerrar" (click)="cerrar()" title="Cerrar">
+      <button class="calc-barra__btn cerrar" (pointerdown)="$event.stopPropagation()" (click)="cerrar()" title="Cerrar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -72,6 +65,19 @@
     <div class="calc-pantalla">
       <div class="calc-pantalla__expresion">{{ expresion || '&nbsp;' }}</div>
       <div class="calc-pantalla__resultado" [class.error]="hayError">{{ pantalla }}</div>
+    </div>
+
+    <!-- Historial de operaciones (queda guardado en este equipo) -->
+    <div class="calc-historial" *ngIf="verHistorial">
+      <div class="calc-historial__cabecera">
+        <span>Historial</span>
+        <button *ngIf="historial.length" class="calc-historial__borrar" (click)="borrarHistorial()">Borrar</button>
+      </div>
+      <p *ngIf="!historial.length" class="calc-historial__vacio">Aún no hay operaciones.</p>
+      <button *ngFor="let h of historial" class="calc-historial__item" (click)="usarResultado(h.resultado)" title="Usar este resultado">
+        <span class="calc-historial__expr">{{ h.expresion }} =</span>
+        <span class="calc-historial__res">{{ h.resultado }}</span>
+      </button>
     </div>
 
     <!-- Teclado científico adicional -->

@@ -90,6 +90,14 @@ export class UsuariosServicio {
     return this.http.patch(`${this.URL}/${id}/estado`, { activo: true, motivo });
   }
 
+  obtenerCorreoRecuperacion(): Observable<{ correoRecuperacion: string | null; requerido: boolean }> {
+    return this.http.get<{ correoRecuperacion: string | null; requerido: boolean }>(`${this.URL}/me/correo-recuperacion`);
+  }
+
+  registrarCorreoRecuperacion(correo: string): Observable<{ correoRecuperacion: string }> {
+    return this.http.patch<{ correoRecuperacion: string }>(`${this.URL}/me/correo-recuperacion`, { correo });
+  }
+
   actualizarPerfil(datos: { nombre?: string; apellido?: string; fotoPerfil?: string }): Observable<UsuarioSistema> {
     return this.http.patch<UsuarioSistema>(`${this.URL}/perfil/mi-perfil`, datos);
   }

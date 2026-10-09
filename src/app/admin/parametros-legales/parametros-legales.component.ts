@@ -45,14 +45,16 @@ import { ParametrosLegalesServicio, ParametroLegal } from '../../nucleo/servicio
           </thead>
           <tbody>
             <tr *ngFor="let p of visibles" class="fila-tabla">
-              <td class="celda-codigo">{{ p.codigo }}</td>
+              <td class="celda-codigo">{{ legible(p.codigo) }}</td>
               <td>{{ p.nombre }}</td>
               <td class="celda-valor">{{ p.valor }}{{ p.unidad === '%' ? '%' : '' }} <span *ngIf="p.unidad && p.unidad !== '%'" class="unidad">{{ p.unidad }}</span></td>
-              <td><span class="badge-estado" [ngClass]="claseFuente(p.fuente)">{{ p.fuente }}</span></td>
+              <td><span class="badge-estado" [ngClass]="claseFuente(p.fuente)">{{ legible(p.fuente) }}</span></td>
               <td class="celda-fecha">{{ p.vigenteDesde | date:'dd/MM/yyyy' }}</td>
-              <td class="celda-acciones">
-                <button class="boton boton-secundario boton-sm" (click)="abrirEditar(p)">Editar</button>
-                <button class="boton boton-texto boton-sm" (click)="abrirHistorial(p)">Historial</button>
+              <td>
+                <div class="celda-acciones">
+                  <button class="boton boton-secundario boton-sm" (click)="abrirEditar(p)">Editar</button>
+                  <button class="boton boton-texto boton-sm" (click)="abrirHistorial(p)">Historial</button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -112,7 +114,7 @@ import { ParametrosLegalesServicio, ParametroLegal } from '../../nucleo/servicio
     <div *ngIf="historialDe" class="modal-overlay" (click)="historialDe = null">
       <div class="modal-form" (click)="$event.stopPropagation()" style="max-width: 560px;">
         <div class="modal-header">
-          <h3 class="modal-titulo">Historial de {{ historialDe }}</h3>
+          <h3 class="modal-titulo">Historial de {{ legible(historialDe) }}</h3>
           <button class="boton boton-icono" (click)="historialDe = null">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
               <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
@@ -137,7 +139,7 @@ import { ParametrosLegalesServicio, ParametroLegal } from '../../nucleo/servicio
     </div>
   `,
   styles: [`
-    .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
+    .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); min-width: 0; max-width: 100%; }
     .pagina-encabezado { display: flex; justify-content: space-between; align-items: center; }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; margin: 0; }
     .pagina-subtitulo { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: -12px 0 0; }
@@ -152,15 +154,15 @@ import { ParametrosLegalesServicio, ParametroLegal } from '../../nucleo/servicio
     @keyframes girar { to { transform: rotate(360deg); } }
     .estado-vacio { display: flex; flex-direction: column; align-items: center; gap: var(--espacio-4); padding: var(--espacio-10); text-align: center; }
 
-    .tabla-contenedor { padding: 0; overflow-x: auto; }
+    .tabla-contenedor { padding: 0; overflow-x: auto; max-width: 100%; }
     .tabla { width: 100%; border-collapse: collapse; }
     .tabla thead th { padding: var(--espacio-3) var(--espacio-4); text-align: left; font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-secundario); background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.03)); border-bottom: 1px solid var(--borde-color); white-space: nowrap; }
     .tabla tbody td { padding: var(--espacio-3) var(--espacio-4); border-bottom: 1px solid var(--borde-color); font-size: var(--tamano-sm); vertical-align: middle; }
     .fila-tabla:last-child td { border-bottom: none; }
-    .celda-codigo { font-family: monospace; font-weight: 600; }
+    .celda-codigo { font-weight: 600; min-width: 140px; }
     .celda-valor { font-weight: 600; }
     .unidad { font-weight: 400; color: var(--texto-terciario); font-size: var(--tamano-xs); }
-    .celda-acciones { white-space: nowrap; display: flex; gap: var(--espacio-2); }
+    .celda-acciones { white-space: nowrap; display: flex; flex-wrap: wrap; gap: var(--espacio-2); }
     .boton-sm { padding: 4px 10px; font-size: var(--tamano-xs); }
     .boton-texto { background: none; border: none; color: var(--color-primario); cursor: pointer; }
 
@@ -256,6 +258,11 @@ export class ParametrosLegalesComponent implements OnInit {
         this.cargar();
       }
     });
+  }
+
+  // 2026-10-09: "MORA_AJUSTE_PUNTOS" se muestra "MORA AJUSTE PUNTOS"
+  legible(codigo: string | null | undefined): string {
+    return (codigo ?? '').replace(/_/g, ' ');
   }
 
   abrirHistorial(p: ParametroLegal): void {

@@ -17,6 +17,7 @@ interface FormUsuario {
   rol: 'ADMIN' | 'SECRETARIA';
 }
 
+import { PresenciaServicio, EstadoPresencia, PresenciaUsuario } from '../../nucleo/servicios/presencia.servicio';
 @Component({
   selector: 'anturi-usuarios-sistema',
   standalone: true,
@@ -69,6 +70,12 @@ interface FormUsuario {
       <!-- Tabla -->
       <div *ngIf="!cargando && usuarios.length > 0" class="tarjeta tabla-contenedor">
         <div class="tabla-scroll">
+        <div *ngIf="esSuperAdmin" class="leyenda-presencia">
+          <span [title]="textosPresencia.EN_LINEA"><i style="background:#22c55e"></i>En línea</span>
+          <span [title]="textosPresencia.AUSENTE"><i style="background:#eab308"></i>Ausente (40 min sin actividad)</span>
+          <span [title]="textosPresencia.SIN_CONEXION"><i style="background:#f97316"></i>Sin internet</span>
+          <span [title]="textosPresencia.SIN_SESION"><i style="background:#ef4444"></i>Sin sesión</span>
+        </div>
         <table class="tabla">
           <thead>
             <tr>
@@ -84,7 +91,11 @@ interface FormUsuario {
             <tr *ngFor="let u of usuarios" class="fila-tabla">
               <td>
                 <div class="celda-usuario">
-                  <div class="avatar-inicial">{{ (u.nombre || '?').charAt(0).toUpperCase() }}</div>
+                  <div class="avatar-con-estado">
+                    <div class="avatar-inicial">{{ (u.nombre || '?').charAt(0).toUpperCase() }}</div>
+                    <span *ngIf="esSuperAdmin && presencias[u.id] as pr" class="punto-estado" [ngClass]="'punto-' + pr.estado"
+                      [title]="textoPresencia(pr)" [attr.aria-label]="textoPresencia(pr)"></span>
+                  </div>
                   <div>
                     <div class="usuario-nombre">{{ u.nombre }} {{ u.apellido }}</div>
                   </div>
@@ -477,6 +488,16 @@ interface FormUsuario {
     .tabla-pie__total { font-size: var(--tamano-sm); color: var(--texto-terciario); }
 
     .celda-usuario { display: flex; align-items: center; gap: var(--espacio-3); }
+    .avatar-con-estado { position: relative; flex-shrink: 0; }
+    .punto-estado { position: absolute; right: -2px; bottom: -2px; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--fondo-tarjeta, #fff); cursor: help; }
+    .punto-EN_LINEA { background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,0.6); animation: latido-verde 2s infinite; }
+    .punto-AUSENTE { background: #eab308; }
+    .punto-SIN_CONEXION { background: #f97316; }
+    .punto-SIN_SESION { background: #ef4444; }
+    @keyframes latido-verde { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); } 70% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+    .leyenda-presencia { display: flex; gap: var(--espacio-4); flex-wrap: wrap; font-size: var(--tamano-xs); color: var(--texto-secundario); margin-bottom: var(--espacio-3); }
+    .leyenda-presencia span { display: inline-flex; align-items: center; gap: 6px; cursor: help; }
+    .leyenda-presencia i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .avatar-inicial { width: 34px; height: 34px; border-radius: 50%; background: rgba(27,50,112,0.12); color: var(--color-primario); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: var(--tamano-sm); flex-shrink: 0; }
     .usuario-nombre { font-weight: 600; color: var(--texto-principal); }
     .celda-correo { color: var(--texto-secundario); }
@@ -591,6 +612,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
     private empresasServicio: EmpresasServicio,
     private alcanceServicio: AlcanceServicio,
     private auth: AutenticacionServicio,
+    private presenciaServicio: PresenciaServicio,
   ) {
     this.esSuperAdmin = this.auth.tieneRol(['SUPER_ADMIN']);
     this.idUsuarioActual = this.auth.usuarioActual?.id ?? null;
@@ -598,9 +620,45 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarUsuarios();
+    if (this.esSuperAdmin) {
+      this.cargarPresencia();
+      this.intervaloPresencia = setInterval(() => this.cargarPresencia(), 10_000);
+    }
+  }
+
+  // ── Estado de conexión (solo Super Admin), se refresca cada 10 s ──
+  presencias: Record<number, PresenciaUsuario> = {};
+  private intervaloPresencia: ReturnType<typeof setInterval> | null = null;
+
+  private cargarPresencia(): void {
+    this.presenciaServicio.estados().pipe(catchError(() => of(null)), takeUntil(this.destruir$)).subscribe((lista) => {
+      if (!lista) return;
+      const mapa: Record<number, PresenciaUsuario> = {};
+      for (const p of lista) mapa[p.id] = p;
+      this.presencias = mapa;
+    });
+  }
+
+  readonly textosPresencia: Record<EstadoPresencia, string> = {
+    EN_LINEA: 'En línea: conectado y usando la plataforma',
+    AUSENTE: 'Ausente: tiene la sesión abierta pero no ha tocado nada en 40 minutos o más',
+    SIN_CONEXION: 'Sin conexión: inició sesión pero se le fue el internet (o cerró la ventana sin salir)',
+    SIN_SESION: 'Sin sesión: no ha iniciado sesión',
+  };
+
+  textoPresencia(p: PresenciaUsuario): string {
+    let t = this.textosPresencia[p.estado];
+    const ref = p.estado === 'AUSENTE' ? p.ultimaActividad : p.ultimoLatido;
+    if (ref && p.estado !== 'EN_LINEA') {
+      const min = Math.round((Date.now() - new Date(ref).getTime()) / 60000);
+      const hace = min < 60 ? `${min} min` : min < 1440 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${Math.floor(min / 1440)} día(s)`;
+      t += ` - ${p.estado === 'AUSENTE' ? 'última actividad' : 'última señal'} hace ${hace}`;
+    }
+    return t;
   }
 
   ngOnDestroy(): void {
+    if (this.intervaloPresencia) clearInterval(this.intervaloPresencia);
     this.destruir$.next();
     this.destruir$.complete();
   }

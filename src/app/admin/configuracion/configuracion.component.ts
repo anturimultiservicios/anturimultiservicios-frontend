@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 import { UsuariosServicio } from '../../nucleo/servicios/usuarios.servicio';
-import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/config-sistema.servicio';
+import { ConfigSistemaServicio, ConfigSistema, ResumenAvisosCobro } from '../../nucleo/servicios/config-sistema.servicio';
 
 @Component({
   selector: 'anturi-configuracion',
@@ -26,6 +26,15 @@ import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/con
           <div *ngIf="!auth.usuarioActual?.fotoPerfil" class="avatar-inicial-grande">
             {{ (auth.usuarioActual?.nombre || '?').charAt(0).toUpperCase() }}
           </div>
+          <!-- 2026-10-09: foto opcional - si no hay, queda la inicial -->
+          <div class="avatar-acciones">
+            <label class="boton boton-secundario boton-sm avatar-subir">
+              {{ subiendoFoto ? 'Guardando...' : (auth.usuarioActual?.fotoPerfil ? 'Cambiar foto' : 'Subir foto') }}
+              <input type="file" accept="image/png,image/jpeg,image/webp" (change)="elegirFoto($event)" [disabled]="subiendoFoto" hidden>
+            </label>
+            <button *ngIf="auth.usuarioActual?.fotoPerfil" type="button" class="boton boton-texto boton-sm" (click)="quitarFoto()" [disabled]="subiendoFoto">Quitar</button>
+          </div>
+          <div *ngIf="errorFoto" class="mensaje-error">{{ errorFoto }}</div>
         </div>
         <div class="perfil-info">
           <h3 class="perfil-nombre">{{ auth.usuarioActual?.nombre }} {{ auth.usuarioActual?.apellido }}</h3>
@@ -73,7 +82,7 @@ import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/con
               >
             </div>
             <div class="campo-grupo campo-grupo--ancho">
-              <label class="campo-etiqueta">Correo electrónico</label>
+              <label class="campo-etiqueta">Usuario para entrar</label>
               <input
                 type="email"
                 class="campo-input"
@@ -81,13 +90,34 @@ import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/con
                 readonly
                 style="background: var(--fondo-tabla-cabecera, rgba(0,0,0,0.04)); cursor: not-allowed;"
               >
-              <span class="campo-ayuda">El correo no puede modificarse desde aquí.</span>
+              <span class="campo-ayuda">Este es su usuario de ingreso y no cambia.</span>
             </div>
           </div>
           <div class="seccion-acciones">
             <button type="submit" class="boton boton-primario" [disabled]="guardandoPerfil">
               <span *ngIf="guardandoPerfil" class="spinner-inline"></span>
               {{ guardandoPerfil ? 'Guardando...' : 'Actualizar perfil' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Sección: correo para recuperar la contraseña (2026-10-09) -->
+      <div class="tarjeta config-seccion">
+        <h3 class="seccion-titulo">Correo para recuperar la contraseña</h3>
+        <p class="campo-ayuda" style="margin-bottom: var(--espacio-3);">
+          Si olvida la contraseña, el enlace para recuperarla llega a este correo personal.
+        </p>
+        <div *ngIf="errorCorreoRec" class="alerta-error">{{ errorCorreoRec }}</div>
+        <div *ngIf="exitoCorreoRec" class="alerta-exito">{{ exitoCorreoRec }}</div>
+        <form (ngSubmit)="guardarCorreoRecuperacion()">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Correo personal</label>
+            <input type="email" class="campo-input" [(ngModel)]="correoRecuperacion" name="correoRecuperacion" placeholder="nombre@gmail.com" autocomplete="email">
+          </div>
+          <div class="seccion-acciones">
+            <button type="submit" class="boton boton-primario" [disabled]="guardandoCorreoRec || !correoRecuperacion.trim()">
+              {{ guardandoCorreoRec ? 'Guardando...' : 'Guardar correo' }}
             </button>
           </div>
         </form>
@@ -159,11 +189,47 @@ import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/con
         <div *ngIf="cargandoConfig" class="estado-carga-inline">Cargando...</div>
         <div *ngIf="errorConfig" class="alerta-error">{{ errorConfig }}</div>
         <div *ngIf="!cargandoConfig && configSistema">
-          <label class="permiso-check">
-            <input type="checkbox" [(ngModel)]="configSistema.enviarCorreosCobro" name="enviarCorreosCobro" (ngModelChange)="guardarConfigSistema()">
-            Enviar correos de cobro automáticos (vencimientos T-8/T-5/T-3/T-1/T-0/T+1)
-          </label>
-          <p class="campo-ayuda">Destinatario de prueba configurado: {{ configSistema.correoTestDestinatario }}</p>
+          <!-- 2026-10-09: interruptor claro. Apagado = no sale ningún correo de cobro ni recordatorio de llamada. -->
+          <div class="cobro-estado" [class.cobro-estado--activo]="configSistema.enviarCorreosCobro">
+            <div>
+              <strong>{{ configSistema.enviarCorreosCobro ? 'Envío de cobros ACTIVO' : 'Envío de cobros APAGADO' }}</strong>
+              <p class="campo-ayuda">
+                Solo a afiliados activos que no han pagado el mes, con el valor a pagar, 8, 5, 3 y 1 días antes de su fecha
+                límite PILA, el mismo día y 1 día después. Nunca a todos a la vez: a cada uno le llega en su fecha.
+                Quien no tiene correo aparece en Llamadas.
+              </p>
+            </div>
+            <button type="button" class="boton" [ngClass]="configSistema.enviarCorreosCobro ? 'boton-secundario' : 'boton-primario'"
+              (click)="alternarCobros()" [disabled]="cambiandoCobros">
+              {{ cambiandoCobros ? 'Un momento...' : (configSistema.enviarCorreosCobro ? 'Apagar envío' : 'Activar envío') }}
+            </button>
+          </div>
+
+          <div *ngIf="resultadoEnvio" class="alerta-exito" style="margin-top: var(--espacio-3);">{{ resultadoEnvio }}</div>
+
+          <div class="cobro-hoy">
+            <div class="cobro-hoy__cabecera">
+              <strong>A quién le toca hoy</strong>
+              <button type="button" class="boton boton-texto boton-sm" (click)="cargarAvisosHoy()" [disabled]="cargandoAvisos">Actualizar</button>
+            </div>
+            <div *ngIf="cargandoAvisos" class="estado-carga-inline">Cargando...</div>
+            <p *ngIf="!cargandoAvisos && avisosHoy && avisosHoy.lista.length === 0" class="campo-ayuda">Hoy no le toca aviso a nadie.</p>
+            <div *ngIf="!cargandoAvisos && avisosHoy && avisosHoy.lista.length > 0" class="tabla-scroll">
+              <table class="tabla-cobro">
+                <thead><tr><th>Afiliado</th><th>Vence</th><th>Valor</th><th>Por</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let a of avisosHoy.lista">
+                    <td>{{ a.nombre }}<br><small>{{ a.documento }}</small></td>
+                    <td>{{ a.fechaLimite | date:'dd/MM' }} <small>({{ textoDias(a.diasParaPagar) }})</small></td>
+                    <td>{{ a.valor | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                    <td>{{ a.canal === 'CORREO' ? a.correo : 'Llamada (sin correo)' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <p class="campo-ayuda" style="margin-top: var(--espacio-4);">El correo de prueba va solo a: {{ configSistema.correoTestDestinatario }}</p>
           <div class="seccion-acciones">
             <button class="boton boton-secundario" (click)="probarCorreo()" [disabled]="probandoCorreo">
               <span *ngIf="probandoCorreo" class="spinner-inline"></span>
@@ -176,12 +242,24 @@ import { ConfigSistemaServicio, ConfigSistema } from '../../nucleo/servicios/con
     </div>
   `,
   styles: [`
+    .cobro-estado { display: flex; gap: var(--espacio-4); align-items: center; justify-content: space-between; flex-wrap: wrap; padding: var(--espacio-4); border-radius: var(--radio-md); border: 1px solid var(--borde-color); background: rgba(0,0,0,0.02); }
+    .cobro-estado--activo { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); }
+    .cobro-estado > div { flex: 1 1 260px; }
+    .cobro-hoy { margin-top: var(--espacio-4); }
+    .cobro-hoy__cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--espacio-2); }
+    .tabla-scroll { overflow-x: auto; }
+    .tabla-cobro { width: 100%; border-collapse: collapse; font-size: var(--tamano-sm); }
+    .tabla-cobro th, .tabla-cobro td { padding: var(--espacio-2); border-bottom: 1px solid var(--borde-color); text-align: left; vertical-align: top; }
+    .tabla-cobro th { color: var(--texto-secundario); font-weight: 600; white-space: nowrap; }
+    .tabla-cobro small { color: var(--texto-terciario); }
     .config-contenedor { display: flex; flex-direction: column; gap: var(--espacio-6); max-width: 700px; }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
 
     /* Avatar perfil */
     .config-perfil { display: flex; align-items: center; gap: var(--espacio-5); padding: var(--espacio-6); }
-    .perfil-avatar-grande { flex-shrink: 0; }
+    .perfil-avatar-grande { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: var(--espacio-2); }
+    .avatar-acciones { display: flex; gap: var(--espacio-1); flex-wrap: wrap; justify-content: center; }
+    .avatar-subir { cursor: pointer; }
     .avatar-imagen { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-primario); }
     .avatar-inicial-grande { width: 80px; height: 80px; border-radius: 50%; background: rgba(27,50,112,0.12); color: var(--color-primario); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; border: 3px solid rgba(27,50,112,0.2); }
     .perfil-info { display: flex; flex-direction: column; gap: var(--espacio-1); }
@@ -247,7 +325,101 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
     return this.auth.tieneRol(['ADMIN', 'SUPER_ADMIN']);
   }
 
+  // ── Foto de perfil (opcional) ──
+  subiendoFoto = false;
+  errorFoto = '';
+
+  elegirFoto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (!archivo) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(archivo.type)) {
+      this.errorFoto = 'Use una imagen PNG, JPG o WEBP.';
+      return;
+    }
+    this.errorFoto = '';
+    this.subiendoFoto = true;
+    this.reducirImagen(archivo, 256)
+      .then((dataUrl) => this.guardarFoto(dataUrl))
+      .catch(() => { this.subiendoFoto = false; this.errorFoto = 'No se pudo leer la imagen.'; });
+  }
+
+  quitarFoto(): void {
+    this.subiendoFoto = true;
+    this.guardarFoto('');
+  }
+
+  private guardarFoto(fotoPerfil: string): void {
+    this.usuariosServicio.actualizarPerfil({ fotoPerfil }).pipe(
+      catchError((err) => { this.errorFoto = err?.error?.message || 'No se pudo guardar la foto.'; return of(null); }),
+      finalize(() => { this.subiendoFoto = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe((u) => {
+      if (u) this.auth.actualizarUsuarioLocal({ fotoPerfil: u.fotoPerfil || undefined });
+    });
+  }
+
+  // La foto se recorta al centro (cuadrada) y se reduce a 256 px en el
+  // navegador: pesa unos pocos KB y se ve nítida en el círculo.
+  private reducirImagen(archivo: File, lado: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(archivo);
+      const img = new Image();
+      img.onload = () => {
+        const corte = Math.min(img.width, img.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = lado;
+        canvas.height = lado;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { URL.revokeObjectURL(url); reject(); return; }
+        ctx.drawImage(img, (img.width - corte) / 2, (img.height - corte) / 2, corte, corte, 0, 0, lado, lado);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+      img.src = url;
+    });
+  }
+
+  // ── Correo de recuperación ──
+  correoRecuperacion = '';
+  guardandoCorreoRec = false;
+  errorCorreoRec = '';
+  exitoCorreoRec = '';
+
+  private cargarCorreoRecuperacion(): void {
+    this.usuariosServicio.obtenerCorreoRecuperacion().pipe(
+      catchError(() => of(null)),
+      takeUntil(this.destruir$),
+    ).subscribe((r) => { this.correoRecuperacion = r?.correoRecuperacion ?? ''; });
+  }
+
+  guardarCorreoRecuperacion(): void {
+    const correo = this.correoRecuperacion.trim();
+    if (!correo) return;
+    this.guardandoCorreoRec = true;
+    this.errorCorreoRec = '';
+    this.exitoCorreoRec = '';
+    this.usuariosServicio.registrarCorreoRecuperacion(correo).pipe(
+      catchError((err) => {
+        const m = err?.error?.message;
+        this.errorCorreoRec = (Array.isArray(m) ? m[0] : m) || 'No se pudo guardar el correo.';
+        return of(null);
+      }),
+      finalize(() => { this.guardandoCorreoRec = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe((r) => {
+      if (r) {
+        this.correoRecuperacion = r.correoRecuperacion;
+        this.exitoCorreoRec = 'Correo de recuperación actualizado.';
+        setTimeout(() => { this.exitoCorreoRec = ''; }, 4000);
+      }
+    });
+  }
+
   ngOnInit(): void {
+    this.cargarCorreoRecuperacion();
     const u = this.auth.usuarioActual;
     if (u) {
       this.formPerfil.nombre = u.nombre;
@@ -266,6 +438,67 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
       finalize(() => { this.cargandoConfig = false; }),
       takeUntil(this.destruir$),
     ).subscribe((cfg) => { this.configSistema = cfg; });
+    this.cargarAvisosHoy();
+  }
+
+  // ── Correos de cobro: vista previa y activación ──
+  avisosHoy: ResumenAvisosCobro | null = null;
+  cargandoAvisos = false;
+  cambiandoCobros = false;
+  resultadoEnvio = '';
+
+  cargarAvisosHoy(): void {
+    this.cargandoAvisos = true;
+    this.configSistemaServicio.avisosCobroHoy().pipe(
+      catchError(() => of(null)),
+      finalize(() => { this.cargandoAvisos = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe((r) => { this.avisosHoy = r; });
+  }
+
+  textoDias(d: number): string {
+    if (d === 0) return 'hoy';
+    if (d === -1) return 'venció ayer';
+    return d === 1 ? 'falta 1 día' : `faltan ${d} días`;
+  }
+
+  alternarCobros(): void {
+    if (!this.configSistema) return;
+    const activar = !this.configSistema.enviarCorreosCobro;
+    if (activar) {
+      const n = this.avisosHoy?.lista.filter((a) => a.canal === 'CORREO').length ?? 0;
+      const ok = confirm(`¿Activar el envío de cobros?\n\nHoy saldrían ${n} correo(s) a quienes les toca según su fecha. Desde mañana se envían solos cada día a las 8 a. m.`);
+      if (!ok) return;
+    }
+    this.cambiandoCobros = true;
+    this.errorConfig = '';
+    this.resultadoEnvio = '';
+    this.configSistemaServicio.actualizar(activar).pipe(
+      catchError((err) => { this.errorConfig = err?.error?.message || 'No se pudo cambiar el envío.'; return of(null); }),
+      takeUntil(this.destruir$),
+    ).subscribe((cfg) => {
+      if (!cfg) { this.cambiandoCobros = false; return; }
+      this.configSistema = cfg;
+      if (!activar) {
+        this.cambiandoCobros = false;
+        this.resultadoEnvio = 'Envío de cobros apagado. No saldrá ningún correo de cobro.';
+        return;
+      }
+      // Recién activado: se envían ya los de hoy (los que ya salieron no se repiten).
+      this.configSistemaServicio.ejecutarAvisosCobro().pipe(
+        catchError(() => of(null)),
+        finalize(() => { this.cambiandoCobros = false; }),
+        takeUntil(this.destruir$),
+      ).subscribe((r) => {
+        this.resultadoEnvio = r
+          ? `Envío activado. Hoy: ${r.correosEnviados} correo(s) enviado(s)` +
+            (r.yaEnviados ? `, ${r.yaEnviados} ya se habían enviado` : '') +
+            (r.sinCorreo ? `, ${r.sinCorreo} sin correo (quedan en Llamadas)` : '') +
+            (r.errores ? `, ${r.errores} no se pudieron enviar (se reintenta)` : '') + '.'
+          : 'Envío activado. Los correos de hoy se enviarán en el próximo ciclo.';
+        this.cargarAvisosHoy();
+      });
+    });
   }
 
   guardarConfigSistema(): void {
@@ -347,6 +580,7 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
       takeUntil(this.destruir$)
     ).subscribe(usuario => {
       if (usuario) {
+        this.auth.actualizarUsuarioLocal({ nombre: usuario.nombre, apellido: usuario.apellido });
         this.mensajeExitoPerfil = 'Perfil actualizado correctamente.';
         setTimeout(() => { this.mensajeExitoPerfil = ''; }, 4000);
       }

@@ -13,6 +13,7 @@ import { HallazgosReconciliacionServicio } from '../../nucleo/servicios/hallazgo
 import { AlcanceServicio } from '../../nucleo/servicios/alcance.servicio';
 import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
 
+import { PresenciaServicio } from '../../nucleo/servicios/presencia.servicio';
 @Component({
   selector: 'anturi-panel-secretaria',
   standalone: true,
@@ -354,21 +355,22 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
   sinAlcanceAsignado = false;
 
   private timerSesion: ReturnType<typeof setInterval> | null = null;
-  private inicioSesion = new Date();
   private destruir$ = new Subject<void>();
 
   constructor(
     public temaServicio: TemaServicio,
     public idiomaServicio: IdiomaServicio,
     public auth: AutenticacionServicio,
+    private presencia: PresenciaServicio,
     private solicitudesServicio: SolicitudesServicio,
     private alcanceServicio: AlcanceServicio,
     private hallazgosServicio: HallazgosReconciliacionServicio,
   ) {}
 
   ngOnInit(): void {
+    this.presencia.iniciar();
     this.timerSesion = setInterval(() => {
-      const diff = Date.now() - this.inicioSesion.getTime();
+      const diff = Date.now() - this.auth.inicioSesion.getTime();
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);

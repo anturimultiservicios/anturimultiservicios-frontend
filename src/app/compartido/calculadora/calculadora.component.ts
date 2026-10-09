@@ -9,6 +9,12 @@ import { CommonModule } from '@angular/common';
 
 type ModoCalc = 'normal' | 'cientifica';
 type EstadoVentana = 'abierta' | 'minimizada' | 'cerrada';
+interface OperacionHistorial { expresion: string; resultado: string }
+
+// 2026-10-09 (pedido de Cristopher): se recuerda en este equipo la última
+// posición, el modo, si quedó abierta/cerrada y el historial de operaciones.
+const CLAVE_CALC = 'anturi_calculadora';
+const MAX_HISTORIAL = 30;
 
 @Component({
   selector: 'anturi-calculadora',
@@ -22,7 +28,8 @@ export class CalculadoraComponent implements OnInit {
 
   modo: ModoCalc = 'normal';
   estado: EstadoVentana = 'abierta';
-  modoSelector = false;
+  verHistorial = false;
+  historial: OperacionHistorial[] = [];
 
   pantalla = '0';
   expresion = '';
@@ -38,10 +45,32 @@ export class CalculadoraComponent implements OnInit {
   ngOnInit(): void {
     this.posX = window.innerWidth - 340;
     this.posY = 120;
+    try {
+      const g = JSON.parse(localStorage.getItem(CLAVE_CALC) || 'null');
+      if (g) {
+        if (typeof g.posX === 'number') this.posX = g.posX;
+        if (typeof g.posY === 'number') this.posY = g.posY;
+        if (g.modo === 'normal' || g.modo === 'cientifica') this.modo = g.modo;
+        if (g.estado === 'abierta' || g.estado === 'minimizada' || g.estado === 'cerrada') this.estado = g.estado;
+        if (Array.isArray(g.historial)) this.historial = g.historial.slice(0, MAX_HISTORIAL);
+      }
+    } catch { /* sin almacenamiento: valores por defecto */ }
+    this.ajustarALaPantalla();
   }
 
-  get tituloBarra(): string {
-    return this.modo === 'normal' ? 'Calculadora' : 'Calculadora Científica';
+  // Si la pantalla es más pequeña que donde quedó, la trae a la vista.
+  private ajustarALaPantalla(): void {
+    const ancho = this.modo === 'cientifica' ? 360 : 290;
+    this.posX = Math.max(0, Math.min(this.posX, window.innerWidth - ancho));
+    this.posY = Math.max(0, Math.min(this.posY, window.innerHeight - 60));
+  }
+
+  private guardar(): void {
+    try {
+      localStorage.setItem(CLAVE_CALC, JSON.stringify({
+        posX: this.posX, posY: this.posY, modo: this.modo, estado: this.estado, historial: this.historial,
+      }));
+    } catch { /* sin almacenamiento */ }
   }
 
   // Entrada de botones
@@ -135,8 +164,14 @@ export class CalculadoraComponent implements OnInit {
       }
 
       const redondeado = parseFloat(resultado.toPrecision(12));
+      const operacion = this.expresion;
       this.pantalla = String(redondeado);
       this.expresion = this.pantalla;
+      if (operacion && operacion !== this.pantalla) {
+        this.historial.unshift({ expresion: operacion.replace(/\*\*/g, '^').replace(/\*/g, '×').replace(/\//g, '÷'), resultado: this.pantalla });
+        this.historial = this.historial.slice(0, MAX_HISTORIAL);
+        this.guardar();
+      }
     } catch {
       this.pantalla = 'Error';
       this.hayError = true;
@@ -193,47 +228,65 @@ export class CalculadoraComponent implements OnInit {
     this.expresion = this.pantalla;
   }
 
-  // Control de ventana
-  seleccionarModo(m: ModoCalc): void {
-    this.modo = m;
-    this.modoSelector = false;
-    this.limpiar();
+  usarResultado(resultado: string): void {
+    this.hayError = false;
+    this.pantalla = resultado;
+    this.expresion = resultado;
+  }
+
+  borrarHistorial(): void {
+    this.historial = [];
+    this.guardar();
+  }
+
+  // Control de ventana - el modo se cambia con un clic en la barra
+  alternarModo(): void {
+    this.modo = this.modo === 'normal' ? 'cientifica' : 'normal';
+    this.ajustarALaPantalla();
+    this.guardar();
   }
 
   minimizar(): void {
     this.estado = 'minimizada';
+    this.guardar();
   }
 
   maximizar(): void {
     this.estado = 'abierta';
+    this.guardar();
   }
 
   cerrar(): void {
     this.estado = 'cerrada';
+    this.verHistorial = false;
+    this.guardar();
   }
 
   abrir(): void {
     this.estado = 'abierta';
-    this.modoSelector = true;
+    this.ajustarALaPantalla();
+    this.guardar();
   }
 
-  // Arrastre
-  iniciarArrastre(event: MouseEvent): void {
+  // Arrastre (mouse y táctil)
+  iniciarArrastre(event: PointerEvent): void {
     this.arrastrando = true;
     this.offsetX = event.clientX - this.posX;
     this.offsetY = event.clientY - this.posY;
     event.preventDefault();
   }
 
-  @HostListener('document:mousemove', ['$event'])
-  alMover(event: MouseEvent): void {
+  @HostListener('document:pointermove', ['$event'])
+  alMover(event: PointerEvent): void {
     if (!this.arrastrando) return;
     this.posX = Math.max(0, Math.min(event.clientX - this.offsetX, window.innerWidth - 300));
     this.posY = Math.max(0, Math.min(event.clientY - this.offsetY, window.innerHeight - 100));
   }
 
-  @HostListener('document:mouseup')
+  @HostListener('document:pointerup')
   alSoltar(): void {
+    if (!this.arrastrando) return;
     this.arrastrando = false;
+    this.guardar();
   }
 }
