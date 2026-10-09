@@ -203,7 +203,8 @@
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
-  animation: botFlotar 3.2s ease-in-out infinite;
+  /* 2026-10-09: sin animación de "flotar" - el video ya trae el saludo, y
+     mover el video por CSS lo hacía verse con saltos y algo distorsionado. */
 }
 
 /* 2026-10-08: más grande y nítido (fuente 576px; a 190px se ve fino
@@ -221,10 +222,13 @@
     0 0 0 7px rgba(234, 88, 12, 0.85),
     0 14px 32px rgba(27, 50, 112, 0.35);
   transition: transform var(--transicion-rapida), box-shadow var(--transicion-rapida);
+  /* capa propia: el video se dibuja nítido y estable */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .wa-robot:hover .wa-robot__burbuja {
-  transform: scale(1.06);
+  transform: translateZ(0) scale(1.06);
   box-shadow:
     0 0 0 4px #fff,
     0 0 0 7px rgba(27, 50, 112, 0.9),
@@ -237,15 +241,6 @@
   height: 100%;
   object-fit: cover;
   background: #fff;
-}
-
-@keyframes botFlotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wa-robot { animation: none; }
 }
 
 @media (max-width: 768px) {
