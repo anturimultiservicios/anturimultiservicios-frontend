@@ -7,6 +7,7 @@ import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
 import { rutas } from './app.routes';
 import { tokenInterceptor } from './nucleo/interceptores/token.interceptor';
+import { sinInternetInterceptor } from './nucleo/interceptores/sin-internet.interceptor';
 
 export function crearCargadorTraduccion(http: HttpClient) {
   return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
@@ -33,7 +34,8 @@ export function recargarSiFaltaArchivo(error: NavigationError): void {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(rutas, withViewTransitions(), withNavigationErrorHandler(recargarSiFaltaArchivo)),
-    provideHttpClient(withInterceptors([tokenInterceptor])),
+    // sinInternet va por fuera: si el servidor no responde, contesta la copia local
+    provideHttpClient(withInterceptors([sinInternetInterceptor, tokenInterceptor])),
     provideAnimations(),
     // 2026-10-09 (plan "sin internet", paso 1): la página queda guardada en
     // el equipo y abre/funciona aunque se vaya el internet. Solo en producción.

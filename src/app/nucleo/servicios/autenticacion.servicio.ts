@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { entorno } from '../../../environments/entorno';
 import { UsuarioSistema } from '../modelos/usuario.modelo';
+import { DatosLocalesServicio } from './datos-locales.servicio';
 
 interface RespuestaAuth {
   acceso: string;
@@ -47,7 +48,7 @@ export class AutenticacionServicio {
     return !!this.obtenerToken();
   }
 
-  constructor(private http: HttpClient, private router: Router) {
+  constructor(private http: HttpClient, private router: Router, private datosLocales: DatosLocalesServicio) {
     this.cargarUsuarioGuardado();
   }
 
@@ -57,7 +58,12 @@ export class AutenticacionServicio {
   // parciales (debe-cambiar-contrasena/pre-auth/solo-registro-dispositivo).
   // El componente de login decide que hacer segun `esLoginCompleto()` y
   // llama guardarSesion() el solo cuando de verdad hay una sesion real.
+  // 2026-10-09 (sin internet): la contraseña se guarda solo en memoria hasta
+  // completar el ingreso, para proteger la copia local de datos (se borra ahí).
+  private contrasenaPendiente: string | null = null;
+
   iniciarSesion(correo: string, contrasena: string): Observable<RespuestaLogin> {
+    this.contrasenaPendiente = contrasena;
     return this.http.post<RespuestaLogin>(`${this.URL}/ingresar`, { correo, contrasena, equipo: this.identificacionEquipo() });
   }
 
@@ -85,6 +91,11 @@ export class AutenticacionServicio {
     localStorage.setItem('anturi_usuario', JSON.stringify(res.usuario));
     localStorage.setItem('anturi_inicio_sesion', String(Date.now()));
     this.usuario$.next(res.usuario);
+    const contrasena = this.contrasenaPendiente;
+    this.contrasenaPendiente = null;
+    if (contrasena && res.usuario?.id) {
+      this.datosLocales.prepararLlave(contrasena, res.usuario.id).then(() => this.datosLocales.sincronizar());
+    }
   }
 
   // 2026-10-09: el "tiempo conectado" cuenta desde que se inició sesión, no
@@ -133,6 +144,8 @@ export class AutenticacionServicio {
     if (token) {
       this.http.post(`${this.URL}/cerrar-sesion`, {}).subscribe();
     }
+    // la copia local se borra antes de quitar el usuario (la busca por su id)
+    this.datosLocales.borrarTodo();
     localStorage.removeItem('anturi_token');
     localStorage.removeItem('anturi_refresco');
     localStorage.removeItem('anturi_usuario');

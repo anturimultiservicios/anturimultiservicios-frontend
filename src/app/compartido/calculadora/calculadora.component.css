@@ -239,9 +239,9 @@
 }
 
 .calc-btn.cero {
-  grid-column: span 2;
-  justify-content: flex-start;
-  padding-left: var(--espacio-5);
+  /* 2026-10-09: la última fila es 0 . ⌫ = - con el 0 doble el "=" quedaba
+     solo en una fila aparte */
+  grid-column: span 1;
 }
 
 /* 2026-10-09: modo (normal/científica) en la barra, con un clic */
