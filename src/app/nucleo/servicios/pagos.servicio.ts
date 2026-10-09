@@ -52,6 +52,35 @@ export interface PagoRegistrado {
   registradoPor: { id: number; nombre: string; apellido: string } | null;
 }
 
+export interface CuentaCobro {
+  empresaId: number;
+  razonSocial: string;
+  nit: string;
+  activa: boolean;
+  cuota: number;
+  descripcion: string | null;
+  usuarioPortal: string | null;
+  mesesAdeudados: number;
+  pagadoEsteMes: boolean;
+  montoAdeudado: number;
+}
+
+export interface CobroEmpresa {
+  cuenta: CuentaCobro;
+  otrasCuentas: CuentaCobro[];
+  personal: {
+    relacionId: number;
+    estadoRelacion: string;
+    cargo: string | null;
+    nombre: string;
+    documento: string;
+    tipoDocumento: string;
+    afiliado: any | null;
+    cuenta: CuentaCobro | null;
+  }[];
+  pagaCon: { id: number; razonSocial: string; nit: string }[];
+}
+
 export interface ResumenPagos {
   totalRecibido: number;
   porCanal: { EFECTIVO: number; TRANSFERENCIA: number; SIN_CANAL: number };
@@ -75,6 +104,15 @@ export class PagosServicio {
 
   registrar(dto: RegistrarPagoDto): Observable<Pago> {
     return this.http.post<Pago>(this.URL, dto);
+  }
+
+  // 2026-10-09: cuentas de empresa / empleador
+  cobroEmpresa(empresaId: number): Observable<CobroEmpresa> {
+    return this.http.get<CobroEmpresa>(`${this.URL}/empresa/${empresaId}/cobro`);
+  }
+
+  registrarEmpresa(empresaId: number, monto: number, canal: CanalPago, mesesCubiertos: number): Observable<any> {
+    return this.http.post(`${this.URL}/empresa`, { empresaId, monto, canal, mesesCubiertos });
   }
 
   registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string): Observable<any> {

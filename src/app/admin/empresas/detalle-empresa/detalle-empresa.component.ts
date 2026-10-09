@@ -136,8 +136,8 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
               </thead>
               <tbody>
                 <tr *ngFor="let p of personal" [class.fila-retirada]="p.estadoRelacion !== 'ACTIVA'">
-                  <td>{{ p.afiliado.nombres }} {{ p.afiliado.apellidos }}</td>
-                  <td>{{ sigla(p.tipoDocumento) }} {{ p.afiliado.cedula }}</td>
+                  <td>{{ p.nombre }}</td>
+                  <td>{{ sigla(p.tipoDocumento) }} {{ p.documento }}</td>
                   <td>{{ p.cargo || '—' }}</td>
                   <td>{{ p.fechaIngreso ? (p.fechaIngreso | date:'dd/MM/yyyy') : '—' }}</td>
                   <td>
@@ -146,7 +146,9 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
                     </span>
                   </td>
                   <td class="acciones-personal">
-                    <a [routerLink]="[prefijo, 'afiliados', p.afiliado.id]" class="boton boton-texto boton-sm">Ver</a>
+                    <a *ngIf="p.afiliado" [routerLink]="[prefijo, 'afiliados', p.afiliado.id]" class="boton boton-texto boton-sm">Ver ficha</a>
+                    <a *ngIf="!p.afiliado && p.cuentaEmpresaId" [routerLink]="[prefijo, 'empresas', p.cuentaEmpresaId]" class="boton boton-texto boton-sm" title="Esta persona tiene su propia cuenta">Ver su cuenta</a>
+                    <span *ngIf="!p.afiliado && !p.cuentaEmpresaId" class="sin-ficha" title="Está en el personal según el Excel, pero no tiene ficha de afiliado">Sin ficha</span>
                     <button *ngIf="!esSecretaria && p.estadoRelacion === 'ACTIVA'" class="boton boton-texto boton-sm" (click)="retirarPersonal(p)">Retirar</button>
                   </td>
                 </tr>
@@ -352,7 +354,8 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
     .aviso-pendiente--eliminar { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); border-left-color: #ef4444; }
     .aviso-pendiente__enlace { color: var(--color-primario); font-weight: 600; text-decoration: none; align-self: flex-start; }
     .fila-retirada td { color: var(--texto-terciario); }
-    .acciones-personal { white-space: nowrap; display: flex; gap: var(--espacio-2); }
+    .acciones-personal { white-space: nowrap; display: flex; gap: var(--espacio-2); align-items: center; }
+    .sin-ficha { font-size: var(--tamano-xs); color: var(--texto-terciario); }
     .lista-busqueda { list-style: none; margin: 0 0 var(--espacio-3); padding: 0; max-height: 260px; overflow-y: auto; border: 1px solid var(--borde-color); border-radius: var(--radio-md); }
     .lista-busqueda li { display: flex; flex-direction: column; gap: 2px; padding: var(--espacio-2) var(--espacio-3); cursor: pointer; border-bottom: 1px solid var(--borde-color); font-size: var(--tamano-sm); }
     .lista-busqueda li span { color: var(--texto-terciario); font-size: var(--tamano-xs); }
@@ -476,7 +479,7 @@ export class DetalleEmpresaComponent implements OnInit {
         catchError(() => of({ datos: [] as Afiliado[] } as any)),
         finalize(() => (this.buscandoPersonal = false)),
       ).subscribe((r: any) => {
-        const vinculados = new Set(this.personalActivo.map((p) => p.afiliado.id));
+        const vinculados = new Set(this.personalActivo.map((p) => p.afiliado?.id).filter(Boolean));
         this.resultadosPersonal = (r.datos ?? []).filter((a: Afiliado) => !vinculados.has(a.id));
       });
     }, 350);
@@ -502,7 +505,7 @@ export class DetalleEmpresaComponent implements OnInit {
   }
 
   retirarPersonal(p: PersonalEmpresa): void {
-    const motivo = prompt(`¿Por qué se retira ${p.afiliado.nombres} ${p.afiliado.apellidos} de la empresa? (ej. terminó contrato)`);
+    const motivo = prompt(`¿Por qué se retira ${p.nombre} de la empresa? (ej. terminó contrato)`);
     if (!motivo || motivo.trim().length < 3) return;
     this.empresasServicio.retirarPersonal(this.id, p.relacionId, { motivo: motivo.trim() }).pipe(
       catchError((err) => { this.mensajeError = err?.error?.message || 'No se pudo retirar.'; return of(null); }),

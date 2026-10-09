@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of, switchMap, takeUntil } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../nucleo/servicios/afiliados.servicio';
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
-import { PagosServicio, CanalPago, ResumenPagos, ResumenMensual } from '../../nucleo/servicios/pagos.servicio';
+import { PagosServicio, CanalPago, ResumenPagos, ResumenMensual, CobroEmpresa, CuentaCobro } from '../../nucleo/servicios/pagos.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 // 2026-10-07 (decisión de Cristopher): "no tenemos esa parte" - marcar que
@@ -67,8 +67,27 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
               <span class="empresa-flecha">{{ empresaExpandidaId === emp.id ? '▲' : '▼' }}</span>
             </button>
             <div *ngIf="empresaExpandidaId === emp.id" class="empresa-empleados">
-              <div *ngIf="cargandoEmpleados" class="estado-carga-inline">Cargando empleados...</div>
-              <div *ngIf="!cargandoEmpleados && empleadosEmpresa.length === 0" class="estado-vacio-inline">Esta empresa no tiene empleados activos registrados.</div>
+              <div *ngIf="cargandoEmpleados" class="estado-carga-inline">Cargando...</div>
+              <!-- 2026-10-09: la cuenta de la empresa misma (su valor del Excel), las
+                   cuentas que se pagan junto con ella y su personal afiliado. -->
+              <ng-container *ngIf="!cargandoEmpleados && cobro">
+                <p *ngIf="cobro.pagaCon.length" class="nota-paga-con">
+                  Se paga junto con la cuenta de <strong>{{ nombresPagaCon }}</strong>.
+                </p>
+                <ng-container *ngTemplateOutlet="filaCuenta; context: { $implicit: cobro.cuenta, etiqueta: 'Cuenta propia' }"></ng-container>
+                <ng-container *ngFor="let o of cobro.otrasCuentas">
+                  <ng-container *ngTemplateOutlet="filaCuenta; context: { $implicit: o, etiqueta: 'Otra cuenta de la misma cédula' }"></ng-container>
+                </ng-container>
+                <ng-container *ngFor="let p of personalActivo">
+                  <ng-container *ngIf="p.cuenta">
+                    <ng-container *ngTemplateOutlet="filaCuenta; context: { $implicit: p.cuenta, etiqueta: 'Cuenta de ' + p.nombre }"></ng-container>
+                  </ng-container>
+                </ng-container>
+                <div *ngIf="personalSinValor.length" class="personal-sin-valor">
+                  <span class="dato-secundario">Personal sin valor propio registrado:</span>
+                  {{ nombresSinValor }}
+                </div>
+              </ng-container>
               <div *ngFor="let a of empleadosEmpresa" class="fila-persona">
                 <label class="permiso-check">
                   <input type="checkbox" [checked]="estaSeleccionado(a.id)" (change)="toggleSeleccion(a)" [disabled]="yaPagados.has(a.id)">
@@ -83,10 +102,25 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
           </div>
         </div>
 
+        <ng-template #filaCuenta let-c let-etiqueta="etiqueta">
+          <div class="fila-persona fila-cuenta">
+            <label class="permiso-check">
+              <input type="checkbox" [checked]="seleccionCuentas.has(c.empresaId)" (change)="toggleCuenta(c)"
+                [disabled]="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId) || !c.cuota">
+              <strong>{{ c.razonSocial }}</strong>
+              <span class="dato-secundario">{{ etiqueta }}<ng-container *ngIf="c.descripcion"> · {{ c.descripcion }}</ng-container> · {{ c.usuarioPortal || ('NIT/CC ' + c.nit) }}</span>
+              <span *ngIf="c.mesesAdeudados > 1" class="badge-mora">Debe {{ c.mesesAdeudados }} meses</span>
+              <span *ngIf="!c.cuota" class="dato-secundario">(sin valor registrado)</span>
+            </label>
+            <span class="monto-persona">{{ c.montoAdeudado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span *ngIf="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)" class="badge-pagado">Pagado ✓</span>
+          </div>
+        </ng-template>
+
         <!-- Panel de confirmación -->
-        <div *ngIf="seleccionados.size > 0" class="panel-confirmar">
+        <div *ngIf="totalItems > 0" class="panel-confirmar">
           <p class="panel-confirmar__resumen">
-            <strong>{{ seleccionados.size }}</strong> persona{{ seleccionados.size !== 1 ? 's' : '' }} seleccionada{{ seleccionados.size !== 1 ? 's' : '' }} -
+            <strong>{{ totalItems }}</strong> pago{{ totalItems !== 1 ? 's' : '' }} seleccionado{{ totalItems !== 1 ? 's' : '' }} -
             total <strong>{{ totalSeleccionado | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
           </p>
           <div class="campo-grupo">
@@ -223,6 +257,9 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     .panel-confirmar__acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); }
 
     .nota-resumen { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 0; }
+    .fila-cuenta { background: rgba(27,50,112,0.04); border-radius: var(--radio-md); }
+    .nota-paga-con { margin: 0 0 var(--espacio-2); font-size: var(--tamano-sm); color: var(--color-primario); }
+    .personal-sin-valor { margin-top: var(--espacio-2); font-size: var(--tamano-xs); color: var(--texto-terciario); }
     .resumen-filtros { display: flex; gap: var(--espacio-4); flex-wrap: wrap; align-items: flex-end; }
     .resumen-buscar { height: 40px; }
     .resumen-totales { display: flex; gap: var(--espacio-4); flex-wrap: wrap; }
@@ -252,6 +289,10 @@ export class RegistrarPagoComponent implements OnDestroy {
   cargandoEmpleados = false;
 
   seleccionados = new Map<number, Afiliado>();
+  // 2026-10-09: cuentas de empresa seleccionadas para pagar
+  seleccionCuentas = new Map<number, CuentaCobro>();
+  yaPagadasCuentas = new Set<number>();
+  cobro: CobroEmpresa | null = null;
   yaPagados = new Set<number>();
   canalSeleccionado: CanalPago | null = null;
   registrando = false;
@@ -334,11 +375,19 @@ export class RegistrarPagoComponent implements OnDestroy {
     }
     this.empresaExpandidaId = emp.id;
     this.cargandoEmpleados = true;
-    this.afiliadosServicio.listar(undefined, 'ACTIVO', undefined, 1, 200, emp.id).pipe(
-      catchError(() => of({ datos: [] as Afiliado[] })),
+    this.cobro = null;
+    this.empleadosEmpresa = [];
+    // Personal afiliado (vínculos de personal) + la cuenta propia y las del bloque.
+    this.pagosServicio.cobroEmpresa(emp.id).pipe(
+      catchError(() => of(null)),
       finalize(() => { this.cargandoEmpleados = false; }),
       takeUntil(this.destruir$),
-    ).subscribe((res) => { this.empleadosEmpresa = res.datos; });
+    ).subscribe((c) => {
+      this.cobro = c;
+      this.empleadosEmpresa = (c?.personal ?? [])
+        .filter((p) => p.estadoRelacion === 'ACTIVA' && p.afiliado && p.afiliado.estado === 'ACTIVO' && !p.cuenta)
+        .map((p) => p.afiliado as Afiliado);
+    });
   }
 
   estaSeleccionado(id: number): boolean {
@@ -353,7 +402,33 @@ export class RegistrarPagoComponent implements OnDestroy {
     }
   }
 
+  get personalActivo() {
+    return (this.cobro?.personal ?? []).filter((p) => p.estadoRelacion === 'ACTIVA');
+  }
+
+  get personalSinValor() {
+    return this.personalActivo.filter((p) => !p.cuenta && !(p.afiliado && p.afiliado.estado === 'ACTIVO'));
+  }
+
+  get nombresSinValor(): string {
+    return this.personalSinValor.map((p) => p.nombre).join(', ');
+  }
+
+  get nombresPagaCon(): string {
+    return (this.cobro?.pagaCon ?? []).map((e) => e.razonSocial).join(', ');
+  }
+
+  toggleCuenta(c: CuentaCobro): void {
+    if (this.seleccionCuentas.has(c.empresaId)) this.seleccionCuentas.delete(c.empresaId);
+    else this.seleccionCuentas.set(c.empresaId, c);
+  }
+
+  get totalItems(): number {
+    return this.seleccionados.size + this.seleccionCuentas.size;
+  }
+
   limpiarSeleccion(): void {
+    this.seleccionCuentas.clear();
     this.seleccionados.clear();
     this.canalSeleccionado = null;
     this.errorRegistro = '';
@@ -389,31 +464,41 @@ export class RegistrarPagoComponent implements OnDestroy {
   get totalSeleccionado(): number {
     let total = 0;
     for (const a of this.seleccionados.values()) total += this.montoAdeudado(a);
+    for (const c of this.seleccionCuentas.values()) total += c.montoAdeudado;
     return total;
   }
 
   confirmarPagos(): void {
-    if (!this.canalSeleccionado || this.seleccionados.size === 0) return;
+    if (!this.canalSeleccionado || this.totalItems === 0) return;
     this.registrando = true;
     this.errorRegistro = '';
     const personas = Array.from(this.seleccionados.values());
+    const cuentas = Array.from(this.seleccionCuentas.values());
 
-    forkJoin(
-      personas.map((a) =>
+    forkJoin([
+      ...personas.map((a) =>
         this.pagosServicio.registrarCompleto(a.id, this.montoAdeudado(a), this.canalSeleccionado!, this.mesesAdeudados(a)).pipe(
           catchError((err) => of({ error: true, afiliado: a, mensaje: err?.error?.message })),
         ),
       ),
-    ).pipe(
+      ...cuentas.map((c) =>
+        this.pagosServicio.registrarEmpresa(c.empresaId, c.montoAdeudado, this.canalSeleccionado!, Math.max(1, c.mesesAdeudados)).pipe(
+          catchError((err) => of({ error: true, cuenta: c, mensaje: err?.error?.message })),
+        ),
+      ),
+    ]).pipe(
       finalize(() => { this.registrando = false; }),
     ).subscribe((resultados) => {
       const exitosos = resultados.filter((r: any) => !r?.error);
       const fallidos = resultados.filter((r: any) => r?.error);
 
       for (const a of personas) {
-        if (!fallidos.some((f: any) => f.afiliado.id === a.id)) {
+        if (!fallidos.some((f: any) => f.afiliado?.id === a.id)) {
           this.yaPagados.add(a.id);
         }
+      }
+      for (const c of cuentas) {
+        if (!fallidos.some((f: any) => f.cuenta?.empresaId === c.empresaId)) this.yaPagadasCuentas.add(c.empresaId);
       }
 
       if (exitosos.length > 0) {
@@ -423,7 +508,7 @@ export class RegistrarPagoComponent implements OnDestroy {
         this.cargarResumenMensual();
       }
       if (fallidos.length > 0) {
-        const nombres = fallidos.map((f: any) => `${f.afiliado.nombres} ${f.afiliado.apellidos}`).join(', ');
+        const nombres = fallidos.map((f: any) => f.cuenta ? f.cuenta.razonSocial : `${f.afiliado.nombres} ${f.afiliado.apellidos}`).join(', ');
         this.errorRegistro = `No se pudo registrar el pago de: ${nombres}.`;
       } else {
         this.limpiarSeleccion();

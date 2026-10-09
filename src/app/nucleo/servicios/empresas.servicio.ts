@@ -84,5 +84,10 @@ export interface PersonalEmpresa {
   fechaIngreso: string | null;
   fechaRetiro: string | null;
   tipoDocumento: string;
-  afiliado: { id: number; nombres: string; apellidos: string; cedula: string; estado: string; telefono: string | null; totalPago: number | null };
+  nombre: string;
+  documento: string;
+  // null = está en el personal pero no tiene ficha de afiliado (vino del Excel)
+  afiliado: { id: number; nombres: string; apellidos: string; cedula: string; estado: string; telefono: string | null; totalPago: number | null } | null;
+  // si la persona tiene su propia cuenta (empresa con su documento)
+  cuentaEmpresaId: number | null;
 }
