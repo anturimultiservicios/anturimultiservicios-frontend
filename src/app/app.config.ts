@@ -1,4 +1,5 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 import { provideRouter, withViewTransitions, withNavigationErrorHandler, NavigationError } from '@angular/router';
 import { provideHttpClient, withInterceptors, HttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -34,6 +35,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(rutas, withViewTransitions(), withNavigationErrorHandler(recargarSiFaltaArchivo)),
     provideHttpClient(withInterceptors([tokenInterceptor])),
     provideAnimations(),
+    // 2026-10-09 (plan "sin internet", paso 1): la página queda guardada en
+    // el equipo y abre/funciona aunque se vaya el internet. Solo en producción.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     importProvidersFrom(
       TranslateModule.forRoot({
         defaultLanguage: 'es',

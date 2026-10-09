@@ -56,8 +56,13 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
             });
             return next(reintentoConToken);
           }),
-          catchError(() => {
-            auth.cerrarSesion();
+          catchError((errRefresco: HttpErrorResponse) => {
+            // 2026-10-09 (plan "sin internet"): si el refresco falló porque
+            // no hay internet (status 0) o el servidor no responde (5xx), la
+            // sesión NO se cierra - se reintenta cuando vuelva la conexión.
+            // Solo se cierra si el servidor dice que la sesión ya no vale.
+            const sinConexion = !errRefresco || errRefresco.status === 0 || errRefresco.status >= 500;
+            if (!sinConexion) auth.cerrarSesion();
             return throwError(() => error);
           })
         );

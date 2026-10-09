@@ -7,12 +7,13 @@ import { IdiomaServicio } from './nucleo/servicios/idioma.servicio';
 import { VersionServicio } from './nucleo/servicios/version.servicio';
 import { AvisoHorarioComponent } from './compartido/aviso-horario/aviso-horario.component';
 import { AvisoActualizacionComponent } from './compartido/aviso-actualizacion/aviso-actualizacion.component';
+import { AvisoConexionComponent } from './compartido/aviso-conexion/aviso-conexion.component';
 
 @Component({
   selector: 'anturi-raiz',
   standalone: true,
-  imports: [RouterOutlet, AvisoHorarioComponent, AvisoActualizacionComponent],
-  template: '<router-outlet /><anturi-aviso-horario /><anturi-aviso-actualizacion />',
+  imports: [RouterOutlet, AvisoHorarioComponent, AvisoActualizacionComponent, AvisoConexionComponent],
+  template: '<router-outlet /><anturi-aviso-horario /><anturi-aviso-actualizacion /><anturi-aviso-conexion />',
   styles: [':host { display: block; min-height: 100vh; }'],
 })
 export class AppComponent implements OnInit {

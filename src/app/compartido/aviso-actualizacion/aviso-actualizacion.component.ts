@@ -235,7 +235,7 @@ export class AvisoActualizacionComponent implements OnInit, OnDestroy {
   }
 
   recargar(): void {
-    window.location.reload();
+    this.version.recargar();
   }
 
   iniciarArrastre(e: PointerEvent): void {
