@@ -1,6 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpParams, HttpRequest, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, catchError, of, throwError } from 'rxjs';
+import { Observable, catchError, from, map, of, throwError } from 'rxjs';
+import { ColaCambiosServicio } from '../servicios/cola-cambios.servicio';
+import { MotorCalculo } from '../motor/motor-calculo';
 import { entorno } from '../../../environments/entorno';
 import { DatosLocalesServicio, CopiaLocal } from '../servicios/datos-locales.servicio';
 
@@ -117,24 +119,82 @@ function responder(req: HttpRequest<unknown>, c: CopiaLocal): unknown {
   return undefined;
 }
 
+// ── Paso 3: calcular valores sin internet con el MISMO motor del servidor ──
+function motorLocal(c: CopiaLocal): MotorCalculo {
+  return new MotorCalculo(
+    {
+      obtenerVigente: async (codigo: string, fecha: Date) => {
+        const filas = (c.parametros ?? [])
+          .filter((p) => p.codigo === codigo && new Date(p.vigenteDesde) <= fecha && (!p.vigenteHasta || new Date(p.vigenteHasta) >= fecha))
+          .sort((a, b) => new Date(b.vigenteDesde).getTime() - new Date(a.vigenteDesde).getTime());
+        if (!filas.length) throw new Error(`No hay un valor vigente para el parámetro '${codigo}' (datos guardados)`);
+        return { valor: filas[0].valor, vigenteDesde: new Date(filas[0].vigenteDesde), fuente: filas[0].fuente };
+      },
+    },
+    {
+      obtenerPlantilla: async (tipo: number) => {
+        const p = (c.plantillas ?? []).find((x) => x.tipo === tipo && x.activa !== false);
+        if (!p) throw new Error(`Tipo de plantilla ${tipo} no existe o está desactivada`);
+        return p;
+      },
+    },
+  );
+}
+
+function simularLocal(req: HttpRequest<any>, c: CopiaLocal): Observable<HttpResponse<unknown>> | null {
+  const m = req.url.slice(API.length).match(/^\/motor-liquidacion\/simular\/(independiente|empleador|parcial)$/);
+  if (req.method !== 'POST' || !m || !c.parametros?.length) return null;
+  const d = req.body ?? {};
+  const motor = motorLocal(c);
+  const calculo = m[1] === 'independiente'
+    ? motor.liquidarIndependiente({ tipoPlantilla: d.tipoPlantilla, ibc: d.ibc, diasMora: d.diasMora, diasCotizados: d.diasCotizados, valorAfiliacion: d.valorAfiliacion })
+    : m[1] === 'empleador'
+      ? motor.liquidarEmpleador({ modalidad: d.modalidad, ibc: d.ibc, claseRiesgoArl: d.claseRiesgoArl, diasMora: d.diasMora, diasCotizados: d.diasCotizados, valorAfiliacion: d.valorAfiliacion })
+      : motor.liquidarParcial({ diasCotizados: d.diasCotizados, claseRiesgoArl: d.claseRiesgoArl, codigoCaja: d.codigoCaja, diasMora: d.diasMora, valorAfiliacion: d.valorAfiliacion });
+  return from(calculo.then(
+    (r) => new HttpResponse({ status: 200, body: r, url: req.url }),
+    (e) => { throw new HttpErrorResponse({ status: 400, error: { message: e?.message ?? 'No se pudo calcular' }, url: req.url }); },
+  ));
+}
+
 function desdeCopia(req: HttpRequest<unknown>, datos: DatosLocalesServicio): Observable<HttpResponse<unknown>> | null {
-  if (req.method !== 'GET' || !req.url.startsWith(API) || !datos.datos) return null;
+  if (!req.url.startsWith(API) || !datos.datos) return null;
+  const simulado = simularLocal(req as HttpRequest<any>, datos.datos);
+  if (simulado) return simulado;
+  if (req.method !== 'GET') return null;
+  if (req.url.slice(API.length).split('?')[0] === '/liquidacion/plantillas' && datos.datos.plantillas) {
+    return of(new HttpResponse({ status: 200, body: datos.datos.plantillas, url: req.url }));
+  }
   const cuerpo = responder(req, datos.datos);
   return cuerpo === undefined ? null : of(new HttpResponse({ status: 200, body: cuerpo, url: req.url }));
 }
 
+// Cambio hecho sin internet: se guarda para subirlo después.
+function guardarParaDespues(req: HttpRequest<unknown>, cola: ColaCambiosServicio): Observable<HttpResponse<unknown>> | null {
+  if (!cola.admite(req.method, req.url)) return null;
+  return from(cola.encolar(req.method, req.url, req.body)).pipe(
+    map((body) => new HttpResponse({ status: 200, body, url: req.url })),
+    catchError((e) => throwError(() => new HttpErrorResponse({ status: 0, error: { message: e?.message ?? 'Sin internet' }, url: req.url }))),
+  );
+}
+
 export const sinInternetInterceptor: HttpInterceptorFn = (req, next) => {
   const datos = inject(DatosLocalesServicio);
-  // Sin internet: ni se intenta, se responde de una vez desde la copia.
+  const cola = inject(ColaCambiosServicio);
+  // Lo que sube la cola misma va directo al servidor (sin volver a guardarse).
+  if (req.headers.has('x-anturi-cola')) {
+    return next(req.clone({ headers: req.headers.delete('x-anturi-cola') }));
+  }
+  // Sin internet: ni se intenta - consulta desde la copia, cambio a la cola.
   if (!navigator.onLine) {
-    const local = desdeCopia(req, datos);
+    const local = desdeCopia(req, datos) ?? guardarParaDespues(req, cola);
     if (local) return local;
   }
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       // El servidor no responde (internet del edificio caído, etc.)
       if (error.status === 0 || error.status === 502 || error.status === 503 || error.status === 504) {
-        const local = desdeCopia(req, datos);
+        const local = desdeCopia(req, datos) ?? guardarParaDespues(req, cola);
         if (local) return local;
       }
       return throwError(() => error);

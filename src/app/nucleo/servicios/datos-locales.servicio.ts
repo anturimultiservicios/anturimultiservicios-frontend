@@ -18,6 +18,8 @@ import { entorno } from '../../../environments/entorno';
 // - Se borra al cerrar sesión, y sola si lleva más de 7 días sin actualizarse.
 export interface CopiaLocal {
   generado: string;
+  parametros?: { codigo: string; valor: unknown; vigenteDesde: string; vigenteHasta: string | null; fuente: string }[];
+  plantillas?: any[];
   afiliados: any[];
   empresas: any[];
   personal: any[];
@@ -87,6 +89,8 @@ export class DatosLocalesServicio {
       if (guardada) llave = await this.desenvolver(guardada, contrasena).catch(() => null);
       if (!llave) {
         // primera vez en este equipo, o cambió la contraseña: llave nueva
+        // (si había cambios sin subir cifrados con la llave vieja, se pierden:
+        // solo pasa si cambió la contraseña estando con cambios pendientes)
         llave = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
         await this.borrarCopia(usuarioId);
         this.guardarLlaveEnvuelta(usuarioId, await this.envolver(llave, contrasena));
@@ -109,18 +113,57 @@ export class DatosLocalesServicio {
     return this.estado$.value === 'lista';
   }
 
-  // Cerrar sesión: no queda nada en el equipo.
+  // Cerrar sesión: no queda nada en el equipo... salvo cambios hechos sin
+  // internet que todavía no se han subido: esos se conservan (cifrados, con
+  // la misma llave) y se suben solos la próxima vez que esa persona entre.
   async borrarTodo(): Promise<void> {
     const uid = this.usuarioId;
+    const hayPendientes = uid ? !!(await this.leerDeBd(uid, 'cola').catch(() => null)) : false;
     this.copia = null;
     this.llave = null;
     this.estado$.next('sin-copia');
     this.generado$.next(null);
     try { sessionStorage.removeItem('anturi_llave_sesion'); } catch { /* */ }
     if (uid) {
-      try { localStorage.removeItem(`anturi_llave_local_${uid}`); } catch { /* */ }
+      if (!hayPendientes) {
+        try { localStorage.removeItem(`anturi_llave_local_${uid}`); } catch { /* */ }
+      }
       await this.borrarCopia(uid);
     }
+  }
+
+  // ── Para los cambios hechos sin internet (paso 3) ──
+  get llaveLista(): boolean {
+    return !!this.llave;
+  }
+
+  // Guarda la copia con los cambios hechos sin internet (sigue cifrada).
+  async persistir(): Promise<void> {
+    const uid = this.usuarioId;
+    if (!uid || !this.llave || !this.copia) return;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const cifrado = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.llave, new TextEncoder().encode(JSON.stringify(this.copia)));
+    await this.guardarEnBd(uid, { iv: b64(iv), datos: cifrado, generado: this.copia.generado });
+  }
+
+  async leerCola<T>(): Promise<T[]> {
+    const uid = this.usuarioId;
+    if (!uid || !this.llave) return [];
+    const fila = await this.leerDeBd(uid, 'cola').catch(() => null);
+    if (!fila) return [];
+    try {
+      const plano = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(fila.iv) }, this.llave, fila.datos);
+      return JSON.parse(new TextDecoder().decode(plano));
+    } catch { return []; }
+  }
+
+  async guardarCola(ops: unknown[]): Promise<void> {
+    const uid = this.usuarioId;
+    if (!uid || !this.llave) throw new Error('sin llave');
+    if (!ops.length) { await this.borrarDeBd(uid, 'cola'); return; }
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const cifrado = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.llave, new TextEncoder().encode(JSON.stringify(ops)));
+    await this.guardarEnBd(uid, { iv: b64(iv), datos: cifrado, generado: new Date().toISOString() }, 'cola');
   }
 
   async sincronizar(): Promise<void> {
@@ -220,21 +263,21 @@ export class DatosLocalesServicio {
     });
   }
 
-  private async guardarEnBd(uid: number, valor: object): Promise<void> {
+  private async guardarEnBd(uid: number, valor: object, tipo = 'copia'): Promise<void> {
     const bd = await this.abrirBd();
     await new Promise<void>((ok, mal) => {
       const tx = bd.transaction(ALMACEN, 'readwrite');
-      tx.objectStore(ALMACEN).put(valor, `u${uid}`);
+      tx.objectStore(ALMACEN).put(valor, tipo === 'copia' ? `u${uid}` : `${tipo}-u${uid}`);
       tx.oncomplete = () => ok();
       tx.onerror = () => mal(tx.error);
     });
     bd.close();
   }
 
-  private async leerDeBd(uid: number): Promise<{ iv: string; datos: ArrayBuffer; generado: string } | null> {
+  private async leerDeBd(uid: number, tipo = 'copia'): Promise<{ iv: string; datos: ArrayBuffer; generado: string } | null> {
     const bd = await this.abrirBd();
     const v = await new Promise<any>((ok, mal) => {
-      const r = bd.transaction(ALMACEN, 'readonly').objectStore(ALMACEN).get(`u${uid}`);
+      const r = bd.transaction(ALMACEN, 'readonly').objectStore(ALMACEN).get(tipo === 'copia' ? `u${uid}` : `${tipo}-u${uid}`);
       r.onsuccess = () => ok(r.result ?? null);
       r.onerror = () => mal(r.error);
     });
@@ -243,11 +286,15 @@ export class DatosLocalesServicio {
   }
 
   private async borrarCopia(uid: number): Promise<void> {
+    await this.borrarDeBd(uid, 'copia');
+  }
+
+  private async borrarDeBd(uid: number, tipo: string): Promise<void> {
     try {
       const bd = await this.abrirBd();
       await new Promise<void>((ok) => {
         const tx = bd.transaction(ALMACEN, 'readwrite');
-        tx.objectStore(ALMACEN).delete(`u${uid}`);
+        tx.objectStore(ALMACEN).delete(tipo === 'copia' ? `u${uid}` : `${tipo}-u${uid}`);
         tx.oncomplete = () => ok();
         tx.onerror = () => ok();
       });

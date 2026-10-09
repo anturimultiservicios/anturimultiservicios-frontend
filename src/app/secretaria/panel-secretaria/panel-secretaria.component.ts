@@ -15,6 +15,7 @@ import { Subject, takeUntil, catchError, of, interval } from 'rxjs';
 
 import { PresenciaServicio } from '../../nucleo/servicios/presencia.servicio';
 import { DatosLocalesServicio } from '../../nucleo/servicios/datos-locales.servicio';
+import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servicio';
 @Component({
   selector: 'anturi-panel-secretaria',
   standalone: true,
@@ -364,6 +365,7 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
     public auth: AutenticacionServicio,
     private presencia: PresenciaServicio,
     private datosLocales: DatosLocalesServicio,
+    private colaCambios: ColaCambiosServicio,
     private solicitudesServicio: SolicitudesServicio,
     private alcanceServicio: AlcanceServicio,
     private hallazgosServicio: HallazgosReconciliacionServicio,
@@ -371,7 +373,8 @@ export class PanelSecretariaComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.presencia.iniciar();
-    this.datosLocales.iniciar(); // copia para trabajar sin internet
+    // copia para trabajar sin internet + cambios hechos sin internet que faltan por subir
+    this.datosLocales.iniciar().then(() => this.colaCambios.iniciar());
     this.timerSesion = setInterval(() => {
       const diff = Date.now() - this.auth.inicioSesion.getTime();
       const h = Math.floor(diff / 3600000);
