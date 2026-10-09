@@ -29,7 +29,7 @@ const AVISO_SUPER_VISTO = 'anturi_aviso_actualizacion_super_visto';
         <p class="aviso__saludo">¡Hola, {{ nombre }}! {{ saludo }} 👋</p>
         <ng-container *ngIf="!enEsquina">
           <p class="aviso__texto">Hay una <b>nueva actualización</b> de la plataforma. Por favor recargue la página para tenerla.</p>
-          <p class="aviso__nota">Si está en medio de algo, puede moverme a un lado y recargar cuando termine. ¡{{ despedida }}!</p>
+          <p class="aviso__nota">Si está en medio de algo, puede arrastrarme a un lado y recargar cuando termine. ¡{{ despedida }}!</p>
         </ng-container>
         <p *ngIf="enEsquina" class="aviso__texto">Recuerde recargar la página 😊</p>
         <div class="aviso__acciones">
