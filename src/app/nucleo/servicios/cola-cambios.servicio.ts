@@ -13,7 +13,7 @@ import { DatosLocalesServicio } from './datos-locales.servicio';
 // el otro.
 export interface CambioPendiente {
   id: string;
-  metodo: 'POST' | 'PATCH';
+  metodo: 'POST' | 'PATCH' | 'PUT';
   ruta: string;            // relativa a la API, ej. /afiliados/12
   cuerpo: any;
   creadoEn: string;
@@ -38,6 +38,9 @@ const RUTAS = [
   { metodo: 'POST', patron: /^\/solicitudes-cambio$/, que: 'Solicitud de cambio' },
   { metodo: 'POST', patron: /^\/pagos\/completo$/, que: 'Pago' },
   { metodo: 'POST', patron: /^\/pagos\/empresa$/, que: 'Pago de cuenta de empresa' },
+  { metodo: 'PATCH', patron: /^\/recordatorios-llamada\/\d+\/nota$/, que: 'Nota de llamada' },
+  { metodo: 'PUT', patron: /^\/notificaciones\/\d+\/leida$/, que: 'Notificación leída' },
+  { metodo: 'PUT', patron: /^\/notificaciones\/marcar-todas$/, que: 'Notificaciones leídas' },
 ];
 
 const API = entorno.urlApi.replace(/\/$/, '');
@@ -78,7 +81,7 @@ export class ColaCambiosServicio {
     const copia = this.datos.datos;
     const cambio: CambioPendiente = {
       id: this.nuevoId(),
-      metodo: metodo as 'POST' | 'PATCH',
+      metodo: metodo as 'POST' | 'PATCH' | 'PUT',
       ruta,
       cuerpo: cuerpo ?? {},
       creadoEn: new Date().toISOString(),

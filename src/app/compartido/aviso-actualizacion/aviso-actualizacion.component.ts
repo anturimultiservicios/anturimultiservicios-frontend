@@ -249,9 +249,9 @@ export class AvisoActualizacionComponent implements OnInit, OnDestroy {
   // contraseña al entrar - quien todavía no la tiene en este equipo debe
   // volver a entrar una vez (después, siempre es solo recargar).
   get debeVolverAEntrar(): boolean {
-    const id = this.auth.usuarioActual?.id;
-    if (!id) return false;
-    try { return !localStorage.getItem(`anturi_llave_local_${id}`); } catch { return false; }
+    const u = this.auth.usuarioActual;
+    if (!u?.id || u.rol === 'SUPER_ADMIN') return false; // el Super Admin no guarda copia sin internet
+    try { return !localStorage.getItem(`anturi_llave_local_${u.id}`); } catch { return false; }
   }
 
   cerrarYEntrar(): void {

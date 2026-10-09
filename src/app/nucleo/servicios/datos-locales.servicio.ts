@@ -42,6 +42,10 @@ export class DatosLocalesServicio {
   readonly estado$ = new BehaviorSubject<EstadoCopia>('sin-copia');
   readonly generado$ = new BehaviorSubject<Date | null>(null);
   private copia: CopiaLocal | null = null;
+  // 2026-10-09: última respuesta vista con internet de pantallas como
+  // notificaciones, llamadas, solicitudes, resumen... (para verlas sin internet)
+  private respuestas = new Map<string, { cuerpo: unknown; en: number }>();
+  private temporizadorRespuestas: ReturnType<typeof setTimeout> | null = null;
   private llave: CryptoKey | null = null;
   private iniciado = false;
   private sincronizando = false;
@@ -61,6 +65,12 @@ export class DatosLocalesServicio {
     return this.copia;
   }
 
+  // 2026-10-09 (Cristopher): él siempre trabaja con internet - el Super Admin
+  // no guarda copia en sus equipos. Solo Administrador y Asistente.
+  private get esSuperAdmin(): boolean {
+    try { return JSON.parse(localStorage.getItem('anturi_usuario') || 'null')?.rol === 'SUPER_ADMIN'; } catch { return false; }
+  }
+
   private get usuarioId(): number | null {
     try { return JSON.parse(localStorage.getItem('anturi_usuario') || 'null')?.id ?? null; } catch { return null; }
   }
@@ -69,10 +79,11 @@ export class DatosLocalesServicio {
   // Lo llaman los paneles al abrir: intenta abrir la copia guardada con la
   // llave de la sesión y, con internet, la actualiza cada 10 minutos.
   async iniciar(): Promise<void> {
-    if (!this.disponible || this.iniciado || !this.usuarioId) return;
+    if (!this.disponible || this.iniciado || !this.usuarioId || this.esSuperAdmin) return;
     this.iniciado = true;
     await this.recuperarLlaveDeSesion();
     await this.abrirCopiaGuardada();
+    await this.abrirRespuestas();
     this.zona.runOutsideAngular(() => {
       setInterval(() => this.sincronizar(), CADA_MS);
       window.addEventListener('online', () => this.sincronizar());
@@ -82,7 +93,7 @@ export class DatosLocalesServicio {
 
   // Al iniciar sesión (con internet): la contraseña protege la llave.
   async prepararLlave(contrasena: string, usuarioId: number): Promise<void> {
-    if (!this.disponible || !contrasena) return;
+    if (!this.disponible || !contrasena || this.esSuperAdmin) return;
     try {
       const guardada = this.leerLlaveEnvuelta(usuarioId);
       let llave: CryptoKey | null = null;
@@ -110,6 +121,7 @@ export class DatosLocalesServicio {
     this.llave = llave;
     await this.guardarLlaveEnSesion(llave);
     await this.abrirCopiaGuardada();
+    await this.abrirRespuestas();
     return this.estado$.value === 'lista';
   }
 
@@ -121,6 +133,7 @@ export class DatosLocalesServicio {
     const hayPendientes = uid ? !!(await this.leerDeBd(uid, 'cola').catch(() => null)) : false;
     this.copia = null;
     this.llave = null;
+    this.respuestas.clear();
     this.estado$.next('sin-copia');
     this.generado$.next(null);
     try { sessionStorage.removeItem('anturi_llave_sesion'); } catch { /* */ }
@@ -129,7 +142,46 @@ export class DatosLocalesServicio {
         try { localStorage.removeItem(`anturi_llave_local_${uid}`); } catch { /* */ }
       }
       await this.borrarCopia(uid);
+      await this.borrarDeBd(uid, 'respuestas');
     }
+  }
+
+  // ── Respuestas guardadas de otras pantallas ──
+  guardarRespuesta(clave: string, cuerpo: unknown): void {
+    if (!this.llave) return;
+    this.respuestas.set(clave, { cuerpo, en: Date.now() });
+    if (this.respuestas.size > 400) {
+      const viejas = [...this.respuestas.entries()].sort((a, b) => a[1].en - b[1].en).slice(0, this.respuestas.size - 400);
+      viejas.forEach(([k]) => this.respuestas.delete(k));
+    }
+    if (this.temporizadorRespuestas) clearTimeout(this.temporizadorRespuestas);
+    this.temporizadorRespuestas = setTimeout(() => this.persistirRespuestas(), 3000);
+  }
+
+  respuestaGuardada(clave: string): unknown | undefined {
+    return this.respuestas.get(clave)?.cuerpo;
+  }
+
+  private async persistirRespuestas(): Promise<void> {
+    const uid = this.usuarioId;
+    if (!uid || !this.llave) return;
+    try {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const plano = JSON.stringify([...this.respuestas.entries()]);
+      const cifrado = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, this.llave, new TextEncoder().encode(plano));
+      await this.guardarEnBd(uid, { iv: b64(iv), datos: cifrado, generado: new Date().toISOString() }, 'respuestas');
+    } catch { /* no crítico */ }
+  }
+
+  private async abrirRespuestas(): Promise<void> {
+    const uid = this.usuarioId;
+    if (!uid || !this.llave) return;
+    const fila = await this.leerDeBd(uid, 'respuestas').catch(() => null);
+    if (!fila) return;
+    try {
+      const plano = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(fila.iv) }, this.llave, fila.datos);
+      for (const [k, v] of JSON.parse(new TextDecoder().decode(plano))) if (!this.respuestas.has(k)) this.respuestas.set(k, v);
+    } catch { /* llave distinta: se ignora */ }
   }
 
   // ── Para los cambios hechos sin internet (paso 3) ──

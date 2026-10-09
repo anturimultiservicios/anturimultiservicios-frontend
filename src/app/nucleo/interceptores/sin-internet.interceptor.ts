@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpParams, HttpRequest, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, catchError, from, map, of, throwError } from 'rxjs';
+import { Observable, catchError, from, map, of, tap, throwError } from 'rxjs';
+import { fechaLimitePila } from '../motor/fechas-pila';
 import { ColaCambiosServicio } from '../servicios/cola-cambios.servicio';
 import { MotorCalculo } from '../motor/motor-calculo';
 import { entorno } from '../../../environments/entorno';
@@ -46,6 +47,71 @@ function personalDe(c: CopiaLocal, empresaId: number) {
   });
 }
 
+// 2026-10-09: calendario sin internet - misma lógica que PagosServicio.calendario()
+// del servidor (fecha límite PILA por los dos últimos dígitos del documento;
+// verde = tiene un pago que cubre ese mes). Incluye los pagos hechos sin internet.
+function calendario(c: CopiaLocal, desdeTxt: string | null, hastaTxt: string | null) {
+  const local = (t: string | null) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t ?? '');
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date();
+  };
+  const desde = local(desdeTxt);
+  const hasta = local(hastaTxt);
+  hasta.setHours(23, 59, 59, 999);
+  const cobertura = new Map<number, [number, number][]>();
+  for (const p of c.pagos) {
+    if (!p.afiliadoId) continue;
+    const ini = indiceMes(new Date(p.fechaPeriodo));
+    if (!cobertura.has(p.afiliadoId)) cobertura.set(p.afiliadoId, []);
+    cobertura.get(p.afiliadoId)!.push([ini, ini + Math.max(1, p.mesesCubiertos ?? 1)]);
+  }
+  const pagoElMes = (id: number, mes: number) => (cobertura.get(id) ?? []).some(([d, h]) => mes >= d && mes < h);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const porDia = new Map<string, any[]>();
+  const activos = c.afiliados.filter((a) => a.estado === 'ACTIVO' && a.cedula);
+  for (let m = indiceMes(desde); m <= indiceMes(hasta); m++) {
+    const anio = Math.floor(m / 12), mes = m % 12;
+    for (const a of activos) {
+      const fecha = fechaLimitePila(a.cedula, anio, mes);
+      if (fecha < desde || fecha > hasta) continue;
+      const pagado = pagoElMes(a.id, m);
+      const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+      if (!porDia.has(clave)) porDia.set(clave, []);
+      porDia.get(clave)!.push({
+        estado: pagado ? 'PAGADO' : 'SIN_PAGAR',
+        vencido: !pagado && fecha < hoy,
+        valorMes: a.totalPago != null ? Number(a.totalPago) : null,
+        afiliado: { id: a.id, nombres: a.nombres, apellidos: a.apellidos, cedula: a.cedula, telefono: a.telefono, correo: a.correo, tipoDocumento: a.persona?.tipoDocumento ?? 'CC' },
+      });
+    }
+  }
+  return Array.from(porDia.entries())
+    .sort(([x], [y]) => x.localeCompare(y))
+    .map(([fecha, lista]) => ({
+      fecha,
+      afiliados: lista.sort((x, y) => (x.estado === y.estado
+        ? `${x.afiliado.nombres} ${x.afiliado.apellidos}`.localeCompare(`${y.afiliado.nombres} ${y.afiliado.apellidos}`)
+        : x.estado === 'SIN_PAGAR' ? -1 : 1)),
+    }));
+}
+
+// Pantallas cuya última respuesta (vista con internet) se guarda cifrada en
+// el equipo para mostrarla sin internet. NO incluye claves de portales.
+const RECORDAR = /^\/(afiliados\/estadisticas|afiliados\/papelera|empresas\/estadisticas|recordatorios-llamada\/pendientes|notificaciones(\/pendientes|\/sin-leer)?|solicitudes-cambio(\/\d+|\/pendientes\/cantidad)?|hallazgos-reconciliacion(\/[\w-]+)?|evidencias-hallazgo\/hallazgo\/\d+|documentos\/(afiliado\/\d+|tipos-requeridos)|eventos-incapacidad\/(afiliado\/\d+|\d+\/documentos)|parametros-legales(\/[\w-]+\/historial)?|alcance\/mi-alcance|pagos\/(resumen|resumen-mensual|afiliado\/\d+)|dispositivos\/mios|usuarios(\/me\/correo-recuperacion)?|config-sistema|liquidacion\/plantillas|horario-acceso\/(configuracion|excepciones)|sucursales\/empresa\/\d+)$/;
+
+function rutaDe(url: string): string {
+  return url.slice(API.length).split('?')[0].replace(/\/$/, '');
+}
+
+// Si nunca se abrió esa pantalla con internet: lista vacía en vez de error.
+function vacio(ruta: string): unknown {
+  if (/^\/(documentos\/afiliado\/\d+|documentos\/tipos-requeridos|eventos-incapacidad\/afiliado\/-?\d+|solicitudes-cambio|notificaciones|notificaciones\/pendientes|recordatorios-llamada\/pendientes|hallazgos-reconciliacion)$/.test(ruta)) return [];
+  if (ruta === '/solicitudes-cambio/pendientes/cantidad' || ruta === '/notificaciones/sin-leer') return 0;
+  if (/^\/documentos\/afiliado\/-\d+$/.test(ruta)) return [];
+  return undefined;
+}
+
 // Devuelve el cuerpo de la respuesta, o undefined si la copia no sabe responder.
 function responder(req: HttpRequest<unknown>, c: CopiaLocal): unknown {
   const ruta = req.url.slice(API.length).split('?')[0].replace(/\/$/, '');
@@ -66,18 +132,15 @@ function responder(req: HttpRequest<unknown>, c: CopiaLocal): unknown {
     const total = lista.length;
     return { datos: lista.slice((pagina - 1) * porPagina, pagina * porPagina), total, pagina, porPagina, totalPaginas: Math.ceil(total / porPagina), sinInternet: true };
   }
-  if ((m = ruta.match(/^\/afiliados\/(\d+)$/))) {
+  if ((m = ruta.match(/^\/afiliados\/(-?\d+)$/))) {
     const a = c.afiliados.find((x) => x.id === Number(m![1]));
     return a ? { ...a, documentos: [], historial: [], sinInternet: true } : undefined;
   }
-  if ((m = ruta.match(/^\/afiliados\/(\d+)\/duplicados$/))) return [];
-  if ((m = ruta.match(/^\/pagos\/afiliado\/(\d+)$/))) return c.pagos.filter((p) => p.afiliadoId === Number(m![1]));
-  if ((m = ruta.match(/^\/documentos\/afiliado\/(\d+)$/))) return [];
-  if (ruta === '/documentos/tipos-requeridos') return [];
-  if ((m = ruta.match(/^\/eventos-incapacidad\/afiliado\/(\d+)$/))) return [];
-  if (ruta === '/solicitudes-cambio') return [];
-  if (ruta === '/solicitudes-cambio/pendientes/cantidad') return 0;
-  if ((m = ruta.match(/^\/credenciales-pila\/titular\/\w+\/(\d+)$/))) return [];
+  if ((m = ruta.match(/^\/afiliados\/(-?\d+)\/duplicados$/))) return [];
+  if ((m = ruta.match(/^\/pagos\/afiliado\/(-?\d+)$/))) return c.pagos.filter((p) => p.afiliadoId === Number(m![1]));
+  if (ruta === '/pagos/calendario') return calendario(c, q.get('desde'), q.get('hasta'));
+  // las claves de portales nunca se guardan en el equipo
+  if ((m = ruta.match(/^\/credenciales-pila\/titular\/\w+\/(-?\d+)$/))) return [];
 
   if (ruta === '/empresas') {
     const termino = sinTildes(q.get('busqueda') ?? '').trim();
@@ -165,7 +228,9 @@ function desdeCopia(req: HttpRequest<unknown>, datos: DatosLocalesServicio): Obs
   if (req.url.slice(API.length).split('?')[0] === '/liquidacion/plantillas' && datos.datos.plantillas) {
     return of(new HttpResponse({ status: 200, body: datos.datos.plantillas, url: req.url }));
   }
-  const cuerpo = responder(req, datos.datos);
+  let cuerpo = responder(req, datos.datos);
+  if (cuerpo === undefined) cuerpo = datos.respuestaGuardada(req.urlWithParams);
+  if (cuerpo === undefined) cuerpo = vacio(rutaDe(req.url));
   return cuerpo === undefined ? null : of(new HttpResponse({ status: 200, body: cuerpo, url: req.url }));
 }
 
@@ -190,7 +255,10 @@ export const sinInternetInterceptor: HttpInterceptorFn = (req, next) => {
     const local = desdeCopia(req, datos) ?? guardarParaDespues(req, cola);
     if (local) return local;
   }
+  // Con internet: se recuerda la última respuesta de las pantallas de RECORDAR.
+  const recordar = req.method === 'GET' && req.url.startsWith(API) && RECORDAR.test(rutaDe(req.url));
   return next(req).pipe(
+    tap((ev) => { if (recordar && ev instanceof HttpResponse && ev.status === 200) datos.guardarRespuesta(req.urlWithParams, ev.body); }),
     catchError((error: HttpErrorResponse) => {
       // El servidor no responde (internet del edificio caído, etc.)
       if (error.status === 0 || error.status === 502 || error.status === 503 || error.status === 504) {
