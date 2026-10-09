@@ -10,6 +10,8 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 // para terminar lo que se está haciendo, y al recargar desaparece solo.
 // NO le sale al Super Admin (es quien publica). Para verlo de prueba:
 // abrir cualquier pantalla con ?probar-aviso al final de la dirección.
+const AVISO_SUPER_VISTO = 'anturi_aviso_actualizacion_super_visto';
+
 @Component({
   selector: 'anturi-aviso-actualizacion',
   standalone: true,
@@ -152,8 +154,14 @@ export class AvisoActualizacionComponent implements OnInit, OnDestroy {
     this.sub = this.version.versionNueva$.subscribe((nueva) => {
       const u = this.auth.usuarioActual;
       // Al Super Admin no le sale (es quien publica), salvo en modo prueba.
-      const corresponde = !!u && u.rol !== 'SUPER_ADMIN' && this.auth.estaAutenticado;
-      if ((nueva && corresponde) || (prueba && !!u)) this.mostrar();
+      // 2026-10-09: excepción de UNA sola vez para que Cristopher lo vea en
+      // vivo - después de verlo queda marcado y no le vuelve a salir.
+      const unaVezSuper = !!u && u.rol === 'SUPER_ADMIN' && !this.leer(AVISO_SUPER_VISTO);
+      const corresponde = !!u && this.auth.estaAutenticado && (u.rol !== 'SUPER_ADMIN' || unaVezSuper);
+      if ((nueva && corresponde) || (prueba && !!u)) {
+        if (nueva && unaVezSuper) this.guardar(AVISO_SUPER_VISTO);
+        this.mostrar();
+      }
     });
   }
 
@@ -161,8 +169,17 @@ export class AvisoActualizacionComponent implements OnInit, OnDestroy {
     this.sub?.unsubscribe();
   }
 
+  private leer(clave: string): string | null {
+    try { return localStorage.getItem(clave); } catch { return null; }
+  }
+
+  private guardar(clave: string): void {
+    try { localStorage.setItem(clave, '1'); } catch { /* sin almacenamiento */ }
+  }
+
   get nombre(): string {
     const n = (this.auth.usuarioActual?.nombre || '').trim().split(/\s+/)[0] || '';
+    if (/^crist[oó]pher$/i.test(n)) return 'Cris'; // así le gusta que lo saluden
     return n ? n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() : '';
   }
 
