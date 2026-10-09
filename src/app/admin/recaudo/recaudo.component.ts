@@ -120,7 +120,7 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
     .recaudo { display: flex; flex-direction: column; gap: var(--espacio-5); min-width: 0; }
     .recaudo__encabezado { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--espacio-4); flex-wrap: wrap; }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
-    .recaudo__rango { margin: 4px 0 0; color: var(--texto-secundario); font-size: var(--tamano-sm); text-transform: capitalize; }
+    .recaudo__rango { margin: 4px 0 0; color: var(--texto-secundario); font-size: var(--tamano-sm); }
     .recaudo__controles { display: flex; gap: var(--espacio-3); align-items: center; flex-wrap: wrap; }
     .periodos { display: inline-flex; background: var(--fondo-tarjeta); border: 1px solid var(--borde-color); border-radius: 999px; padding: 3px; }
     .periodos__btn { border: none; background: none; padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: var(--tamano-sm); color: var(--texto-secundario); cursor: pointer; }
@@ -204,6 +204,11 @@ export class RecaudoComponent implements OnInit, OnDestroy {
   }
 
   get textoRango(): string {
+    const t = this.textoRangoBase;
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  private get textoRangoBase(): string {
     const { desde, hasta } = this.rango;
     const f = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString('es-CO', o);
     switch (this.periodo) {
