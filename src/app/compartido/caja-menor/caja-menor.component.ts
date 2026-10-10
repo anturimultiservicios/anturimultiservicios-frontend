@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { catchError, finalize, of } from 'rxjs';
 import { entorno } from '../../../environments/entorno';
-import { esc, fechaCorta, imprimirHtml, pesos } from '../imprimir';
 
 interface Recibo {
   id: number; numero: string; fecha: string; ciudad: string; valor: number | string; canceladoA: string;
@@ -71,13 +71,50 @@ const hoyIso = () => { const d = new Date(); return `${d.getFullYear()}-${String
               <td>{{ r.concepto }}<div class="sub" *ngIf="r.anulado">ANULADO: {{ r.motivoAnulacion }}</div></td>
               <td class="num">{{ +r.valor | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
               <td class="acciones">
-                <button type="button" class="boton boton-texto boton-sm" (click)="imprimir(r)">Imprimir</button>
+                <button type="button" class="boton boton-texto boton-sm" (click)="abrirRecibo(r)">Ver y compartir</button>
                 <button *ngIf="!r.anulado" type="button" class="boton boton-texto boton-sm" (click)="editar(r)">Editar</button>
                 <button *ngIf="!r.anulado" type="button" class="boton boton-texto boton-sm peligro" (click)="anular(r)">Anular</button>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- 2026-10-09: el recibo (PDF media carta con el logo de Anturi) y cómo compartirlo -->
+    <div *ngIf="recibo" class="modal-overlay" (click)="cerrarRecibo()">
+      <div class="modal-contenido visor" (click)="$event.stopPropagation()" role="dialog" aria-labelledby="tituloVisor">
+        <div class="visor__cab">
+          <h3 id="tituloVisor" class="modal-titulo">Recibo de caja menor N.º {{ recibo.numero }}</h3>
+          <button type="button" class="boton boton-icono" (click)="cerrarRecibo()" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="visor__hoja">
+          <div *ngIf="cargandoPdf" class="estado">Preparando el recibo...</div>
+          <iframe *ngIf="urlSegura && !esCelular" [src]="urlSegura" title="Vista previa del recibo"></iframe>
+          <div *ngIf="urlSegura && esCelular" class="visor__celular">
+            <b>{{ recibo.pagadorNombre }}</b>
+            <span>{{ +recibo.valor | currency:'COP':'symbol-narrow':'1.0-0' }} · {{ recibo.concepto }}</span>
+            <small>Toque "Descargar" para ver el recibo completo.</small>
+          </div>
+        </div>
+        <div *ngIf="recibo.anulado" class="alerta-error">Este recibo está anulado: se puede ver y descargar, pero no enviar.</div>
+        <div class="visor__acciones">
+          <button type="button" class="boton boton-secundario" [disabled]="!pdf" (click)="descargar()">⬇ Descargar</button>
+          <button type="button" class="boton boton-secundario" [disabled]="!pdf" (click)="imprimirPdf()">🖨 Imprimir</button>
+          <button type="button" class="boton boton-secundario" [disabled]="!pdf || recibo.anulado" (click)="modoCorreo = !modoCorreo">✉ Enviar por correo</button>
+          <button type="button" class="boton boton-primario whatsapp" [disabled]="!pdf || recibo.anulado" (click)="compartirWhatsapp()">WhatsApp</button>
+        </div>
+        <button *ngIf="intentoWhatsapp" type="button" class="boton boton-texto boton-sm visor__alterno" (click)="whatsappWeb()">¿No aparece WhatsApp? Descargar el recibo y abrir WhatsApp Web</button>
+        <form *ngIf="modoCorreo" class="visor__correo" (ngSubmit)="enviarCorreo()">
+          <label class="campo-etiqueta" for="correoRecibo">¿A qué correo se envía?</label>
+          <div class="visor__correo-fila">
+            <input id="correoRecibo" name="correoRecibo" type="email" class="campo-input" [(ngModel)]="correoDestino" placeholder="cliente@correo.com" autocomplete="email" required>
+            <button type="submit" class="boton boton-primario" [disabled]="enviando || !correoValido">{{ enviando ? 'Enviando...' : 'Enviar' }}</button>
+          </div>
+          <small class="sub">Llega desde el correo de Anturi Multiservicios, con el recibo en PDF.</small>
+        </form>
+        <div *ngIf="mensajeVisor" class="alerta-exito">{{ mensajeVisor }}</div>
+        <div *ngIf="errorVisor" class="alerta-error">{{ errorVisor }}</div>
       </div>
     </div>
 
@@ -140,6 +177,10 @@ const hoyIso = () => { const d = new Date(); return `${d.getFullYear()}-${String
 
   `,
   styles: [`
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: var(--espacio-4); }
+    .modal-contenido { background: var(--fondo-tarjeta, #fff); border-radius: var(--radio-xl, 14px); width: 100%; max-width: 520px; padding: var(--espacio-5, 20px); box-shadow: var(--sombra-md, 0 10px 30px rgba(0,0,0,.2)); max-height: 92vh; overflow-y: auto; }
+    .modal-titulo { font-size: var(--tamano-xl); font-weight: 700; color: var(--texto-principal); margin: 0 0 var(--espacio-3); }
+    .modal-acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); margin-top: var(--espacio-4); }
     .caja { display: flex; flex-direction: column; gap: var(--espacio-4); min-width: 0; }
     .caja__encabezado { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--espacio-3); flex-wrap: wrap; }
     .pagina-titulo { margin: 0; font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); }
@@ -158,12 +199,25 @@ const hoyIso = () => { const d = new Date(); return `${d.getFullYear()}-${String
     tr.anulado td .sub { text-decoration: none; }
     .estado { padding: var(--espacio-4); color: var(--texto-terciario); }
     .caja__modal { max-width: 720px; width: 100%; }
+    .visor { max-width: 760px; width: 100%; display: flex; flex-direction: column; gap: var(--espacio-3); }
+    .visor__cab { display: flex; justify-content: space-between; align-items: center; }
+    .visor__cab .modal-titulo { margin: 0; }
+    .visor__hoja { background: #e9edf3; border-radius: var(--radio-md); padding: 10px; }
+    .visor__hoja iframe { width: 100%; aspect-ratio: 612 / 396; border: none; background: #fff; border-radius: 6px; display: block; }
+    .visor__celular { display: flex; flex-direction: column; gap: 4px; padding: 18px; background: #fff; border-radius: 6px; text-align: center; color: var(--texto-principal); }
+    .visor__acciones { display: flex; gap: var(--espacio-2); flex-wrap: wrap; }
+    .visor__acciones .boton { flex: 1; min-width: 140px; }
+    .visor__alterno { align-self: flex-start; }
+    .whatsapp { background: #1fa855 !important; border-color: #1fa855 !important; }
+    .visor__correo { display: flex; flex-direction: column; gap: 6px; }
+    .visor__correo-fila { display: flex; gap: var(--espacio-2); }
+    .visor__correo-fila input { flex: 1; }
     .rejilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-3); margin: var(--espacio-3) 0; }
     .rejilla .ancho { grid-column: span 2; }
     @media (max-width: 700px) { .rejilla { grid-template-columns: 1fr; } .rejilla .ancho { grid-column: auto; } }
   `],
 })
-export class CajaMenorComponent implements OnInit {
+export class CajaMenorComponent implements OnInit, OnDestroy {
   private readonly URL = `${entorno.urlApi}/caja-menor`;
   meses = MESES;
   anios: number[] = [];
@@ -184,8 +238,21 @@ export class CajaMenorComponent implements OnInit {
   guardando = false;
   errorForm = '';
   private pausa?: ReturnType<typeof setTimeout>;
+  // visor del recibo
+  recibo: Recibo | null = null;
+  pdf: Blob | null = null;
+  private urlPdf = '';
+  urlSegura: SafeResourceUrl | null = null;
+  cargandoPdf = false;
+  modoCorreo = false;
+  correoDestino = '';
+  enviando = false;
+  mensajeVisor = '';
+  errorVisor = '';
+  intentoWhatsapp = false;
+  readonly esCelular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private sanitizer: DomSanitizer) {
     const actual = new Date().getFullYear();
     for (let a = actual + 1; a >= 2025; a--) this.anios.push(a);
   }
@@ -278,8 +345,10 @@ export class CajaMenorComponent implements OnInit {
     peticion.pipe(finalize(() => (this.guardando = false))).subscribe({
       next: (r) => {
         this.modal = false;
-        this.avisar(this.editando ? `Recibo N° ${r.numero} actualizado.` : `Recibo N° ${r.numero} creado.`);
+        const nuevo = !this.editando;
+        this.avisar(nuevo ? `Recibo N° ${r.numero} creado.` : `Recibo N° ${r.numero} actualizado.`);
         this.cargar();
+        if (nuevo) this.abrirRecibo(r); // listo para descargar o compartir
       },
       error: (e) => (this.errorForm = e?.error?.message ? [].concat(e.error.message).join('. ') : 'No se pudo guardar.'),
     });
@@ -293,28 +362,117 @@ export class CajaMenorComponent implements OnInit {
     ).subscribe((x) => { if (x) { this.avisar(`Recibo N° ${x.numero} anulado.`); this.cargar(); } });
   }
 
-  // Mismo formato del Excel "RECIBOS DE CAJA MENOR".
-  imprimir(r: Recibo): void {
-    const cuerpo = `
-      <div class="recibo">
-        <div class="cab"><strong>RECIBO DE CAJA MENOR</strong><span>No. <strong>${esc(r.numero)}</strong></span></div>
-        <div class="fila"><span><span class="et">Ciudad:</span> ${esc(r.ciudad)}</span><span><span class="et">Fecha:</span> ${fechaCorta(r.fecha)}</span><span class="valor">${pesos(r.valor)}</span></div>
-        <div class="fila"><span><span class="et">Cancelado a:</span> ${esc(r.canceladoA)} — Cra 7 #15-24 Oficina 114</span></div>
-        <div class="fila"><span><span class="et">Concepto:</span> ${esc(r.concepto)}</span></div>
-        <div class="fila"><span><span class="et">Recibido de:</span> ${esc(r.pagadorNombre)}${r.pagadorDocumento ? ' — CC # ' + esc(r.pagadorDocumento) : ''}</span></div>
-        <div class="fila"><span><span class="et">La suma de:</span> ${esc(r.valorEnLetras)}</span></div>
-        <div class="firmas"><span><span class="et">Código:</span> ${esc(r.codigo)}</span><span><span class="et">Aprobado:</span> ${esc(r.aprobadoPor)}</span><span class="firma">Firma y sello<br><span class="et">C.C. o NIT</span></span></div>
-        ${r.anulado ? '<div class="anulado">ANULADO</div>' : ''}
-      </div>`;
-    const css = `
-      .recibo { border: 2px solid #000; padding: 18px; max-width: 760px; position: relative; }
-      .cab { display: flex; justify-content: space-between; font-size: 18px; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 8px; }
-      .fila { display: flex; gap: 24px; padding: 7px 0; border-bottom: 1px dotted #999; font-size: 14px; }
-      .valor { margin-left: auto; font-size: 18px; font-weight: 700; border: 1px solid #000; padding: 2px 10px; }
-      .firmas { display: flex; justify-content: space-between; margin-top: 48px; font-size: 13px; }
-      .firma { border-top: 1px solid #000; padding-top: 4px; min-width: 200px; text-align: center; }
-      .anulado { position: absolute; top: 35%; left: 25%; font-size: 64px; color: rgba(220,38,38,.35); transform: rotate(-20deg); font-weight: 900; }`;
-    if (!imprimirHtml(`Recibo ${r.numero}`, cuerpo, css)) this.error = 'El navegador bloqueó la ventana para imprimir. Permita ventanas emergentes para esta página.';
+  ngOnDestroy(): void {
+    this.soltarPdf();
+  }
+
+  // ── Ver, descargar, imprimir y compartir el recibo (PDF del servidor) ──
+  abrirRecibo(r: Recibo): void {
+    this.soltarPdf();
+    this.recibo = r;
+    this.modoCorreo = false;
+    this.intentoWhatsapp = false;
+    this.correoDestino = '';
+    this.mensajeVisor = '';
+    this.errorVisor = '';
+    this.cargandoPdf = true;
+    this.http.get(`${this.URL}/${r.id}/pdf`, { responseType: 'blob' }).pipe(finalize(() => (this.cargandoPdf = false))).subscribe({
+      next: (b) => {
+        this.pdf = b;
+        this.urlPdf = URL.createObjectURL(b);
+        this.urlSegura = this.sanitizer.bypassSecurityTrustResourceUrl(this.urlPdf + '#toolbar=0&navpanes=0&view=FitH');
+      },
+      error: () => (this.errorVisor = 'No se pudo preparar el recibo. Revise la conexión e intente de nuevo.'),
+    });
+  }
+
+  cerrarRecibo(): void {
+    this.recibo = null;
+    this.soltarPdf();
+  }
+
+  private soltarPdf(): void {
+    if (this.urlPdf) URL.revokeObjectURL(this.urlPdf);
+    this.urlPdf = '';
+    this.urlSegura = null;
+    this.pdf = null;
+  }
+
+  private get nombreArchivo(): string {
+    return `Recibo-caja-menor-${this.recibo?.numero ?? ''}.pdf`;
+  }
+
+  descargar(): void {
+    if (!this.urlPdf) return;
+    const a = document.createElement('a');
+    a.href = this.urlPdf;
+    a.download = this.nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  imprimirPdf(): void {
+    if (!this.urlPdf) return;
+    if (this.esCelular) { window.open(this.urlPdf, '_blank'); return; }
+    const marco = document.createElement('iframe');
+    marco.style.position = 'fixed';
+    marco.style.width = '0';
+    marco.style.height = '0';
+    marco.style.border = '0';
+    marco.src = this.urlPdf;
+    marco.onload = () => {
+      try { marco.contentWindow?.focus(); marco.contentWindow?.print(); } catch { window.open(this.urlPdf, '_blank'); }
+      setTimeout(() => marco.remove(), 60_000);
+    };
+    document.body.appendChild(marco);
+  }
+
+  get correoValido(): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.correoDestino.trim());
+  }
+
+  enviarCorreo(): void {
+    if (!this.recibo || !this.correoValido) return;
+    this.enviando = true;
+    this.errorVisor = '';
+    this.mensajeVisor = '';
+    this.http.post<{ correo: string }>(`${this.URL}/${this.recibo.id}/enviar`, { correo: this.correoDestino.trim() })
+      .pipe(finalize(() => (this.enviando = false)))
+      .subscribe({
+        next: (r) => { this.mensajeVisor = `Listo: el recibo se envió a ${r.correo}.`; this.modoCorreo = false; },
+        error: (e) => (this.errorVisor = e?.error?.message ? [].concat(e.error.message).join('. ') : 'No se pudo enviar el correo.'),
+      });
+  }
+
+  // WhatsApp: en celular, tablet y PC con WhatsApp instalado se abre el menú de
+  // compartir del equipo con el PDF adjunto (solo se elige el contacto). Si el
+  // navegador no lo permite, se descarga el PDF y se abre WhatsApp para adjuntarlo.
+  async compartirWhatsapp(): Promise<void> {
+    if (!this.pdf || !this.recibo) return;
+    const r = this.recibo;
+    const texto = `Recibo de caja menor N.º ${r.numero} de Anturi Multiservicios por ${'$' + Math.round(+r.valor).toLocaleString('es-CO')} (${r.concepto}).`;
+    const archivo = new File([this.pdf], this.nombreArchivo, { type: 'application/pdf' });
+    this.intentoWhatsapp = true;
+    const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
+    if (nav.share && nav.canShare?.({ files: [archivo] })) {
+      try {
+        await nav.share({ files: [archivo], title: `Recibo N.º ${r.numero}`, text: texto });
+        return;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return; // la persona cerró el menú
+      }
+    }
+    this.whatsappWeb();
+  }
+
+  whatsappWeb(): void {
+    if (!this.recibo) return;
+    const r = this.recibo;
+    const texto = `Recibo de caja menor N.º ${r.numero} de Anturi Multiservicios por ${'$' + Math.round(+r.valor).toLocaleString('es-CO')} (${r.concepto}). Le adjunto el recibo en PDF.`;
+    this.descargar();
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+    this.mensajeVisor = 'Se descargó el recibo y se abrió WhatsApp: elija el contacto y adjunte el PDF descargado.';
   }
 
   private avisar(m: string): void {

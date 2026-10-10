@@ -183,6 +183,10 @@ const lineaVacia = (dias = 15): Linea => ({
     </div>
   `,
   styles: [`
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: var(--espacio-4); }
+    .modal-contenido { background: var(--fondo-tarjeta, #fff); border-radius: var(--radio-xl, 14px); width: 100%; max-width: 520px; padding: var(--espacio-5, 20px); box-shadow: var(--sombra-md, 0 10px 30px rgba(0,0,0,.2)); max-height: 92vh; overflow-y: auto; }
+    .modal-titulo { font-size: var(--tamano-xl); font-weight: 700; color: var(--texto-principal); margin: 0 0 var(--espacio-3); }
+    .modal-acciones { display: flex; justify-content: flex-end; gap: var(--espacio-3); margin-top: var(--espacio-4); }
     .nom { display: flex; flex-direction: column; gap: var(--espacio-4); min-width: 0; }
     .nom__encabezado { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--espacio-3); flex-wrap: wrap; }
     .pagina-titulo { margin: 0; font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); }
