@@ -39,6 +39,16 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
       <div *ngIf="error && !cargando" class="tarjeta estado-vacio">{{ error }}</div>
 
       <ng-container *ngIf="datos && !cargando">
+        <!-- 2026-10-09: los pagos cargados del Excel (pasado) no se mezclan con lo registrado en la página -->
+        <div class="historico" *ngIf="datos.historicoExcel?.cantidad || historico">
+          <span *ngIf="!historico">
+            Solo se cuenta lo registrado en la página. Este periodo también tiene
+            <b>{{ datos.historicoExcel?.cantidad }} pago{{ datos.historicoExcel?.cantidad !== 1 ? 's' : '' }} del Excel</b>
+            ({{ datos.historicoExcel?.recaudado | currency:'COP':'symbol-narrow':'1.0-0' }}) con fecha de este periodo, que no se suman.
+          </span>
+          <span *ngIf="historico">Incluye los pagos cargados del Excel (marcados <span class="marca-excel">Excel</span>).</span>
+          <label class="historico__switch"><input type="checkbox" [(ngModel)]="historico" (ngModelChange)="cambiarHistorico()"> Incluir histórico del Excel</label>
+        </div>
         <div class="tarjetas">
           <div class="tarjeta dato dato--principal">
             <span class="dato__etiqueta">Recaudado</span>
@@ -110,7 +120,7 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
                   <td class="num">{{ p.cuatroXMil | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
                   <td class="num">{{ p.comision | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
                   <td class="num">{{ p.afiliacion ? (p.afiliacion | currency:'COP':'symbol-narrow':'1.0-0') : '—' }}</td>
-                  <td class="sub">{{ p.registradoPor || '—' }}<span *ngIf="p.estimado" class="estimado" title="Pago anterior al módulo de Recaudo: el desglose se calculó con los valores actuales de la ficha"> · estimado</span></td>
+                  <td class="sub"><span *ngIf="p.historico" class="marca-excel" title="Pago cargado del Excel histórico, no registrado en la página">Excel</span>{{ p.historico ? '' : (p.registradoPor || '—') }}<span *ngIf="p.estimado" class="estimado" title="Pago anterior al módulo de Recaudo: el desglose se calculó con los valores actuales de la ficha"> · estimado</span></td>
                 </tr>
               </tbody>
             </table>
@@ -150,6 +160,9 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
     .nowrap { white-space: nowrap; }
     .sub { font-size: var(--tamano-xs); color: var(--texto-terciario); }
     .estimado { color: var(--color-advertencia); }
+    .historico { display: flex; justify-content: space-between; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; padding: 10px 14px; border-radius: var(--radio-md); background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.35); font-size: var(--tamano-sm); color: var(--texto-secundario); margin-bottom: var(--espacio-3); }
+    .historico__switch { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 600; color: var(--texto-principal); cursor: pointer; }
+    .marca-excel { display: inline-block; padding: 0 6px; border-radius: 4px; background: #e2e8f0; color: #334155; font-size: 11px; font-weight: 700; margin-right: 4px; }
     .etiqueta-tipo { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--tamano-xs); font-weight: 700; white-space: nowrap; background: rgba(27,50,112,0.08); color: var(--color-primario); }
     .tipo-NO_APORTA { background: rgba(232,87,12,0.12); color: var(--color-secundario); }
     .tipo-COOPERATIVA { background: rgba(34,197,94,0.12); color: #15803d; }
@@ -173,6 +186,7 @@ export class RecaudoComponent implements OnInit, OnDestroy {
   cargando = false;
   error = '';
   filtro = '';
+  historico = false;
   private destruir$ = new Subject<void>();
 
   constructor(private servicio: RecaudoServicio) {}
@@ -247,11 +261,15 @@ export class RecaudoComponent implements OnInit, OnDestroy {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
+  cambiarHistorico(): void {
+    this.cargar();
+  }
+
   cargar(): void {
     const { desde, hasta } = this.rango;
     this.cargando = true;
     this.error = '';
-    this.servicio.obtener(this.iso(desde), this.iso(hasta)).pipe(
+    this.servicio.obtener(this.iso(desde), this.iso(hasta), this.historico).pipe(
       catchError((err) => { this.error = err?.error?.message || 'No se pudo cargar el recaudo.'; return of(null); }),
       finalize(() => { this.cargando = false; }),
       takeUntil(this.destruir$),

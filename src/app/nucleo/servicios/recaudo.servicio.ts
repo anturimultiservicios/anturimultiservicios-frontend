@@ -33,6 +33,8 @@ export interface PagoRecaudo {
   comision: number;
   afiliacion: number;
   estimado: boolean;
+  // cargado del Excel histórico (no registrado en la página)
+  historico?: boolean;
   motivo: string | null;
   registradoPor: string | null;
 }
@@ -42,6 +44,9 @@ export interface Recaudo {
   hasta: string;
   totales: TotalesRecaudo;
   pagos: PagoRecaudo[];
+  // 2026-10-09: lo del Excel histórico no se suma salvo que se pida
+  incluyeHistorico?: boolean;
+  historicoExcel?: { cantidad: number; recaudado: number };
 }
 
 // 2026-10-09: control del dinero - solo Administrador y Super Admin.
@@ -51,7 +56,9 @@ export class RecaudoServicio {
 
   constructor(private http: HttpClient) {}
 
-  obtener(desde: string, hasta: string): Observable<Recaudo> {
-    return this.http.get<Recaudo>(this.URL, { params: new HttpParams().set('desde', desde).set('hasta', hasta) });
+  obtener(desde: string, hasta: string, historico = false): Observable<Recaudo> {
+    let params = new HttpParams().set('desde', desde).set('hasta', hasta);
+    if (historico) params = params.set('historico', 'true');
+    return this.http.get<Recaudo>(this.URL, { params });
   }
 }
