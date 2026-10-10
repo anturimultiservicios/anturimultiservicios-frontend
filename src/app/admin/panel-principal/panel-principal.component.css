@@ -228,3 +228,112 @@
 .boton-tema .icono-tema { width: 20px; height: 20px; }
 .boton-espacio { border-color: #e8590c; color: #e8590c; }
 .boton-espacio:hover { background: rgba(232, 89, 12, 0.08); }
+
+/* 2026-10-09: selector de idioma del encabezado (le faltaban sus estilos: salía como lista con viñetas) */
+.selector-idioma {
+
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* 2026-10-01: versión "simple" junto al logo - sin botón/borde, solo
+   texto + flecha, para que no llame tanto la atención (decisión de
+   Cristopher). La lista desplegable mantiene su estilo normal. */
+.selector-idioma--simple .selector-idioma__boton {
+  border: none;
+  padding: var(--espacio-2);
+  background: transparent;
+}
+
+.selector-idioma--simple .selector-idioma__boton:hover {
+  background: var(--fondo-tarjeta-hover);
+  border-radius: var(--radio-md);
+}
+
+.selector-idioma__boton {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  padding: var(--espacio-2) var(--espacio-3);
+  background: transparent;
+  border: 1.5px solid var(--borde-color);
+  border-radius: var(--radio-md);
+  color: var(--texto-secundario);
+  font-size: var(--tamano-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transicion-rapida);
+}
+
+.selector-idioma__boton:hover {
+  border-color: var(--color-primario);
+  color: var(--color-primario);
+}
+
+.selector-idioma__bandera {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.selector-idioma__codigo {
+  font-size: var(--tamano-xs);
+  font-weight: 700;
+}
+
+.selector-idioma__flecha {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--transicion-rapida);
+}
+
+.selector-idioma.abierto .selector-idioma__flecha {
+  transform: rotate(180deg);
+}
+
+.selector-idioma__lista {
+  position: absolute;
+  top: calc(100% + var(--espacio-2));
+  right: 0;
+  background-color: var(--fondo-tarjeta);
+  border: 1px solid var(--borde-color);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-lg);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 160px;
+  overflow: hidden;
+  animation: escalar var(--transicion-rapida) ease forwards;
+  z-index: calc(var(--z-flotante) + 10);
+}
+
+.selector-idioma__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  padding: var(--espacio-3) var(--espacio-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--tamano-sm);
+  color: var(--texto-secundario);
+  transition: background-color var(--transicion-rapida);
+}
+
+.selector-idioma__opcion:hover {
+  background-color: var(--fondo-tarjeta-hover);
+  color: var(--color-primario);
+}
+
+.selector-idioma__opcion.activo {
+  color: var(--color-primario);
+  font-weight: 600;
+  background-color: var(--fondo-tarjeta-hover);
+}
+
+:host-context(body.tema-oscuro) .selector-idioma__boton {
+  border-color: rgba(255,255,255,0.15);
+  color: var(--texto-principal);
+}
