@@ -204,6 +204,49 @@
       </button>
     </div>
 
+    <!-- ===== CÓDIGO DE GOOGLE AUTHENTICATOR (Super Admin, 2026-10-09) ===== -->
+    <div class="login-formulario" *ngIf="vista === 'codigo-totp'">
+      <div class="login-encabezado">
+        <h1 class="login-titulo">Código de seguridad</h1>
+        <p class="login-subtitulo">Abra Google Authenticator y escriba el código de 6 dígitos de <b>Anturi Multiservicios</b>.</p>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="codigo-totp">Código <span class="requerido">*</span></label>
+        <input
+          id="codigo-totp"
+          type="text"
+          inputmode="numeric"
+          maxlength="8"
+          class="campo-input"
+          style="font-size: 26px; letter-spacing: 8px; text-align: center;"
+          [(ngModel)]="codigoTotp"
+          placeholder="000000"
+          autocomplete="one-time-code"
+          (keyup.enter)="ingresar()">
+      </div>
+
+      <div class="login-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        {{ error }}
+      </div>
+
+      <button class="boton boton-primario login-btn-ingresar" (click)="ingresar()" [disabled]="cargando || codigoTotp.replace(' ', '').length < 6">
+        {{ cargando ? ('comun.cargando' | translate) : 'Entrar' }}
+      </button>
+
+      <button class="login-olvidaste" (click)="vista = 'login'; error = ''; codigoTotp = ''">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        {{ 'login.volver' | translate }}
+      </button>
+    </div>
+
     <!-- ===== CAMBIAR CONTRASEÑA TEMPORAL (alcance: debe-cambiar-contrasena) ===== -->
     <div class="login-formulario" *ngIf="vista === 'cambiar-contrasena'">
       <div class="login-encabezado">

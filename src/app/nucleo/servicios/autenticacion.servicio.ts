@@ -25,7 +25,13 @@ export interface RespuestaLoginParcial {
   usuario: Partial<UsuarioSistema>;
 }
 
-export type RespuestaLogin = RespuestaAuth | RespuestaLoginParcial;
+// 2026-10-09: el Super Admin con código de Google Authenticator exigido
+export interface RespuestaRequiereCodigo {
+  alcance: 'requiere-codigo';
+  mensaje: string;
+}
+
+export type RespuestaLogin = RespuestaAuth | RespuestaLoginParcial | RespuestaRequiereCodigo;
 
 export function esLoginCompleto(res: RespuestaLogin): res is RespuestaAuth {
   return (res as RespuestaAuth).acceso !== undefined;
@@ -62,9 +68,9 @@ export class AutenticacionServicio {
   // completar el ingreso, para proteger la copia local de datos (se borra ahí).
   private contrasenaPendiente: string | null = null;
 
-  iniciarSesion(correo: string, contrasena: string): Observable<RespuestaLogin> {
+  iniciarSesion(correo: string, contrasena: string, codigoTotp?: string): Observable<RespuestaLogin> {
     this.contrasenaPendiente = contrasena;
-    return this.http.post<RespuestaLogin>(`${this.URL}/ingresar`, { correo, contrasena, equipo: this.identificacionEquipo() });
+    return this.http.post<RespuestaLogin>(`${this.URL}/ingresar`, { correo, contrasena, equipo: this.identificacionEquipo(), ...(codigoTotp ? { codigoTotp } : {}) });
   }
 
   // 2026-10-08: identificación propia de ESTE navegador (equipos autorizados

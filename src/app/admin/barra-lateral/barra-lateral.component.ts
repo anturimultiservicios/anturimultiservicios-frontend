@@ -46,8 +46,6 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'hallazgos', etiqueta: 'Reconciliación empleadores', ruta: '/admin/hallazgos-reconciliacion', soloAdmin: true },
     { icono: 'parametros', etiqueta: 'Parámetros legales', ruta: '/admin/parametros-legales', soloAdmin: true },
     { icono: 'excel', etiqueta: 'Archivos Excel', ruta: '/admin/archivos-excel' },
-    // 2026-10-09: espacio Interrapidísimo - en desarrollo, solo Super Admin
-    { icono: 'paquete', etiqueta: 'Interrapidísimo', ruta: '/interrapidisimo', soloSuperAdmin: true },
     { icono: 'configuracion', etiqueta: 'Configuración', ruta: '/admin/configuracion' },
   ];
 

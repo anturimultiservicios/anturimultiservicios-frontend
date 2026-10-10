@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { BarraLateralComponent } from '../barra-lateral/barra-lateral.component';
 import { CalculadoraComponent } from '../../compartido/calculadora/calculadora.component';
@@ -20,6 +20,7 @@ import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servici
   imports: [
     CommonModule,
     RouterOutlet,
+    RouterLink,
     TranslateModule,
     BarraLateralComponent,
     CalculadoraComponent,

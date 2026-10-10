@@ -25,7 +25,8 @@ type VistaLogin =
   | 'cambiar-contrasena'
   | 'verificar-dispositivo'
   | 'registrar-dispositivo'
-  | 'dispositivo-pendiente';
+  | 'dispositivo-pendiente'
+  | 'codigo-totp';
 
 @Component({
   selector: 'anturi-inicio-sesion',
@@ -62,6 +63,8 @@ export class InicioSesionComponent {
   nuevaContrasena = '';
   confirmarContrasena = '';
   nombreDispositivo = '';
+  // 2026-10-09: código de Google Authenticator (Super Admin)
+  codigoTotp = '';
 
   constructor(
     public idiomaServicio: IdiomaServicio,
@@ -89,13 +92,24 @@ export class InicioSesionComponent {
     this.cargando = true;
     this.error = '';
 
-    this.auth.iniciarSesion(this.correo, this.contrasena).subscribe({
+    const codigo = this.vista === 'codigo-totp' ? this.codigoTotp.replace(/\s/g, '') : undefined;
+    this.auth.iniciarSesion(this.correo, this.contrasena, codigo).subscribe({
       next: (res) => {
         this.cargando = false;
 
         if (esLoginCompleto(res)) {
+          this.codigoTotp = '';
           this.auth.guardarSesion(res);
           this.irSegunRol(res.usuario.rol);
+          return;
+        }
+
+        // 2026-10-09: contraseña correcta, falta el código de Google Authenticator
+        if (res.alcance === 'requiere-codigo') {
+          this.mensajePaso = res.mensaje;
+          this.codigoTotp = '';
+          this.vista = 'codigo-totp';
+          setTimeout(() => document.getElementById('codigo-totp')?.focus(), 50);
           return;
         }
 
@@ -127,6 +141,9 @@ export class InicioSesionComponent {
           this.mensajeEquipo = mensaje.replace(/^EQUIPO_[A-Z_]+:\s*/, '');
           this.equipoBloqueado = mensaje.startsWith('EQUIPO_BLOQUEADO') || mensaje.startsWith('EQUIPO_SIN_ID');
           this.vista = 'equipo-pendiente';
+        } else if (err.status === 401 && mensaje?.includes('Google Authenticator')) {
+          this.error = 'Código incorrecto. Revise el de "Anturi Multiservicios" en Google Authenticator e intente con el código nuevo.';
+          this.codigoTotp = '';
         } else if (err.status === 401) {
           this.error = 'Correo o contraseña incorrectos.';
         } else {

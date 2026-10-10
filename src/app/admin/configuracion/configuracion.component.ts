@@ -7,13 +7,17 @@ import { UsuariosServicio } from '../../nucleo/servicios/usuarios.servicio';
 import { ConfigSistemaServicio, ConfigSistema, ResumenAvisosCobro } from '../../nucleo/servicios/config-sistema.servicio';
 
 import { TemaServicio } from '../../nucleo/servicios/tema.servicio';
+import { CodigoIngresoComponent } from './codigo-ingreso.component';
 @Component({
   selector: 'anturi-configuracion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CodigoIngresoComponent],
   template: `
     <div class="config-contenedor">
       <h2 class="pagina-titulo">Configuración</h2>
+
+      <!-- 2026-10-09: seguridad del Super Admin (código de Google Authenticator al ingresar) -->
+      <anturi-codigo-ingreso *ngIf="auth.usuarioActual?.rol === 'SUPER_ADMIN'"></anturi-codigo-ingreso>
 
       <!-- Avatar y datos básicos -->
       <div class="tarjeta config-perfil">
