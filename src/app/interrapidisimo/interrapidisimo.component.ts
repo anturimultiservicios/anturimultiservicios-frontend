@@ -52,7 +52,7 @@ const num = (v: unknown) => Number(v ?? 0) || 0;
         </div>
       </header>
 
-      <div *ngIf="esSuperAdmin" class="inter__desarrollo">🔒 <b>En desarrollo:</b> este espacio solo lo ve usted (Super Admin). Nadie más lo ve ni puede entrar hasta que se active.</div>
+      <div *ngIf="esSuperAdmin" class="inter__desarrollo">🔒 Página en desarrollo</div>
 
       <nav class="inter__pestanas">
         <button type="button" [class.activa]="vista === 'dia'" (click)="vista = 'dia'">Día</button>
