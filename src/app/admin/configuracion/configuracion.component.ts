@@ -229,7 +229,17 @@ import { CodigoIngresoComponent } from './codigo-ingreso.component';
             </div>
             <div *ngIf="cargandoAvisos" class="estado-carga-inline">Cargando...</div>
             <p *ngIf="!cargandoAvisos && avisosHoy && avisosHoy.lista.length === 0" class="campo-ayuda">Hoy no le toca aviso a nadie.</p>
-            <div *ngIf="!cargandoAvisos && avisosHoy && avisosHoy.lista.length > 0" class="tabla-scroll">
+            <!-- 2026-10-09 (Cristopher): solo el resumen; la lista completa queda detrás de un botón -->
+            <div *ngIf="!cargandoAvisos && avisosHoy && avisosHoy.lista.length > 0" class="cobro-resumen">
+              <div><b>{{ avisosHoy.lista.length }}</b><span>afiliados</span></div>
+              <div><b>{{ porCorreo }}</b><span>por correo</span></div>
+              <div><b>{{ porLlamada }}</b><span>por llamada</span></div>
+              <div><b>{{ totalAvisos | currency:'COP':'symbol-narrow':'1.0-0' }}</b><span>por cobrar</span></div>
+            </div>
+            <button *ngIf="!cargandoAvisos && avisosHoy && avisosHoy.lista.length > 0" type="button" class="boton boton-texto boton-sm" (click)="verListaAvisos = !verListaAvisos">
+              {{ verListaAvisos ? 'Ocultar la lista' : 'Ver la lista (' + avisosHoy.lista.length + ')' }}
+            </button>
+            <div *ngIf="verListaAvisos && !cargandoAvisos && avisosHoy && avisosHoy.lista.length > 0" class="tabla-scroll">
               <table class="tabla-cobro">
                 <thead><tr><th>Afiliado</th><th>Vence</th><th>Valor</th><th>Por</th></tr></thead>
                 <tbody>
@@ -261,6 +271,10 @@ import { CodigoIngresoComponent } from './codigo-ingreso.component';
     .cobro-estado--activo { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); }
     .cobro-estado > div { flex: 1 1 260px; }
     .cobro-hoy { margin-top: var(--espacio-4); }
+    .cobro-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--espacio-2); margin-bottom: var(--espacio-2); }
+    .cobro-resumen div { background: var(--fondo-tarjeta-hover, #f3f5f9); border-radius: var(--radio-md); padding: 10px 12px; display: flex; flex-direction: column; }
+    .cobro-resumen b { font-size: var(--tamano-lg); color: var(--texto-principal); }
+    .cobro-resumen span { font-size: var(--tamano-xs); color: var(--texto-terciario); }
     .cobro-hoy__cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--espacio-2); }
     .tabla-scroll { overflow-x: auto; }
     .tabla-cobro { width: 100%; border-collapse: collapse; font-size: var(--tamano-sm); }
@@ -459,6 +473,11 @@ export class ConfiguracionComponent implements OnInit, OnDestroy {
 
   // ── Correos de cobro: vista previa y activación ──
   avisosHoy: ResumenAvisosCobro | null = null;
+  verListaAvisos = false;
+
+  get porCorreo(): number { return this.avisosHoy?.lista.filter((a) => a.canal === 'CORREO').length ?? 0; }
+  get porLlamada(): number { return (this.avisosHoy?.lista.length ?? 0) - this.porCorreo; }
+  get totalAvisos(): number { return (this.avisosHoy?.lista ?? []).reduce((t, a) => t + (Number(a.valor) || 0), 0); }
   cargandoAvisos = false;
   cambiandoCobros = false;
   resultadoEnvio = '';
