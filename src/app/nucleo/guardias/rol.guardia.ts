@@ -23,7 +23,9 @@ export const rolGuardia: CanActivateFn = (ruta: ActivatedRouteSnapshot) => {
     const destino =
       usuario.rol === 'SUPER_ADMIN' || usuario.rol === 'ADMIN'
         ? '/admin'
-        : '/asistente';
+        : usuario.rol === 'EXTERNO'
+          ? '/interrapidisimo'
+          : '/asistente';
     return router.createUrlTree([destino]);
   }
 

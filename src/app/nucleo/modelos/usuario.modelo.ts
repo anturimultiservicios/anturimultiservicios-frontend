@@ -1,4 +1,5 @@
-export type Rol = 'SUPER_ADMIN' | 'ADMIN' | 'SECRETARIA';
+// EXTERNO (2026-10-09): usuario de otro espacio (ej. Interrapidísimo), sin seguridad social
+export type Rol = 'SUPER_ADMIN' | 'ADMIN' | 'SECRETARIA' | 'EXTERNO';
 
 export interface UsuarioSistema {
   id: number;

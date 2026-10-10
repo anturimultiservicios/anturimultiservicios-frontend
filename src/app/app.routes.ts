@@ -55,6 +55,16 @@ export const rutas: Routes = [
       import('./secretaria/secretaria.routes').then((m) => m.rutasSecretaria),
   },
 
+  // 2026-10-09: espacio Interrapidísimo (en desarrollo: solo Super Admin; el
+  // servidor decide quién entra de verdad - EspacioGuardia)
+  {
+    path: 'interrapidisimo',
+    canActivate: [autenticacionGuardia, rolGuardia],
+    data: { roles: ['SUPER_ADMIN', 'EXTERNO'] },
+    loadComponent: () =>
+      import('./interrapidisimo/interrapidisimo.component').then((m) => m.InterrapidisimoComponent),
+  },
+
   // 2026-10-08: el rol se llama "Asistente" en todo el front; la URL vieja
   // /secretaria/... sigue funcionando por si alguien la tenía guardada.
   { path: 'secretaria', redirectTo: 'asistente' },

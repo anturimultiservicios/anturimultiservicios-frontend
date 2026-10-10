@@ -146,6 +146,9 @@ export class InicioSesionComponent {
   private irSegunRol(rol: string): void {
     if (rol === 'SUPER_ADMIN' || rol === 'ADMIN') {
       this.router.navigate(['/admin']);
+    } else if (rol === 'EXTERNO') {
+      // 2026-10-09: usuario de otro espacio (ej. Interrapidísimo)
+      this.router.navigate(['/interrapidisimo']);
     } else {
       this.router.navigate(['/asistente']);
     }
