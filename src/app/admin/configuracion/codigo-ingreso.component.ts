@@ -32,6 +32,31 @@ import { entorno } from '../../../environments/entorno';
           </button>
         </div>
       </form>
+      <!-- 2026-10-09: si la entrada de la app no coincide, vincular de nuevo con un QR -->
+      <button *ngIf="estado.totpActivo && !revincular" type="button" class="ci__enlace" (click)="revincular = 'clave'; error = ''; mensaje = ''">¿El código no funciona? Vincular Google Authenticator de nuevo</button>
+      <div *ngIf="revincular" class="ci__revincular">
+        <ng-container *ngIf="revincular === 'clave'">
+          <p class="ci__paso"><b>Paso 1.</b> Por seguridad, escriba su contraseña de la página.</p>
+          <form class="ci__fila" (ngSubmit)="pedirQr()">
+            <input type="password" name="ciClave" class="campo-input" autocomplete="current-password" placeholder="Contraseña" [(ngModel)]="contrasena">
+            <button type="submit" class="boton boton-primario" [disabled]="guardando || !contrasena">{{ guardando ? '...' : 'Continuar' }}</button>
+          </form>
+        </ng-container>
+        <ng-container *ngIf="revincular === 'qr' && qr">
+          <p class="ci__paso"><b>Paso 2.</b> En Google Authenticator toque <b>+</b> → <b>Escanear un código QR</b> y escanee este código. Se crea la entrada <b>{{ cuenta }}</b>.</p>
+          <div class="ci__qr">
+            <img [src]="qr" alt="Código QR para Google Authenticator" width="200" height="200">
+            <div class="ci__manual">¿No puede escanear? Elija <b>Ingresar clave de configuración</b> y escriba:<br><code>{{ secreto }}</code></div>
+          </div>
+          <p class="ci__paso"><b>Paso 3.</b> Escriba el código que aparece en esa <b>entrada nueva</b>:</p>
+          <form class="ci__fila" (ngSubmit)="confirmarQr()">
+            <input name="ciNuevo" class="campo-input ci__codigo" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="000000" [(ngModel)]="codigoNuevo">
+            <button type="submit" class="boton boton-primario" [disabled]="guardando || codigoNuevo.replace(' ', '').length < 6">{{ guardando ? 'Verificando...' : 'Confirmar y activar' }}</button>
+          </form>
+          <p class="ci__nota">Después puede borrar de la app la entrada vieja de "Anturi Multiservicios" que no funcionaba.</p>
+        </ng-container>
+        <button type="button" class="ci__enlace" (click)="cancelarRevincular()">Cancelar</button>
+      </div>
       <div *ngIf="mensaje" class="ci__ok">{{ mensaje }}</div>
       <div *ngIf="error" class="ci__error">{{ error }}</div>
     </div>
@@ -46,6 +71,14 @@ import { entorno } from '../../../environments/entorno';
     .ci__fila { display: flex; gap: 8px; }
     .ci__codigo { max-width: 180px; font-size: 22px; letter-spacing: 6px; text-align: center; }
     .ci__aviso { color: #7a4b00; background: #fff7e6; padding: 8px 12px; border-radius: 8px; margin: 0; }
+    .ci__enlace { align-self: flex-start; background: none; border: none; padding: 0; color: var(--color-primario, #1b3270); text-decoration: underline; cursor: pointer; font-size: 14px; }
+    .ci__revincular { border: 1px dashed var(--borde-color, #e3e7ef); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .ci__paso { margin: 0; font-size: 14px; color: var(--texto-principal); }
+    .ci__qr { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .ci__qr img { background: #fff; padding: 6px; border-radius: 8px; border: 1px solid var(--borde-color, #e3e7ef); }
+    .ci__manual { font-size: 13px; color: var(--texto-secundario); max-width: 320px; }
+    .ci__manual code { display: inline-block; margin-top: 4px; font-size: 14px; letter-spacing: 1px; background: #f3f5f9; padding: 4px 8px; border-radius: 6px; word-break: break-all; color: #111a3d; }
+    .ci__nota { margin: 0; font-size: 12px; color: var(--texto-terciario); }
     .ci__ok { color: #1b5e20; background: #e8f5e9; padding: 8px 12px; border-radius: 8px; }
     .ci__error { color: #b42318; background: #fdecea; padding: 8px 12px; border-radius: 8px; }
   `],
@@ -57,11 +90,52 @@ export class CodigoIngresoComponent implements OnInit {
   guardando = false;
   mensaje = '';
   error = '';
+  // volver a vincular
+  revincular: '' | 'clave' | 'qr' = '';
+  contrasena = '';
+  qr = '';
+  secreto = '';
+  cuenta = '';
+  codigoNuevo = '';
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.http.get<{ totpActivo: boolean; exigirEnIngreso: boolean }>(this.URL).pipe(catchError(() => of(null))).subscribe((e) => (this.estado = e));
+  }
+
+  pedirQr(): void {
+    this.guardando = true;
+    this.error = '';
+    this.http.post<{ qr: string; secreto: string; cuenta: string }>(`${entorno.urlApi}/recuperacion-super-admin/totp/revincular`, { contrasena: this.contrasena })
+      .pipe(finalize(() => (this.guardando = false)))
+      .subscribe({
+        next: (r) => { this.qr = r.qr; this.secreto = r.secreto; this.cuenta = r.cuenta; this.contrasena = ''; this.revincular = 'qr'; },
+        error: (e) => (this.error = e?.status === 401 ? 'Contraseña incorrecta.' : (e?.error?.message || 'No se pudo generar el código QR.')),
+      });
+  }
+
+  confirmarQr(): void {
+    this.guardando = true;
+    this.error = '';
+    this.http.post<{ exigirEnIngreso: boolean }>(`${entorno.urlApi}/recuperacion-super-admin/totp/revincular/confirmar`, { codigo: this.codigoNuevo.replace(/\s/g, '') })
+      .pipe(finalize(() => (this.guardando = false)))
+      .subscribe({
+        next: () => {
+          this.estado = { totpActivo: true, exigirEnIngreso: true };
+          this.cancelarRevincular();
+          this.mensaje = 'Listo: Google Authenticator quedó vinculado de nuevo y ACTIVO. Desde la próxima vez la página le pedirá el código al entrar. Le enviamos un aviso a sus correos.';
+        },
+        error: (e) => (this.error = e?.error?.message || 'No se pudo confirmar el código.'),
+      });
+  }
+
+  cancelarRevincular(): void {
+    this.revincular = '';
+    this.contrasena = '';
+    this.qr = '';
+    this.secreto = '';
+    this.codigoNuevo = '';
   }
 
   cambiar(): void {
