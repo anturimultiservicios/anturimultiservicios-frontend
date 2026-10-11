@@ -1,0 +1,12 @@
+# Anturi Multiservicios - solo la página pública se muestra en buscadores
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /asistente
+Disallow: /secretaria
+Disallow: /super-admin
+Disallow: /interrapidisimo
+Disallow: /ingresar
+Disallow: /restablecer-contrasena
+
+Sitemap: https://anturimultiservicios.com/sitemap.xml
