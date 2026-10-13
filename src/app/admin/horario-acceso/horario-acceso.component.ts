@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of, forkJoin } from 'rxjs';
 import {
   HorarioAccesoServicio,
+  UsuarioSinHorario,
   ConfiguracionHorarioAcceso,
   ExcepcionHorarioAcceso,
 } from '../../nucleo/servicios/horario-acceso.servicio';
@@ -98,6 +99,22 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
           </div>
         </div>
 
+        <!-- 2026-10-13: usuarios que entran a cualquier hora (permanente) -->
+        <div class="tarjeta seccion-datos" style="margin-top: var(--espacio-5);">
+          <h3 class="seccion-titulo">Usuarios sin horario</h3>
+          <p class="campo-ayuda" style="margin-bottom: var(--espacio-4);">
+            Pueden entrar a cualquier hora, también de noche, domingos y festivos. Los demás siguen con el horario de arriba.
+          </p>
+          <div *ngFor="let u of sinHorario" class="fila-sin-horario">
+            <span><strong>{{ u.nombre }} {{ u.apellido }}</strong> <small>{{ nombreRol(u.rol) }}</small></span>
+            <label class="interruptor-sh">
+              <input type="checkbox" [checked]="u.sinHorario" [disabled]="cambiandoSinHorario === u.id" (change)="alternarSinHorario(u, $any($event.target).checked)">
+              <span>{{ u.sinHorario ? 'Sin horario' : 'Con horario' }}</span>
+            </label>
+          </div>
+          <p *ngIf="!sinHorario.length" class="campo-ayuda">No hay usuarios.</p>
+        </div>
+
         <!-- Otorgar excepción -->
         <div class="tarjeta seccion-datos" style="margin-top: var(--espacio-5);">
           <h3 class="seccion-titulo">Otorgar excepción</h3>
@@ -180,6 +197,10 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
     </div>
   `,
   styles: [`
+    .fila-sin-horario { display: flex; justify-content: space-between; align-items: center; gap: var(--espacio-3); padding: var(--espacio-2) 0; border-bottom: 1px solid var(--borde-color, #e5e7eb); }
+    .fila-sin-horario small { color: var(--texto-terciario); margin-left: 6px; }
+    .interruptor-sh { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: var(--tamano-sm); color: var(--texto-secundario); }
+    .interruptor-sh input { width: 18px; height: 18px; cursor: pointer; }
     .resumen-horario { margin: var(--espacio-3) 0 0; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .pagina-contenedor { display: flex; flex-direction: column; gap: var(--espacio-2); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
@@ -229,6 +250,9 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
     motivo: '',
   };
 
+  sinHorario: UsuarioSinHorario[] = [];
+  cambiandoSinHorario: number | null = null;
+
   private destruir$ = new Subject<void>();
 
   constructor(
@@ -238,6 +262,15 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarTodo();
+    this.horarioServicio.listarSinHorario().pipe(catchError(() => of([] as UsuarioSinHorario[]))).subscribe((l) => (this.sinHorario = l));
+  }
+
+  alternarSinHorario(u: UsuarioSinHorario, valor: boolean): void {
+    this.cambiandoSinHorario = u.id;
+    this.horarioServicio.cambiarSinHorario(u.id, valor).pipe(catchError(() => of(null))).subscribe((r) => {
+      this.cambiandoSinHorario = null;
+      if (r) u.sinHorario = r.sinHorario;
+    });
   }
 
   ngOnDestroy(): void {
@@ -266,7 +299,7 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
   }
 
   nombreRol(rol: string): string {
-    return rol === 'SECRETARIA' ? 'Asistente' : rol === 'ADMIN' ? 'Administrador' : rol === 'SUPER_ADMIN' ? 'Super Admin' : rol;
+    return rol === 'SECRETARIA' ? 'Asistente' : rol === 'ADMIN' ? 'Administrador' : rol === 'SUPER_ADMIN' ? 'Super Admin' : rol === 'EXTERNO' ? 'Otro espacio' : rol;
   }
 
   readonly horas = Array.from({ length: 24 }, (_, i) => i);

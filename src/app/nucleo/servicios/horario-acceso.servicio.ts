@@ -42,6 +42,8 @@ export interface ExcepcionHorarioAcceso {
 // aviso de "se cierra en 5 minutos" y la pantalla de cierre forzado, para
 // que tanto el polling periódico como el interceptor de HTTP (que detecta
 // el corte real en cualquier request) escriban al mismo lugar.
+export interface UsuarioSinHorario { id: number; nombre: string; apellido: string; rol: string; sinHorario: boolean }
+
 @Injectable({ providedIn: 'root' })
 export class HorarioAccesoServicio {
   private readonly URL = `${entorno.urlApi}/horario-acceso`;
@@ -67,6 +69,15 @@ export class HorarioAccesoServicio {
 
   actualizarConfiguracion(datos: Partial<Pick<ConfiguracionHorarioAcceso, 'activo' | 'horaInicio' | 'horaFin' | 'sabadoActivo' | 'sabadoHoraInicio' | 'sabadoHoraFin' | 'domingoActivo' | 'domingoHoraInicio' | 'domingoHoraFin' | 'bloquearFestivos'>>): Observable<ConfiguracionHorarioAcceso> {
     return this.http.patch<ConfiguracionHorarioAcceso>(`${this.URL}/configuracion`, datos);
+  }
+
+  // 2026-10-13: usuarios que entran a cualquier hora (permanente)
+  listarSinHorario(): Observable<UsuarioSinHorario[]> {
+    return this.http.get<UsuarioSinHorario[]>(`${this.URL}/sin-horario`);
+  }
+
+  cambiarSinHorario(usuarioId: number, sinHorario: boolean): Observable<UsuarioSinHorario> {
+    return this.http.patch<UsuarioSinHorario>(`${this.URL}/sin-horario/${usuarioId}`, { sinHorario });
   }
 
   listarExcepciones(): Observable<ExcepcionHorarioAcceso[]> {
