@@ -174,10 +174,13 @@ const TIPOS: TipoAfiliacionInfo[] = [
 ];
 
 import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/listas-entidades.component';
+import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
+import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aportante';
+
 @Component({
   selector: 'anturi-formulario-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ListasEntidadesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ListasEntidadesComponent, ContactosAdicionalesComponent],
   template: `
     <anturi-listas-entidades></anturi-listas-entidades>
     <div class="pagina-formulario">
@@ -454,6 +457,7 @@ import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/l
               <label class="campo-etiqueta">Correo electrónico</label>
               <input type="email" class="campo-input" [(ngModel)]="form.correo" name="correo"
                 placeholder="correo@ejemplo.com" (blur)="validarCampo('confirmarCorreo')">
+              <anturi-contactos-adicionales tipo="email" etiqueta="Correo" nombre="nuevo-correos" [(valores)]="correosAdicionales"></anturi-contactos-adicionales>
             </div>
             <div class="campo-grupo" *ngIf="form.correo">
               <label class="campo-etiqueta">Confirmar correo <span class="requerido">*</span></label>
@@ -464,8 +468,31 @@ import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/l
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Teléfono</label>
-              <input type="tel" class="campo-input" [(ngModel)]="form.telefono" name="telefono" placeholder="Número de teléfono">
+              <input type="tel" class="campo-input" [(ngModel)]="form.telefono" name="telefono" placeholder="Número de celular">
+              <anturi-contactos-adicionales tipo="tel" etiqueta="Celular" nombre="nuevo-telefonos" [(valores)]="telefonosAdicionales"></anturi-contactos-adicionales>
             </div>
+            <!-- 2026-10-15: dirección de la casa (y del trabajo si se quiere) -->
+            <div class="campo-grupo campo-grupo--ancho">
+              <label class="campo-etiqueta">Dirección de la casa</label>
+              <input type="text" class="campo-input" [(ngModel)]="direccion" name="direccion" placeholder="Ej. Cra 7 # 15-24, barrio...">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Municipio</label>
+              <input type="text" class="campo-input" [(ngModel)]="municipio" name="municipio" placeholder="Ej. Quimbaya, Quindío">
+            </div>
+            <div class="campo-grupo">
+              <button *ngIf="!verTrabajo" type="button" class="boton boton-texto boton-sm" style="margin-top: 26px;" (click)="verTrabajo = true">+ Agregar dirección del trabajo</button>
+            </div>
+            <ng-container *ngIf="verTrabajo">
+              <div class="campo-grupo campo-grupo--ancho">
+                <label class="campo-etiqueta">Dirección del trabajo</label>
+                <input type="text" class="campo-input" [(ngModel)]="direccionTrabajo" name="direccionTrabajo">
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta">Municipio (trabajo)</label>
+                <input type="text" class="campo-input" [(ngModel)]="municipioTrabajo" name="municipioTrabajo">
+              </div>
+            </ng-container>
             <div class="campo-grupo campo-grupo--ancho">
               <label class="campo-etiqueta">Fecha de nacimiento</label>
               <!-- 2026-10-07 (bug real reportado por Cristopher en vivo): el
@@ -521,11 +548,7 @@ import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/l
               <label class="campo-etiqueta">Clase aportante</label>
               <select class="campo-input" [(ngModel)]="form.claseAportante" name="claseAportante">
                 <option value="">Seleccionar...</option>
-                <option value="DOMESTICA">Doméstica</option>
-                <option value="Independiente">Independiente</option>
-                <option value="Cooperativa">Cooperativa</option>
-                <option value="Empresa">Empresa</option>
-                <option value="FINCA SAN FELIPE">Finca San Felipe</option>
+                <option *ngFor="let c of opcionesClase" [value]="c">{{ c }}</option>
               </select>
             </div>
             <div class="campo-grupo">
@@ -931,6 +954,16 @@ import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/l
   `]
 })
 export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
+  // 2026-10-15: contactos adicionales, direcciones y clase de aportante
+  telefonosAdicionales: string[] = [];
+  correosAdicionales: string[] = [];
+  direccion = '';
+  municipio = '';
+  direccionTrabajo = '';
+  municipioTrabajo = '';
+  verTrabajo = false;
+  get opcionesClase(): string[] { return opcionesClaseAportante(this.form?.claseAportante); }
+
   readonly tipos = TIPOS;
   readonly tiposDocumento = TIPOS_DOCUMENTO;
 
@@ -1463,6 +1496,12 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       notificarSms: this.form.notificarSms,
       notificarLlamada: this.form.notificarLlamada,
       telefono: this.form.telefono || undefined,
+      telefonosAdicionales: limpiarContactos(this.telefonosAdicionales),
+      correosAdicionales: limpiarContactos(this.correosAdicionales),
+      direccion: this.direccion.trim() || undefined,
+      municipio: this.municipio.trim() || undefined,
+      direccionTrabajo: this.direccionTrabajo.trim() || undefined,
+      municipioTrabajo: this.municipioTrabajo.trim() || undefined,
       fechaNacimiento: this.form.fechaNacimiento || undefined,
       cargo: this.form.cargo || undefined,
       claseAportante: this.form.claseAportante || undefined,

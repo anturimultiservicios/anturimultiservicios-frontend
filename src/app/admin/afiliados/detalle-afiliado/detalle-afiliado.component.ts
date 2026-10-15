@@ -13,10 +13,14 @@ import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipo
 import { formatearValor } from '../../../nucleo/utilidades/comparar-datos';
 import { CredencialesTitularComponent } from '../../../compartido/credenciales-titular/credenciales-titular.component';
 
+import { DocumentosTitularComponent } from '../../../compartido/documentos-titular/documentos-titular.component';
+import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
+import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aportante';
+
 @Component({
   selector: 'anturi-detalle-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent],
   template: `
     <div class="detalle-contenedor">
 
@@ -185,11 +189,23 @@ import { CredencialesTitularComponent } from '../../../compartido/credenciales-t
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Correo</span>
-              <span class="dato-valor">{{ afiliado.correo || '—' }}</span>
+              <span class="dato-valor">{{ afiliado.correo || '—' }}<ng-container *ngFor="let c of lista($any(afiliado).correosAdicionales)"><br>{{ c }}</ng-container></span>
             </div>
             <div class="dato-item">
-              <span class="dato-etiqueta">Teléfono</span>
-              <span class="dato-valor">{{ afiliado.telefono || '—' }}</span>
+              <span class="dato-etiqueta">Celular / teléfono</span>
+              <span class="dato-valor">{{ afiliado.telefono || '—' }}<ng-container *ngFor="let t of lista($any(afiliado).telefonosAdicionales)"><br>{{ t }}</ng-container></span>
+            </div>
+            <div class="dato-item">
+              <span class="dato-etiqueta">Género</span>
+              <span class="dato-valor">{{ nombreGenero($any(afiliado).genero) }}</span>
+            </div>
+            <div class="dato-item dato-item--ancho">
+              <span class="dato-etiqueta">Dirección de la casa</span>
+              <span class="dato-valor">{{ $any(afiliado).direccion || '—' }}{{ $any(afiliado).municipio ? ' · ' + $any(afiliado).municipio : '' }}</span>
+            </div>
+            <div class="dato-item dato-item--ancho" *ngIf="$any(afiliado).direccionTrabajo || $any(afiliado).municipioTrabajo">
+              <span class="dato-etiqueta">Dirección del trabajo</span>
+              <span class="dato-valor">{{ $any(afiliado).direccionTrabajo || '—' }}{{ $any(afiliado).municipioTrabajo ? ' · ' + $any(afiliado).municipioTrabajo : '' }}</span>
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Fecha de nacimiento</span>
@@ -405,11 +421,34 @@ import { CredencialesTitularComponent } from '../../../compartido/credenciales-t
           <div class="campo-grupo">
             <label class="campo-etiqueta">Correo</label>
             <input type="email" class="campo-input" [(ngModel)]="edicionForm.correo" name="edit-correo">
+            <anturi-contactos-adicionales tipo="email" etiqueta="Correo" nombre="edit-correos" [(valores)]="edicionForm.correosAdicionales"></anturi-contactos-adicionales>
           </div>
           <div class="campo-grupo">
-            <label class="campo-etiqueta">Teléfono</label>
+            <label class="campo-etiqueta">Celular / teléfono</label>
             <input type="tel" class="campo-input" [(ngModel)]="edicionForm.telefono" name="edit-telefono">
+            <anturi-contactos-adicionales tipo="tel" etiqueta="Celular" nombre="edit-telefonos" [(valores)]="edicionForm.telefonosAdicionales"></anturi-contactos-adicionales>
           </div>
+          <div class="campo-grupo campo-grupo--ancho">
+            <label class="campo-etiqueta">Dirección de la casa</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.direccion" name="edit-direccion">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Municipio (casa)</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.municipio" name="edit-municipio" placeholder="Ej. Quimbaya, Quindío">
+          </div>
+          <div class="campo-grupo">
+            <button *ngIf="!verTrabajo && !edicionForm.direccionTrabajo" type="button" class="boton boton-texto boton-sm" style="margin-top: 26px;" (click)="verTrabajo = true">+ Agregar dirección del trabajo</button>
+          </div>
+          <ng-container *ngIf="verTrabajo || edicionForm.direccionTrabajo">
+            <div class="campo-grupo campo-grupo--ancho">
+              <label class="campo-etiqueta">Dirección del trabajo</label>
+              <input type="text" class="campo-input" [(ngModel)]="edicionForm.direccionTrabajo" name="edit-direccionTrabajo">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta">Municipio (trabajo)</label>
+              <input type="text" class="campo-input" [(ngModel)]="edicionForm.municipioTrabajo" name="edit-municipioTrabajo">
+            </div>
+          </ng-container>
           <div class="campo-grupo campo-grupo--ancho" *ngIf="edicionForm.correo !== undefined">
             <label class="campo-etiqueta">¿Cómo prefiere que le avisemos del vencimiento?</label>
             <div style="display: flex; gap: var(--espacio-5); flex-wrap: wrap; margin-top: var(--espacio-2);">
@@ -432,18 +471,25 @@ import { CredencialesTitularComponent } from '../../../compartido/credenciales-t
             <label class="campo-etiqueta">Clase aportante</label>
             <select class="campo-input" [(ngModel)]="edicionForm.claseAportante" name="edit-clase">
               <option value="">Seleccionar...</option>
-              <option value="Independiente">Independiente</option>
-              <option value="Cooperativa">Cooperativa</option>
-              <option value="Empresa">Empresa</option>
+              <option *ngFor="let c of opcionesClase" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Estado</label>
-            <select class="campo-input" [(ngModel)]="edicionForm.estado" name="edit-estado">
+            <select class="campo-input" [(ngModel)]="edicionForm.estado" name="edit-estado" (ngModelChange)="cambioEstado($event)">
               <option value="ACTIVO">Activo</option>
               <option value="RETIRADO">Retirado</option>
               <option value="SUSPENDIDO">Suspendido</option>
             </select>
+            <small *ngIf="edicionForm.estado !== 'ACTIVO'" style="color: var(--texto-terciario);">Retirado o suspendido: ya no le llegan correos de cobro.</small>
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Fecha de ingreso</label>
+            <input type="date" class="campo-input" [(ngModel)]="edicionForm.fechaIngreso" name="edit-fechaIngreso">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Fecha de retiro</label>
+            <input type="date" class="campo-input" [(ngModel)]="edicionForm.fechaRetiro" name="edit-fechaRetiro">
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Seguridad social (mes)</label>
@@ -472,171 +518,9 @@ import { CredencialesTitularComponent } from '../../../compartido/credenciales-t
       </div>
 
       <!-- SECCIÓN DOCUMENTOS -->
+      <!-- 2026-10-15: documentos por carpetas (nombre único en todo el sistema) -->
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
-        <div class="docs-encabezado">
-          <h3 class="seccion-titulo">Documentos</h3>
-        </div>
-
-        <!-- Input de archivo único, compartido por todos los botones "Subir" -
-             cada botón fija tipoParaSubir antes de abrirlo (triggerSubidaTipo). -->
-        <input
-          type="file"
-          #inputArchivo
-          style="display: none;"
-          accept=".pdf,.jpg,.jpeg,.png"
-          (change)="onArchivoSeleccionado($event)"
-        >
-
-        <div *ngIf="cargandoDocs" class="estado-carga" style="padding: var(--espacio-6);">
-          <div class="spinner"></div>
-        </div>
-
-        <!-- Tarjetas por categoría: cédula (única obligatoria) + el resto de
-             seguros/documentos, cada una con su propio botón de subida. -->
-        <div *ngIf="!cargandoDocs" class="docs-tipos-grid">
-          <div
-            *ngFor="let t of tiposDocumento"
-            class="doc-tipo-tarjeta"
-            [class.doc-tipo-tarjeta--falta]="t.obligatorio && documentosPorTipo(t.tipo).length === 0"
-          >
-            <div class="doc-tipo-tarjeta__info">
-              <span class="doc-tipo-tarjeta__label">{{ t.label }}</span>
-              <span class="doc-tipo-tarjeta__estado" *ngIf="documentosPorTipo(t.tipo).length > 0">
-                {{ documentosPorTipo(t.tipo).length }} archivo(s)
-              </span>
-              <span class="doc-tipo-tarjeta__estado doc-tipo-tarjeta__estado--falta" *ngIf="documentosPorTipo(t.tipo).length === 0 && t.obligatorio">
-                ⚠ Falta
-              </span>
-              <span class="doc-tipo-tarjeta__estado" *ngIf="documentosPorTipo(t.tipo).length === 0 && !t.obligatorio">
-                Sin subir
-              </span>
-            </div>
-            <button class="boton boton-secundario boton-sm" (click)="triggerSubidaTipo(t.tipo)">Subir</button>
-          </div>
-        </div>
-
-        <!-- Progreso de subida -->
-        <div *ngIf="subiendoArchivo" class="progreso-subida">
-          <span>Subiendo: {{ nombreArchivoSubiendo }}</span>
-          <div class="barra-progreso">
-            <div class="barra-progreso__relleno" [style.width.%]="progresoSubida"></div>
-          </div>
-          <span>{{ progresoSubida }}%</span>
-        </div>
-
-        <!-- Error de subida -->
-        <div *ngIf="errorSubida" class="alerta-error" style="margin-top: var(--espacio-3);">
-          {{ errorSubida }}
-          <button style="margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;" (click)="errorSubida = ''">✕</button>
-        </div>
-
-        <!-- Documentos ya clasificados, agrupados por su categoría real -->
-        <div *ngIf="!cargandoDocs && documentosClasificados.length > 0" class="docs-lista">
-          <div *ngFor="let doc of documentosClasificados" class="doc-tarjeta">
-            <div class="doc-tarjeta__icono" (click)="abrirDocumento(doc)" style="cursor: pointer;">
-              <svg *ngIf="docServicio.esPdf(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #dc2626;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-              <svg *ngIf="docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #2563eb;">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-              <svg *ngIf="!docServicio.esPdf(doc.extension) && !docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: var(--texto-terciario);">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-              </svg>
-            </div>
-            <div class="doc-tarjeta__info" (click)="abrirDocumento(doc)" style="cursor: pointer;">
-              <span class="doc-nombre">{{ doc.nombre || doc.nombreOriginal }}</span>
-              <span class="doc-meta">{{ etiquetaTipo(doc.tipo) }} · {{ doc.creadoEn | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <button
-              class="boton boton-icono boton-peligro-suave"
-              title="Eliminar documento"
-              (click)="eliminarDocumento(doc)"
-              [disabled]="eliminandoDocId === doc.id"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Otros documentos: llegan sin saber qué son, se reclasifican después -->
-        <div *ngIf="!cargandoDocs" class="docs-otros">
-          <div class="docs-otros__encabezado">
-            <h4 class="docs-otros__titulo">Otros documentos</h4>
-            <button class="boton boton-secundario boton-sm" (click)="triggerSubidaTipo('OTRO')">Subir a Otros</button>
-          </div>
-          <p class="campo-ayuda">Lo que llega sin identificar todavía va acá - cuando sepas qué es cada uno, movelo a su categoría real con el selector, sin volver a subir el archivo.</p>
-
-          <!-- Zona Drag & Drop, siempre hacia "Otros" -->
-          <div
-            class="dropzone"
-            [class.dropzone--activa]="arrastrando"
-            (dragover)="onDragOver($event)"
-            (dragleave)="arrastrando = false"
-            (drop)="onDrop($event)"
-            (click)="triggerSubidaTipo('OTRO')"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32" style="color: var(--texto-terciario);">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <p>Arrastra archivos aquí o haz clic para seleccionar</p>
-            <p class="dropzone__tipos">PDF, JPG, PNG</p>
-          </div>
-
-          <div *ngIf="documentosOtros.length === 0" class="docs-vacio">No hay documentos sin clasificar.</div>
-
-          <div *ngIf="documentosOtros.length > 0" class="docs-lista">
-            <div *ngFor="let doc of documentosOtros" class="doc-tarjeta">
-              <div class="doc-tarjeta__icono" (click)="abrirDocumento(doc)" style="cursor: pointer;">
-                <svg *ngIf="docServicio.esPdf(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #dc2626;">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-                <svg *ngIf="docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: #2563eb;">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                <svg *ngIf="!docServicio.esPdf(doc.extension) && !docServicio.esImagen(doc.extension)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="color: var(--texto-terciario);">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>
-              </div>
-              <div class="doc-tarjeta__info" (click)="abrirDocumento(doc)" style="cursor: pointer;">
-                <span class="doc-nombre">{{ doc.nombre || doc.nombreOriginal }}</span>
-                <span class="doc-meta">{{ doc.creadoEn | date:'dd/MM/yyyy' }}</span>
-              </div>
-              <select
-                class="campo-input campo-input--sm"
-                [disabled]="reclasificandoDocId === doc.id"
-                (change)="moverDocumento(doc, $event)"
-              >
-                <option value="" selected disabled>Mover a...</option>
-                <option *ngFor="let t of tiposDocumento" [value]="t.tipo">{{ t.label }}</option>
-              </select>
-              <button
-                class="boton boton-icono boton-peligro-suave"
-                title="Eliminar documento"
-                (click)="eliminarDocumento(doc)"
-                [disabled]="eliminandoDocId === doc.id"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+        <anturi-documentos-titular titularTipo="AFILIADO" [titularId]="afiliadoId"></anturi-documentos-titular>
       </div>
 
       <!-- MODAL: Visualizar documento -->
@@ -1221,9 +1105,27 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   // ── EDICIÓN ──────────────────────────────────────────────
+  // 2026-10-15
+  verTrabajo = false;
+  get opcionesClase(): string[] { return opcionesClaseAportante(this.edicionForm?.claseAportante); }
+  lista(v: unknown): string[] { return Array.isArray(v) ? v.filter((x) => !!x) : []; }
+  nombreGenero(g?: string | null): string { return g === 'M' ? 'Masculino' : g === 'F' ? 'Femenino' : g === 'INDETERMINADO' ? 'Prefiere no decir' : '—'; }
+  cambioEstado(estado: string): void {
+    // al retirar, se propone la fecha de hoy si no tiene fecha de retiro
+    if (estado === 'RETIRADO' && !this.edicionForm.fechaRetiro) this.edicionForm.fechaRetiro = new Date().toISOString().slice(0, 10);
+  }
+
   activarEdicion(): void {
     if (!this.afiliado) return;
-    this.edicionForm = { ...this.afiliado, tipoDocumento: (this.afiliado as any).persona?.tipoDocumento ?? 'CC' };
+    const a: any = this.afiliado;
+    const fecha = (v: any) => (v ? String(v).slice(0, 10) : '');
+    this.edicionForm = {
+      ...a,
+      tipoDocumento: a.persona?.tipoDocumento ?? 'CC',
+      fechaIngreso: fecha(a.fechaIngreso), fechaRetiro: fecha(a.fechaRetiro), fechaNacimiento: fecha(a.fechaNacimiento),
+      telefonosAdicionales: this.lista(a.telefonosAdicionales), correosAdicionales: this.lista(a.correosAdicionales),
+    };
+    this.verTrabajo = false;
     this.motivoEdicion = '';
     this.modoEdicion = true;
     this.mensajeExito = '';
@@ -1277,7 +1179,11 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       // bug ya cerrado en otros formularios de este proyecto (permisos,
       // usuarios). Se arma acá un payload explícito con solo los campos
       // editables reales, mismo criterio que ya usa el alta de afiliado.
-      const { id, sucursal, seguros, documentos, historial, creadoEn, actualizadoEn, eliminadoEn, eliminacionDefinitivaEn, ...datosLimpios } = this.edicionForm as any;
+      // 2026-10-15 (bug real: Julián no podía guardar género, retirar ni
+      // suspender - 5 rechazos en el registro): el servidor solo acepta sus
+      // campos y rechazaba TODO el cambio si llegaba uno de más (persona,
+      // credenciales...) o un vacío inválido. Ahora se manda lista blanca.
+      const datosLimpios = this.payloadEdicion(this.edicionForm as any);
       const motivo = this.motivoEdicion || 'Actualización desde panel de administración';
       this.afiliadosServicio.actualizar(this.afiliadoId, datosLimpios, motivo).pipe(
         catchError(err => {
@@ -1294,6 +1200,27 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  private payloadEdicion(f: any): Record<string, any> {
+    const texto = ['nombres', 'apellidos', 'cedula', 'telefono', 'cargo', 'claseAportante', 'asopagos', 'actividadEconomica', 'direccion', 'municipio', 'direccionTrabajo', 'municipioTrabajo', 'observaciones'];
+    const numeros = ['valorAfiliacion', 'ibc', 'porcentajeArl', 'valor', 'comision', 'totalPago', 'cuatroXMil', 'cesantias', 'porcentajeSalud', 'porcentajePension', 'porcentajeSaludEmpleador', 'porcentajePensionEmpleador', 'porcentajeCaja', 'porcentajeSena', 'porcentajeIcbf'];
+    const fechas = ['fechaNacimiento', 'fechaIngreso', 'fechaRetiro'];
+    const otros = ['tipoAfiliacion', 'claseRiesgoArl', 'genero', 'estado'];
+    const booleanos = ['notificarCorreo', 'notificarSms', 'notificarLlamada'];
+    const p: Record<string, any> = {};
+    for (const k of texto) if (k in f) p[k] = f[k] == null ? null : String(f[k]).trim() || null;
+    for (const k of numeros) if (k in f) p[k] = f[k] === '' || f[k] == null ? null : Number(f[k]);
+    for (const k of fechas) if (f[k]) p[k] = String(f[k]).slice(0, 10);
+    for (const k of otros) if (f[k]) p[k] = f[k];
+    for (const k of booleanos) if (typeof f[k] === 'boolean') p[k] = f[k];
+    if (f.correo !== undefined) p['correo'] = String(f.correo ?? '').trim() || null;
+    if (f.tipoDocumento && this.afiliado && (this.afiliado as any).personaId) p['tipoDocumento'] = f.tipoDocumento;
+    if (f.diasPago !== undefined && f.diasPago !== null && f.diasPago !== '') p['diasPago'] = parseInt(f.diasPago, 10);
+    if (f.sucursalId) p['sucursalId'] = Number(f.sucursalId);
+    p['telefonosAdicionales'] = limpiarContactos(f.telefonosAdicionales);
+    p['correosAdicionales'] = limpiarContactos(f.correosAdicionales);
+    return p;
   }
 
   // ── ELIMINACIÓN ───────────────────────────────────────────

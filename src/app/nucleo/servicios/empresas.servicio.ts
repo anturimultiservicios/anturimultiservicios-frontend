@@ -9,6 +9,11 @@ export interface Empresa {
   nit: string;
   correo?: string;
   telefono?: string;
+  // 2026-10-15
+  telefonosAdicionales?: string[] | null;
+  correosAdicionales?: string[] | null;
+  fechaIngreso?: string | null;
+  fechaRetiro?: string | null;
   direccion?: string;
   ciudad?: string;
   municipio?: string;

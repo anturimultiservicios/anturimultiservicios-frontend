@@ -17,10 +17,13 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 // sucursales (crear/editar, directo para ambos roles con permiso
 // granular - sucursales no pasa por SolicitudCambio, a diferencia de
 // Empresa, ver empresas.controlador.ts/sucursales.controlador.ts reales).
+import { DocumentosTitularComponent } from '../../../compartido/documentos-titular/documentos-titular.component';
+import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
+
 @Component({
   selector: 'anturi-detalle-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent],
   template: `
     <div class="detalle-contenedor">
       <div class="detalle-encabezado">
@@ -70,8 +73,69 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         <button class="boton boton-secundario" (click)="cargar()">Reintentar</button>
       </div>
 
-      <ng-container *ngIf="empresa && !cargando && !modoEdicion">
-        <div class="tarjeta seccion-datos">
+      <!-- 2026-10-15: el personal, las sucursales y los documentos se ven también mientras se edita -->
+      <ng-container *ngIf="empresa && !cargando">
+        <!-- MODO EDICIÓN DE LA EMPRESA -->
+        <div class="tarjeta seccion-datos" *ngIf="modoEdicion">
+        <h3 class="seccion-titulo">Editar {{ empresa.razonSocial }}</h3>
+        <div *ngIf="esSecretaria" class="aviso-secretaria">Este cambio queda pendiente de aprobación de un Admin/Super Admin.</div>
+        <div class="campos-grid-modal">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Razón social</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.razonSocial" name="edit-razonSocial">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">NIT</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.nit" name="edit-nit">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Correo</label>
+            <input type="email" class="campo-input" [(ngModel)]="edicionForm.correo" name="edit-correo">
+            <anturi-contactos-adicionales tipo="email" etiqueta="Correo" nombre="edit-correos" [(valores)]="correosAdicionales"></anturi-contactos-adicionales>
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Celular / teléfono</label>
+            <input type="tel" class="campo-input" [(ngModel)]="edicionForm.telefono" name="edit-telefono">
+            <anturi-contactos-adicionales tipo="tel" etiqueta="Celular" nombre="edit-telefonos" [(valores)]="telefonosAdicionales"></anturi-contactos-adicionales>
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Fecha de ingreso</label>
+            <input type="date" class="campo-input" [(ngModel)]="fechaIngresoEdicion" name="edit-fechaIngreso">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Fecha de retiro</label>
+            <input type="date" class="campo-input" [(ngModel)]="fechaRetiroEdicion" name="edit-fechaRetiro">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Municipio</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.municipio" name="edit-municipio">
+          </div>
+          <div class="campo-grupo campo-grupo--ancho">
+            <label class="campo-etiqueta">Dirección</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.direccion" name="edit-direccion">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Clase aportante</label>
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.claseAportante" name="edit-claseAportante">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta">Días de pago</label>
+            <input type="number" class="campo-input" [(ngModel)]="edicionForm.diasPago" name="edit-diasPago">
+          </div>
+          <div class="campo-grupo campo-grupo--ancho" *ngIf="esSecretaria">
+            <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
+            <input type="text" class="campo-input" [(ngModel)]="motivoEdicion" placeholder="Por qué se hace este cambio">
+          </div>
+        </div>
+        <div class="form-acciones">
+          <button class="boton boton-secundario" (click)="cancelarEdicion()" [disabled]="guardandoEdicion">Cancelar</button>
+          <button class="boton boton-primario" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
+            <span *ngIf="guardandoEdicion" class="spinner-inline"></span>
+            {{ guardandoEdicion ? 'Guardando...' : (esSecretaria ? 'Enviar solicitud' : 'Guardar cambios') }}
+          </button>
+        </div>
+      </div>
+        <div class="tarjeta seccion-datos" *ngIf="!modoEdicion">
           <h3 class="seccion-titulo">Datos de la empresa</h3>
           <div class="datos-grid">
             <div class="dato-item">
@@ -80,11 +144,11 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Correo</span>
-              <span class="dato-valor">{{ empresa.correo || '—' }}</span>
+              <span class="dato-valor">{{ empresa.correo || '—' }}<ng-container *ngFor="let c of lista(empresa.correosAdicionales)"><br>{{ c }}</ng-container></span>
             </div>
             <div class="dato-item">
-              <span class="dato-etiqueta">Teléfono</span>
-              <span class="dato-valor">{{ empresa.telefono || '—' }}</span>
+              <span class="dato-etiqueta">Celular / teléfono</span>
+              <span class="dato-valor">{{ empresa.telefono || '—' }}<ng-container *ngFor="let t of lista(empresa.telefonosAdicionales)"><br>{{ t }}</ng-container></span>
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Municipio</span>
@@ -107,6 +171,14 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
               <span class="dato-valor">{{ empresa.asopagos || '—' }}</span>
             </div>
             <div class="dato-item">
+              <span class="dato-etiqueta">Fecha de ingreso</span>
+              <span class="dato-valor">{{ empresa.fechaIngreso ? (empresa.fechaIngreso | date:'dd/MM/yyyy':'UTC') : '—' }}</span>
+            </div>
+            <div class="dato-item">
+              <span class="dato-etiqueta">Fecha de retiro</span>
+              <span class="dato-valor">{{ empresa.fechaRetiro ? (empresa.fechaRetiro | date:'dd/MM/yyyy':'UTC') : '—' }}</span>
+            </div>
+            <div class="dato-item">
               <span class="dato-etiqueta">Registrada</span>
               <span class="dato-valor">{{ empresa.creadoEn | date:'d MMM y' }}</span>
             </div>
@@ -117,6 +189,11 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         <div class="tarjeta seccion-datos">
           <h3 class="seccion-titulo">Usuarios y claves de portales</h3>
           <anturi-credenciales-titular titularTipo="EMPRESA" [titularId]="empresa.id"></anturi-credenciales-titular>
+        </div>
+
+        <!-- 2026-10-15: documentos de la empresa, por carpetas -->
+        <div class="tarjeta seccion-datos">
+          <anturi-documentos-titular titularTipo="EMPRESA" [titularId]="empresa.id"></anturi-documentos-titular>
         </div>
 
         <!-- 2026-10-08: personal de la empresa (antes solo se veían sucursales) -->
@@ -200,56 +277,6 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
         </div>
       </ng-container>
 
-      <!-- MODO EDICIÓN DE LA EMPRESA -->
-      <div class="tarjeta seccion-datos" *ngIf="empresa && modoEdicion">
-        <h3 class="seccion-titulo">Editar {{ empresa.razonSocial }}</h3>
-        <div *ngIf="esSecretaria" class="aviso-secretaria">Este cambio queda pendiente de aprobación de un Admin/Super Admin.</div>
-        <div class="campos-grid-modal">
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">Razón social</label>
-            <input type="text" class="campo-input" [(ngModel)]="edicionForm.razonSocial" name="edit-razonSocial">
-          </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">NIT</label>
-            <input type="text" class="campo-input" [(ngModel)]="edicionForm.nit" name="edit-nit">
-          </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">Correo</label>
-            <input type="email" class="campo-input" [(ngModel)]="edicionForm.correo" name="edit-correo">
-          </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">Teléfono</label>
-            <input type="tel" class="campo-input" [(ngModel)]="edicionForm.telefono" name="edit-telefono">
-          </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">Municipio</label>
-            <input type="text" class="campo-input" [(ngModel)]="edicionForm.municipio" name="edit-municipio">
-          </div>
-          <div class="campo-grupo campo-grupo--ancho">
-            <label class="campo-etiqueta">Dirección</label>
-            <input type="text" class="campo-input" [(ngModel)]="edicionForm.direccion" name="edit-direccion">
-          </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">Clase aportante</label>
-            <input type="text" class="campo-input" [(ngModel)]="edicionForm.claseAportante" name="edit-claseAportante">
-          </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta">Días de pago</label>
-            <input type="number" class="campo-input" [(ngModel)]="edicionForm.diasPago" name="edit-diasPago">
-          </div>
-          <div class="campo-grupo campo-grupo--ancho" *ngIf="esSecretaria">
-            <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
-            <input type="text" class="campo-input" [(ngModel)]="motivoEdicion" placeholder="Por qué se hace este cambio">
-          </div>
-        </div>
-        <div class="form-acciones">
-          <button class="boton boton-secundario" (click)="cancelarEdicion()" [disabled]="guardandoEdicion">Cancelar</button>
-          <button class="boton boton-primario" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
-            <span *ngIf="guardandoEdicion" class="spinner-inline"></span>
-            {{ guardandoEdicion ? 'Guardando...' : (esSecretaria ? 'Enviar solicitud' : 'Guardar cambios') }}
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- MODAL: cambiar estado (activar/desactivar) -->
@@ -648,9 +675,20 @@ export class DetalleEmpresaComponent implements OnInit {
   }
 
   // ── EDICIÓN ──────────────────────────────────────────────
+  // 2026-10-15: contactos adicionales y fechas de la empresa
+  telefonosAdicionales: string[] = [];
+  correosAdicionales: string[] = [];
+  fechaIngresoEdicion = '';
+  fechaRetiroEdicion = '';
+  lista(v: unknown): string[] { return Array.isArray(v) ? v.filter((x) => !!x) : []; }
+
   activarEdicion(): void {
     if (!this.empresa) return;
     this.edicionForm = { ...this.empresa };
+    this.telefonosAdicionales = this.lista(this.empresa.telefonosAdicionales);
+    this.correosAdicionales = this.lista(this.empresa.correosAdicionales);
+    this.fechaIngresoEdicion = this.empresa.fechaIngreso ? String(this.empresa.fechaIngreso).slice(0, 10) : '';
+    this.fechaRetiroEdicion = this.empresa.fechaRetiro ? String(this.empresa.fechaRetiro).slice(0, 10) : '';
     this.motivoEdicion = '';
     this.modoEdicion = true;
     this.mensajeExito = '';
@@ -681,7 +719,11 @@ export class DetalleEmpresaComponent implements OnInit {
       direccion: this.edicionForm.direccion,
       municipio: this.edicionForm.municipio,
       claseAportante: this.edicionForm.claseAportante,
-      diasPago: this.edicionForm.diasPago,
+      diasPago: this.edicionForm.diasPago == null || (this.edicionForm.diasPago as any) === '' ? undefined : Number(this.edicionForm.diasPago),
+      telefonosAdicionales: limpiarContactos(this.telefonosAdicionales),
+      correosAdicionales: limpiarContactos(this.correosAdicionales),
+      ...(this.fechaIngresoEdicion ? { fechaIngreso: this.fechaIngresoEdicion } : {}),
+      ...(this.fechaRetiroEdicion ? { fechaRetiro: this.fechaRetiroEdicion } : {}),
     };
 
     if (this.esSecretaria) {

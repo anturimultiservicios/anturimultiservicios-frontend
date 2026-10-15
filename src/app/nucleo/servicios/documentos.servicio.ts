@@ -15,7 +15,10 @@ export type TipoDocumento =
 
 export interface Documento {
   id: number;
-  afiliadoId: number;
+  afiliadoId: number | null;
+  empresaId?: number | null;
+  carpetaId?: number | null;
+  carpeta?: { id: number; nombre: string } | null;
   tipo: TipoDocumento;
   nombre: string;
   nombreOriginal: string;
@@ -24,6 +27,20 @@ export interface Documento {
   tamanoKb?: number;
   estado: 'ACTIVO' | 'ELIMINADO';
   creadoEn: string;
+}
+
+// 2026-10-15: carpetas con nombre único (las fijas de siempre + las creadas)
+export interface CatalogoCarpetas {
+  fijas: { tipo: TipoDocumento; nombre: string }[];
+  propias: { id: number; nombre: string; clave: string }[];
+}
+
+export interface ResultadoCarpeta {
+  existia: boolean;
+  fija: boolean;
+  tipo: TipoDocumento | null;
+  nombre: string;
+  carpeta: { id: number; nombre: string } | null;
 }
 
 export interface TipoDocumentoRequerido {
@@ -65,6 +82,38 @@ export class DocumentosServicio {
   // hacia su categoría real, sin tener que volver a subir el archivo.
   cambiarTipo(id: number, nuevoTipo: TipoDocumento): Observable<Documento> {
     return this.http.patch<Documento>(`${this.URL}/${id}/tipo`, { tipo: nuevoTipo });
+  }
+
+  // ── 2026-10-15: empresas, carpetas y vista previa con la sesión ──
+  listarDeEmpresa(empresaId: number): Observable<Documento[]> {
+    return this.http.get<Documento[]>(`${this.URL}/empresa/${empresaId}`);
+  }
+
+  carpetas(): Observable<CatalogoCarpetas> {
+    return this.http.get<CatalogoCarpetas>(`${this.URL}/carpetas`);
+  }
+
+  crearCarpeta(nombre: string): Observable<ResultadoCarpeta> {
+    return this.http.post<ResultadoCarpeta>(`${this.URL}/carpetas`, { nombre });
+  }
+
+  subirA(destino: { afiliadoId?: number; empresaId?: number; tipo?: string; carpetaId?: number | null }, archivo: File): Observable<HttpEvent<any>> {
+    const form = new FormData();
+    form.append('archivo', archivo, archivo.name);
+    if (destino.afiliadoId) form.append('afiliadoId', String(destino.afiliadoId));
+    if (destino.empresaId) form.append('empresaId', String(destino.empresaId));
+    form.append('tipo', destino.tipo || 'OTRO');
+    if (destino.carpetaId) form.append('carpetaId', String(destino.carpetaId));
+    return this.http.request(new HttpRequest('POST', `${this.URL}/subir`, form, { reportProgress: true }));
+  }
+
+  mover(id: number, destino: { tipo?: string; carpetaId?: number | null }): Observable<Documento> {
+    return this.http.patch<Documento>(`${this.URL}/${id}/tipo`, { tipo: destino.tipo ?? 'OTRO', carpetaId: destino.carpetaId ?? undefined });
+  }
+
+  // el archivo se pide CON la sesión (el navegador solo no la manda)
+  archivo(id: number): Observable<Blob> {
+    return this.http.get(`${this.URL}/${id}/ver`, { responseType: 'blob' });
   }
 
   obtenerUrlVisualizacion(id: number): string {

@@ -29,6 +29,13 @@ export interface Afiliado {
   cedula: string;
   correo?: string;
   telefono?: string;
+  // 2026-10-15: contactos adicionales y direcciones (casa / trabajo)
+  telefonosAdicionales?: string[] | null;
+  correosAdicionales?: string[] | null;
+  direccion?: string | null;
+  municipio?: string | null;
+  direccionTrabajo?: string | null;
+  municipioTrabajo?: string | null;
   genero?: GeneroAfiliado;
   notificarCorreo?: boolean;
   notificarSms?: boolean;
@@ -73,6 +80,11 @@ export interface Afiliado {
 }
 
 export interface CrearAfiliadoDto {
+  // 2026-10-15 (direccion y municipio ya estaban más abajo)
+  direccionTrabajo?: string;
+  municipioTrabajo?: string;
+  telefonosAdicionales?: string[];
+  correosAdicionales?: string[];
   valorAfiliacion?: number; // cobro único al afiliarse (2026-10-08)
   ibc?: number;             // base de cotización - `valor` es el valor de la seguridad social
   nombres: string;

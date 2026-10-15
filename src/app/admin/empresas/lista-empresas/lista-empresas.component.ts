@@ -7,10 +7,12 @@ import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.se
 import { CredencialesNuevasComponent, credencialesValidas } from '../../../compartido/credenciales-nuevas/credenciales-nuevas.component';
 import { CredencialesServicio, NuevaCredencial } from '../../../nucleo/servicios/credenciales.servicio';
 
+import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
+
 @Component({
   selector: 'anturi-lista-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ContactosAdicionalesComponent],
   template: `
     <div class="pagina-lista">
       <div class="pagina-encabezado">
@@ -152,10 +154,12 @@ import { CredencialesServicio, NuevaCredencial } from '../../../nucleo/servicios
             <div class="campo-grupo">
               <label class="campo-etiqueta">Correo</label>
               <input type="email" class="campo-input" [(ngModel)]="formEmpresa.correo" placeholder="correo@empresa.com">
+              <anturi-contactos-adicionales tipo="email" etiqueta="Correo" nombre="nueva-emp-correos" [(valores)]="formEmpresa.correosAdicionales"></anturi-contactos-adicionales>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Teléfono</label>
+              <label class="campo-etiqueta">Celular / teléfono</label>
               <input type="tel" class="campo-input" [(ngModel)]="formEmpresa.telefono">
+              <anturi-contactos-adicionales tipo="tel" etiqueta="Celular" nombre="nueva-emp-telefonos" [(valores)]="formEmpresa.telefonosAdicionales"></anturi-contactos-adicionales>
             </div>
             <div class="campo-grupo">
               <label class="campo-etiqueta">Municipio</label>
@@ -357,7 +361,11 @@ export class ListaEmpresasComponent implements OnInit, OnDestroy {
     if (!this.formEmpresa.razonSocial?.trim() || !this.formEmpresa.nit?.trim()) return;
     this.guardandoCrear = true;
     this.errorModal = '';
-    this.empresasServicio.crear(this.formEmpresa).pipe(
+    this.empresasServicio.crear({
+      ...this.formEmpresa,
+      telefonosAdicionales: limpiarContactos(this.formEmpresa.telefonosAdicionales),
+      correosAdicionales: limpiarContactos(this.formEmpresa.correosAdicionales),
+    }).pipe(
       catchError((err) => { this.errorModal = err?.error?.message || 'Error al crear la empresa.'; return of(null); }),
     ).subscribe((creada) => {
       if (!creada) { this.guardandoCrear = false; return; }
