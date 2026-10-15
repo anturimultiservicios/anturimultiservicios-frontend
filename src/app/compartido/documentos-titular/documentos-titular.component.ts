@@ -5,6 +5,7 @@ import { HttpEventType } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { catchError, forkJoin, of } from 'rxjs';
 import { CatalogoCarpetas, Documento, DocumentosServicio } from '../../nucleo/servicios/documentos.servicio';
+import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: number | null; obligatoria: boolean }
 
@@ -32,6 +33,8 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
       <div *ngIf="avisoCarpeta" class="dt__aviso">{{ avisoCarpeta }}</div>
 
       <input type="file" #selector multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none" (change)="archivosElegidos($event)">
+      <input type="file" #selectorReemplazo accept=".pdf,.jpg,.jpeg,.png" style="display:none" (change)="reemplazoElegido($event)">
+      <div *ngIf="esAsistente" class="sub">Lo que elimine, reemplace o mueva se aplica de una vez y le llega a Anturi para que lo confirme.</div>
 
       <div *ngIf="cargando" class="sub">Cargando documentos...</div>
       <div class="dt__carpetas" *ngIf="!cargando">
@@ -51,7 +54,8 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
                 <option value="" selected disabled>Mover a...</option>
                 <option *ngFor="let o of carpetasDestino(c)" [value]="o.clave">{{ o.nombre }}</option>
               </select>
-              <button type="button" class="doc__borrar" (click)="eliminar(d)" title="Eliminar">🗑</button>
+              <button type="button" class="doc__borrar" (click)="pedirReemplazo(d, selectorReemplazo)" title="Reemplazar por otro archivo">🔄</button>
+              <button type="button" class="doc__borrar" (click)="pedirEliminar(d)" title="Eliminar">🗑</button>
             </div>
           </div>
         </div>
@@ -63,6 +67,24 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
         <button type="button" class="boton boton-texto boton-sm" (click)="errores = []">Cerrar</button>
       </div>
       <div *ngIf="mensaje" class="dt__ok">{{ mensaje }}</div>
+    </div>
+
+    <!-- 2026-10-15: por qué se elimina / reemplaza (le llega a Anturi) -->
+    <div *ngIf="accion" class="modal-overlay" (click)="accion = null">
+      <div class="motivo" (click)="$event.stopPropagation()" role="dialog" aria-labelledby="tituloMotivo">
+        <h3 id="tituloMotivo" class="motivo__titulo">{{ accion.tipo === 'eliminar' ? 'Eliminar documento' : 'Reemplazar documento' }}</h3>
+        <p class="sub">{{ accion.doc.nombre || accion.doc.nombreOriginal }}{{ accion.archivo ? ' → ' + accion.archivo.name : '' }}</p>
+        <ng-container *ngIf="accion.tipo === 'eliminar'">
+          <label *ngFor="let m of motivosEliminar" class="motivo__opcion"><input type="radio" name="motivoDoc" [value]="m" [(ngModel)]="accion.opcion"> {{ m }}</label>
+        </ng-container>
+        <label class="campo-etiqueta" for="motivoTexto">{{ accion.tipo === 'eliminar' ? (accion.opcion === 'Otro motivo' ? 'Escriba el motivo' : 'Nota (opcional)') : 'Nota para Anturi' }}</label>
+        <input id="motivoTexto" class="campo-input" [(ngModel)]="accion.texto" [placeholder]="accion.tipo === 'reemplazar' ? 'Ej. la cédula anterior estaba borrosa' : 'Ej. era la cédula de otra persona'">
+        <p *ngIf="esAsistente" class="sub">Se aplica de una vez y le llega a Anturi con esta nota y el documento para que lo vea.</p>
+        <div class="motivo__acciones">
+          <button type="button" class="boton boton-secundario" (click)="accion = null">Cancelar</button>
+          <button type="button" class="boton boton-primario" [disabled]="!motivoValido" (click)="confirmarAccion()">{{ accion.tipo === 'eliminar' ? 'Eliminar' : 'Reemplazar' }}</button>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="vista" class="modal-overlay" (click)="cerrarVista()">
@@ -93,7 +115,7 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
     .carpeta__cuenta { font-size: 12px; color: var(--texto-terciario); white-space: nowrap; }
     .carpeta__cuenta.falta { color: #b45309; font-weight: 700; }
     .carpeta__lista { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--borde-color, #e5e7eb); padding-top: 8px; }
-    .doc { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; }
+    .doc { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 8px; align-items: center; }
     .doc__nombre { background: none; border: none; text-align: left; cursor: pointer; color: var(--color-primario, #1b3270); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; }
     .doc__nombre:hover { text-decoration: underline; }
     .doc__borrar { background: none; border: 1px solid var(--borde-color, #e5e7eb); border-radius: 8px; cursor: pointer; padding: 4px 8px; }
@@ -103,6 +125,10 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
     .dt__error { background: #fdecea; color: #b42318; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
     .dt__ok { background: #e8f5e9; color: #1b5e20; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .motivo { background: var(--fondo-tarjeta, #fff); border-radius: 14px; width: min(480px, 100%); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+    .motivo__titulo { margin: 0; font-size: 18px; color: var(--texto-principal); }
+    .motivo__opcion { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--texto-principal); cursor: pointer; }
+    .motivo__acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
     .visor { background: var(--fondo-tarjeta, #fff); border-radius: 14px; width: min(920px, 100%); max-height: 94vh; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
     .visor__cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .visor__cuerpo { flex: 1; min-height: 60vh; display: flex; justify-content: center; }
@@ -134,7 +160,57 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
   vista: { nombre: string; url: SafeResourceUrl; crudo: string; pdf: boolean } | null = null;
   private destino: Carpeta | null = null;
 
-  constructor(private docs: DocumentosServicio, private sanitizer: DomSanitizer) {}
+  // 2026-10-15: eliminar / reemplazar con nota (la Asistente -> le llega a Anturi)
+  readonly motivosEliminar = ['No era el documento de la persona', 'Está repetido', 'El archivo está dañado o no se ve', 'Otro motivo'];
+  accion: { tipo: 'eliminar' | 'reemplazar'; doc: Documento; archivo?: File; opcion: string; texto: string } | null = null;
+  private docAReemplazar: Documento | null = null;
+  readonly esAsistente: boolean;
+
+  constructor(private docs: DocumentosServicio, private sanitizer: DomSanitizer, auth: AutenticacionServicio) {
+    this.esAsistente = auth.usuarioActual?.rol === 'SECRETARIA';
+  }
+
+  get motivoValido(): boolean {
+    if (!this.accion) return false;
+    if (this.accion.tipo === 'reemplazar') return true;
+    if (!this.accion.opcion) return false;
+    return this.accion.opcion !== 'Otro motivo' || this.accion.texto.trim().length >= 3;
+  }
+
+  pedirEliminar(d: Documento): void {
+    this.accion = { tipo: 'eliminar', doc: d, opcion: '', texto: '' };
+  }
+
+  pedirReemplazo(d: Documento, selector: HTMLInputElement): void {
+    this.docAReemplazar = d;
+    selector.value = '';
+    selector.click();
+  }
+
+  reemplazoElegido(ev: Event): void {
+    const archivo = (ev.target as HTMLInputElement).files?.[0];
+    if (!archivo || !this.docAReemplazar) return;
+    if (archivo.size > 20 * 1024 * 1024) { this.errores = [`"${archivo.name}" pesa más de 20 MB.`]; return; }
+    this.accion = { tipo: 'reemplazar', doc: this.docAReemplazar, archivo, opcion: '', texto: `Se reemplaza por "${archivo.name}"` };
+  }
+
+  confirmarAccion(): void {
+    const a = this.accion;
+    if (!a || !this.motivoValido) return;
+    const motivo = a.tipo === 'eliminar'
+      ? [a.opcion !== 'Otro motivo' ? a.opcion : '', a.texto.trim()].filter(Boolean).join('. ')
+      : a.texto.trim() || `Se reemplaza por "${a.archivo!.name}"`;
+    this.accion = null;
+    const peticion = a.tipo === 'eliminar' ? this.docs.eliminar(a.doc.id, motivo) : this.docs.reemplazar(a.doc.id, a.archivo!, motivo);
+    peticion.subscribe({
+      next: () => {
+        this.mensaje = (a.tipo === 'eliminar' ? 'Documento eliminado.' : 'Documento reemplazado.') + (this.esAsistente ? ' Le llegó a Anturi para que lo confirme.' : '');
+        setTimeout(() => (this.mensaje = ''), 6000);
+        this.cargar();
+      },
+      error: (e) => (this.errores = [e?.status === 413 ? 'El archivo es muy grande.' : e?.error?.message || 'No se pudo completar.']),
+    });
+  }
 
   ngOnChanges(): void {
     if (this.titularId) this.cargar();
@@ -264,7 +340,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
     const c = this.carpetasDestino({ clave: '', nombre: '', tipo: '', carpetaId: null, obligatoria: false }).find((x) => x.clave === clave);
     if (!c) return;
     this.docs.mover(d.id, c.carpetaId ? { carpetaId: c.carpetaId } : { tipo: c.tipo }).subscribe({
-      next: () => { this.mensaje = `Movido a "${c.nombre}".`; setTimeout(() => (this.mensaje = ''), 4000); this.cargar(); },
+      next: () => { this.mensaje = `Movido a "${c.nombre}".` + (this.esAsistente ? ' Le llegó a Anturi para que lo confirme.' : ''); setTimeout(() => (this.mensaje = ''), 4000); this.cargar(); },
       error: (e) => (this.errores = [e?.error?.message || 'No se pudo mover.']),
     });
   }

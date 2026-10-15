@@ -120,8 +120,16 @@ export class DocumentosServicio {
     return `${entorno.urlApi}/documentos/${id}/ver`;
   }
 
-  eliminar(id: number): Observable<any> {
-    return this.http.delete(`${this.URL}/${id}`);
+  // 2026-10-15: la Asistente debe decir por qué (le llega a Anturi)
+  eliminar(id: number, motivo?: string): Observable<any> {
+    return this.http.delete(`${this.URL}/${id}`, motivo ? { body: { motivo } } : {});
+  }
+
+  reemplazar(id: number, archivo: File, motivo: string): Observable<any> {
+    const form = new FormData();
+    form.append('archivo', archivo, archivo.name);
+    form.append('motivo', motivo);
+    return this.http.post(`${this.URL}/${id}/reemplazar`, form);
   }
 
   esImagen(extension: string): boolean {

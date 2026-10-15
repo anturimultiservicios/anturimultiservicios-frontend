@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { SolicitudesServicio, SolicitudCambio } from '../../nucleo/servicios/solicitudes.servicio';
 import { compararDatos, resumenDatos, FilaComparacion } from '../../nucleo/utilidades/comparar-datos';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DocumentosServicio } from '../../nucleo/servicios/documentos.servicio';
 
 type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 
@@ -96,7 +98,7 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
             <div class="solicitud-header__izq">
               <span class="badge-tipo" [ngClass]="claseBadgeTipo(sol.tipo)">{{ sol.tipo }}</span>
               <div class="solicitud-info">
-                <span class="solicitud-tabla">Tabla: <strong>{{ sol.tabla }}</strong></span>
+                <span class="solicitud-tabla">{{ sol.tabla === 'documentos' ? 'Documento' : 'Tabla' }}: <strong>{{ sol.tabla === 'documentos' ? (docAntes(sol)?.titular || 'documento') : sol.tabla }}</strong></span>
                 <span class="solicitud-motivo">{{ sol.motivo }}</span>
               </div>
             </div>
@@ -139,7 +141,30 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
               el {{ sol.revisadoEn | date:'dd/MM/yyyy HH:mm' }}
             </div>
 
+            <!-- 2026-10-15: documentos de la Asistente - comparativo con el archivo para verlo -->
+            <div *ngIf="sol.tabla === 'documentos'" class="doc-comparativo">
+              <p class="doc-comparativo__nota"><strong>Nota de {{ sol.creadoPor?.nombre }}:</strong> {{ sol.motivo }}</p>
+              <div class="doc-comparativo__columnas">
+                <div class="doc-comparativo__caja">
+                  <span class="doc-comparativo__titulo">{{ sol.tipo === 'ELIMINACION' ? 'Documento que se elimina' : 'Antes' }}</span>
+                  <span><strong>{{ docAntes(sol)?.archivo }}</strong></span>
+                  <span>Carpeta: {{ docAntes(sol)?.carpeta }}</span>
+                  <span>De: {{ docAntes(sol)?.titular }}</span>
+                  <button type="button" class="boton boton-secundario boton-sm" (click)="verDoc(docAntes(sol)?.documentoId, docAntes(sol)?.archivo)">👁 Ver documento</button>
+                </div>
+                <div class="doc-comparativo__flecha" *ngIf="docDespues(sol)">→</div>
+                <div class="doc-comparativo__caja doc-comparativo__caja--nuevo" *ngIf="docDespues(sol)">
+                  <span class="doc-comparativo__titulo">{{ docDespues(sol)?.reemplazoId ? 'Lo reemplaza' : 'Después' }}</span>
+                  <span><strong>{{ docDespues(sol)?.archivo }}</strong></span>
+                  <span>Carpeta: {{ docDespues(sol)?.carpeta }}</span>
+                  <button type="button" class="boton boton-secundario boton-sm" (click)="verDoc(docDespues(sol)?.reemplazoId || docDespues(sol)?.documentoId, docDespues(sol)?.archivo)">👁 Ver documento</button>
+                </div>
+              </div>
+              <p class="sin-cambios" *ngIf="sol.estado === 'PENDIENTE'">Ya está aplicado para la Asistente. <b>Aprobar</b> lo deja así; <b>Rechazar</b> lo devuelve como estaba.</p>
+            </div>
+
             <!-- 2026-10-08: datos legibles (antes salía código JSON) -->
+            <ng-container *ngIf="sol.tabla !== 'documentos'">
             <ng-container *ngIf="sol.datosNuevos; else sinCambiosTpl">
               <h4 class="detalle-bloque__titulo">Qué cambia</h4>
               <table class="tabla-cambios" *ngIf="cambiosDe(sol).length > 0; else igualTpl">
@@ -164,8 +189,18 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
                 </dl>
               </div>
             </ng-template>
+            </ng-container>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- 2026-10-15: ver el documento de la solicitud -->
+    <div *ngIf="vistaDoc" class="modal-overlay" (click)="cerrarDoc()">
+      <div class="visor-doc" (click)="$event.stopPropagation()">
+        <div class="visor-doc__cab"><strong>{{ vistaDoc.nombre }}</strong><button type="button" class="boton boton-icono" (click)="cerrarDoc()" aria-label="Cerrar">✕</button></div>
+        <iframe *ngIf="vistaDoc.pdf" [src]="vistaDoc.url" title="Documento"></iframe>
+        <img *ngIf="!vistaDoc.pdf" [src]="vistaDoc.url" [alt]="vistaDoc.nombre">
       </div>
     </div>
 
@@ -256,6 +291,18 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     .detalle-datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-4); }
     .detalle-bloque { display: flex; flex-direction: column; gap: var(--espacio-2); }
     .detalle-bloque__titulo { font-size: var(--tamano-sm); font-weight: 600; color: var(--texto-secundario); margin: 0; text-transform: uppercase; letter-spacing: 0.06em; }
+    .doc-comparativo { display: flex; flex-direction: column; gap: 10px; }
+    .doc-comparativo__nota { margin: 0; padding: 8px 12px; background: #fff7e6; border-radius: 8px; color: #7a4b00; }
+    .doc-comparativo__columnas { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+    .doc-comparativo__caja { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--borde-color, #e5e7eb); border-radius: 10px; background: var(--fondo-tarjeta, #fff); font-size: var(--tamano-sm); }
+    .doc-comparativo__caja--nuevo { border-color: #86c79a; }
+    .doc-comparativo__caja .boton { align-self: flex-start; margin-top: 4px; }
+    .doc-comparativo__titulo { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--texto-terciario); }
+    .doc-comparativo__flecha { align-self: center; font-size: 22px; color: var(--texto-terciario); }
+    .visor-doc { background: var(--fondo-tarjeta, #fff); border-radius: 14px; width: min(920px, 100%); max-height: 94vh; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    .visor-doc__cab { display: flex; justify-content: space-between; align-items: center; }
+    .visor-doc iframe { width: 100%; height: 78vh; border: none; }
+    .visor-doc img { max-width: 100%; max-height: 78vh; object-fit: contain; align-self: center; }
     .tabla-cambios { width: 100%; border-collapse: collapse; font-size: var(--tamano-sm); }
     .tabla-cambios th { text-align: left; padding: 6px 10px; font-weight: 600; color: var(--texto-terciario); border-bottom: 1px solid var(--borde-color); }
     .tabla-cambios td { padding: 6px 10px; border-bottom: 1px solid var(--borde-color); vertical-align: top; }
@@ -318,7 +365,7 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
 
   private destruir$ = new Subject<void>();
 
-  constructor(private solicitudesServicio: SolicitudesServicio) {}
+  constructor(private solicitudesServicio: SolicitudesServicio, private docs: DocumentosServicio, private sanitizer: DomSanitizer) {}
 
   ngOnInit(): void {
     this.cargarSolicitudes();
@@ -473,6 +520,36 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
         setTimeout(() => { this.mensajeExito = ''; }, 4000);
       }
     });
+  }
+
+  // ── 2026-10-15: documentos ──
+  vistaDoc: { nombre: string; url: SafeResourceUrl; crudo: string; pdf: boolean } | null = null;
+  private cacheDoc = new Map<string, any>();
+
+  private parsear(texto: string | null | undefined): any {
+    if (!texto) return null;
+    if (!this.cacheDoc.has(texto)) { try { this.cacheDoc.set(texto, JSON.parse(texto)); } catch { this.cacheDoc.set(texto, null); } }
+    return this.cacheDoc.get(texto);
+  }
+
+  docAntes(sol: SolicitudCambio): any { return this.parsear(sol.datosOriginales as any); }
+  docDespues(sol: SolicitudCambio): any { return this.parsear(sol.datosNuevos as any); }
+
+  verDoc(id: number | undefined, nombre: string | undefined): void {
+    if (!id) return;
+    this.docs.archivo(id).subscribe({
+      next: (blob) => {
+        this.cerrarDoc();
+        const crudo = URL.createObjectURL(blob);
+        this.vistaDoc = { nombre: nombre || 'Documento', crudo, url: this.sanitizer.bypassSecurityTrustResourceUrl(crudo), pdf: blob.type === 'application/pdf' || /\.pdf$/i.test(nombre || '') };
+      },
+      error: () => alert('No se pudo abrir el documento.'),
+    });
+  }
+
+  cerrarDoc(): void {
+    if (this.vistaDoc) URL.revokeObjectURL(this.vistaDoc.crudo);
+    this.vistaDoc = null;
   }
 
   cerrarModales(): void {
