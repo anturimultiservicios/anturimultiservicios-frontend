@@ -26,6 +26,7 @@ export class ChatbotWhatsappComponent {
     { clave: 'ubicacion', textoKey: 'chatbot.preguntas.ubicacion' },
     { clave: 'horarios', textoKey: 'chatbot.preguntas.horarios' },
     { clave: 'documentos', textoKey: 'chatbot.preguntas.documentos' },
+    { clave: 'beneficiarios', textoKey: 'chatbot.preguntas.beneficiarios' },
     { clave: 'costos', textoKey: 'chatbot.preguntas.costos' },
     { clave: 'asesor', textoKey: 'chatbot.preguntas.asesor' },
   ];

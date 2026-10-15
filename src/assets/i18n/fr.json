@@ -82,15 +82,17 @@
       "ubicacion": "Où êtes-vous situés?",
       "horarios": "Quels sont vos horaires?",
       "documentos": "Quels documents faut-il?",
+      "beneficiarios": "Qui peut être bénéficiaire ?",
       "costos": "Combien ça coûte?",
       "asesor": "Parler à un conseiller"
     },
     "respuestas": {
-      "servicios": "Nous proposons: affiliations EPS, Retraite, ARL et Caisse de Compensation. Nous fournissons également des conseils en sécurité sociale et gestion documentaire.",
-      "afiliacion": "Pour s'affilier, apportez votre pièce d'identité, dernière facture de services et si entreprise: RUT et Chambre de Commerce.",
+      "servicios": "Nous offrons :\n1. Affiliations à l’EPS (santé), la retraite, l’ARL (risques professionnels) et la Caisse de compensation familiale, transferts d’EPS et ajout de bénéficiaires.\n2. Paiement du formulaire de sécurité sociale pour indépendants et entreprises.\n3. Liquidations de travail et conseil en paie.\n4. Vente d’assurances vie, santé, automobile, etc.\n5. Certificats de propriété.\n6. SOAT (assurance automobile obligatoire).",
+      "afiliacion": "INDÉPENDANT :\nIl faut la carte d’identité. Pour s’affilier à l’ARL, un examen médical est nécessaire.\n\nPOUR AFFILIER UNE ENTREPRISE IL FAUT :\n1. RUT.\n2. Pièce d’identité du représentant légal.\n3. Certificat de la Chambre de commerce de moins de 30 jours.\n4. Attestation bancaire de l’entreprise.\n\nVous pouvez les envoyer par WhatsApp au 316 285 2138 ou nous appeler pour un conseil selon votre cas.",
       "ubicacion": "Nous sommes situés au Carrera 7 # 15-24, Quimbaya, Quindío, Colombie. Vous pouvez nous contacter via WhatsApp au 316 285 2138.",
       "horarios": "Nous sommes ouverts du lundi au vendredi de 8h30 à 12h00 et de 14h00 à 18h00, et le samedi de 8h00 à 12h00.",
       "documentos": "Documents de base: Pièce d'identité nationale. Pour les entreprises: RUT, Chambre de Commerce, liste des employés.",
+      "beneficiarios": "Les enfants, beaux-enfants, conjoints, frères et sœurs et parents qui dépendent financièrement du salarié, de l’indépendant ou du retraité affilié ont droit aux mêmes avantages.",
       "costos": "Le coût varie selon le service. Nous offrons une consultation gratuite pour vous orienter. Contactez-nous!",
       "asesor": "Nous vous mettrons en contact avec un conseiller via WhatsApp."
     },

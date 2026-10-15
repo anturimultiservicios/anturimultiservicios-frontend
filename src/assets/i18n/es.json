@@ -82,15 +82,17 @@
       "ubicacion": "¿Dónde están ubicados?",
       "horarios": "¿Cuáles son los horarios?",
       "documentos": "¿Qué documentos necesito?",
+      "beneficiarios": "¿Quiénes pueden ser beneficiarios?",
       "costos": "¿Cuánto cuesta?",
       "asesor": "Hablar con un asesor"
     },
     "respuestas": {
-      "servicios": "Ofrecemos: Afiliaciones a EPS, Pensión, ARL y Caja de Compensación familiar. También brindamos asesorías en seguridad social y gestión documental.",
-      "afiliacion": "Para afiliarse debe traer su cédula de ciudadanía, último recibo de servicios y en caso de empresa: RUT y Cámara de Comercio. Nuestro proceso es rápido y personalizado.",
+      "servicios": "Ofrecemos:\n1. Afiliaciones a EPS, Pensión, ARL y Caja de Compensación Familiar, traslados de EPS e inclusión de beneficiarios.\n2. Pago de la planilla de seguridad social para independientes y empresas.\n3. Liquidación laboral y asesoría en el pago de nómina.\n4. Venta de seguros de vida, médicos, de vehículos, etc.\n5. Certificados de tradición.\n6. SOAT.",
+      "afiliacion": "INDEPENDIENTE:\nSe necesita la cédula de ciudadanía. Para afiliarse a ARL se necesita examen médico.\n\nPARA AFILIAR LA EMPRESA SE NECESITA:\n1. RUT.\n2. Cédula del representante legal.\n3. Cámara de Comercio con vigencia no mayor a 30 días.\n4. Certificado bancario de la empresa.\n\nPuede enviarlos vía WhatsApp al 316 285 2138 o llamarnos para asesorarle según su caso.",
       "ubicacion": "Estamos ubicados en la Carrera 7 # 15-24, Quimbaya, Quindío. También puede comunicarse vía WhatsApp al 316 285 2138.",
       "horarios": "Atendemos de lunes a viernes de 8:30 am a 12:00 m y de 2:00 pm a 6:00 pm, y los sábados de 8:00 am a 12:00 m.",
       "documentos": "Documentos básicos: Cédula de ciudadanía. Para empresa: RUT, Cámara de Comercio, planilla de trabajadores. Según el servicio pueden requerirse documentos adicionales.",
+      "beneficiarios": "Los hijos, hijastros, cónyuges, hermanos y padres que dependan económicamente del trabajador dependiente, independiente o pensionado afiliado tienen derecho a los mismos beneficios.",
       "costos": "El costo varía según el servicio y el número de personas. Le ofrecemos asesoría gratuita para orientarle sobre la mejor opción. ¡Contáctenos!",
       "asesor": "Le comunicaremos con uno de nuestros asesores vía WhatsApp."
     },

@@ -82,15 +82,17 @@
       "ubicacion": "Wo sind Sie ansässig?",
       "horarios": "Was sind Ihre Öffnungszeiten?",
       "documentos": "Welche Dokumente benötige ich?",
+      "beneficiarios": "Wer kann begünstigt werden?",
       "costos": "Was kostet das?",
       "asesor": "Mit einem Berater sprechen"
     },
     "respuestas": {
-      "servicios": "Wir bieten: Kranken-, Renten-, ARL- und Familienausgleichsanmeldungen. Außerdem Beratung zu sozialer Sicherheit und Dokumentenverwaltung.",
-      "afiliacion": "Für die Anmeldung benötigen Sie Ihren Personalausweis, letzte Stromrechnung und bei Unternehmen: RUT und Handelskammerregistrierung.",
+      "servicios": "Wir bieten:\n1. Anmeldung bei EPS (Krankenkasse), Rente, ARL (Berufsrisiko) und Familienausgleichskasse, EPS-Wechsel und Aufnahme von Begünstigten.\n2. Zahlung des Sozialversicherungsformulars für Selbständige und Unternehmen.\n3. Arbeitsrechtliche Abrechnungen und Beratung zur Lohnabrechnung.\n4. Lebens-, Kranken- und Kfz-Versicherungen u. a.\n5. Eigentumsnachweise.\n6. SOAT (Kfz-Pflichtversicherung).",
+      "afiliacion": "SELBSTÄNDIGE:\nBenötigt wird der Personalausweis. Für die ARL ist eine ärztliche Untersuchung erforderlich.\n\nFÜR DIE ANMELDUNG EINES UNTERNEHMENS BENÖTIGEN SIE:\n1. RUT.\n2. Ausweis des gesetzlichen Vertreters.\n3. Handelskammerauszug, nicht älter als 30 Tage.\n4. Bankbescheinigung des Unternehmens.\n\nSie können sie per WhatsApp an 316 285 2138 senden oder uns für eine Beratung anrufen.",
       "ubicacion": "Wir befinden uns in der Carrera 7 # 15-24, Quimbaya, Quindío, Kolumbien. Sie können uns auch per WhatsApp unter 316 285 2138 erreichen.",
       "horarios": "Wir sind Montag bis Freitag von 8:30 bis 12:00 Uhr und von 14:00 bis 18:00 Uhr geöffnet, samstags von 8:00 bis 12:00 Uhr.",
       "documentos": "Grunddokumente: Nationalausweis. Für Unternehmen: RUT, Handelskammer, Mitarbeiterliste.",
+      "beneficiarios": "Kinder, Stiefkinder, Ehepartner, Geschwister und Eltern, die wirtschaftlich vom versicherten Arbeitnehmer, Selbständigen oder Rentner abhängen, haben Anspruch auf dieselben Leistungen.",
       "costos": "Die Kosten variieren je nach Leistung. Wir bieten kostenlose Beratung. Kontaktieren Sie uns!",
       "asesor": "Wir verbinden Sie mit einem Berater über WhatsApp."
     },

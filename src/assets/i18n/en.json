@@ -82,15 +82,17 @@
       "ubicacion": "Where are you located?",
       "horarios": "What are your hours?",
       "documentos": "What documents do I need?",
+      "beneficiarios": "Who can be beneficiaries?",
       "costos": "How much does it cost?",
       "asesor": "Talk to an advisor"
     },
     "respuestas": {
-      "servicios": "We offer: EPS, Pension, ARL and Family Compensation Fund affiliations. We also provide social security consulting and document management.",
-      "afiliacion": "To enroll you must bring your national ID, latest utility bill, and if a company: RUT and Chamber of Commerce. Our process is fast and personalized.",
+      "servicios": "We offer:\n1. Enrollment in EPS (health), Pension, ARL (occupational risk) and Family Compensation Fund, EPS transfers and adding beneficiaries.\n2. Payment of the social security form for self-employed workers and companies.\n3. Labor settlements and payroll advice.\n4. Life, medical and vehicle insurance, among others.\n5. Property title certificates.\n6. SOAT (mandatory vehicle insurance).",
+      "afiliacion": "SELF-EMPLOYED:\nYou need your national ID card. To enroll in ARL a medical exam is required.\n\nTO ENROLL A COMPANY YOU NEED:\n1. RUT.\n2. ID of the legal representative.\n3. Chamber of Commerce certificate issued no more than 30 days ago.\n4. Company bank certificate.\n\nYou can send them via WhatsApp to 316 285 2138 or call us for advice on your case.",
       "ubicacion": "We are located at Carrera 7 # 15-24, Quimbaya, Quindío, Colombia. You can also reach us via WhatsApp at 316 285 2138.",
       "horarios": "We serve Monday to Friday from 8:30 am to 12:00 pm and from 2:00 pm to 6:00 pm, and Saturdays from 8:00 am to 12:00 pm.",
       "documentos": "Basic documents: National ID card. For companies: RUT, Chamber of Commerce, employee payroll. Additional documents may be required depending on the service.",
+      "beneficiarios": "Children, stepchildren, spouses, siblings and parents who depend financially on the affiliated employee, self-employed worker or pensioner are entitled to the same benefits.",
       "costos": "The cost varies depending on the service and number of people. We offer free consultation to guide you. Contact us!",
       "asesor": "We will connect you with one of our advisors via WhatsApp."
     },
