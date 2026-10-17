@@ -16,11 +16,13 @@ import { CredencialesTitularComponent } from '../../../compartido/credenciales-t
 import { DocumentosTitularComponent } from '../../../compartido/documentos-titular/documentos-titular.component';
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
 import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aportante';
+import { FamiliaComponent } from '../../../compartido/familia/familia.component';
+import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.component';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, FamiliaComponent, FechaDmyComponent],
   template: `
     <div class="detalle-contenedor">
 
@@ -209,7 +211,11 @@ import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aporta
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Fecha de nacimiento</span>
-              <span class="dato-valor">{{ afiliado.fechaNacimiento ? (afiliado.fechaNacimiento | date:'dd/MM/yyyy') : '—' }}</span>
+              <span class="dato-valor">{{ afiliado.fechaNacimiento ? (afiliado.fechaNacimiento | date:'dd/MM/yyyy':'UTC') : '—' }}</span>
+            </div>
+            <div class="dato-item">
+              <span class="dato-etiqueta">Expedición del documento</span>
+              <span class="dato-valor">{{ $any(afiliado).fechaExpedicion ? ($any(afiliado).fechaExpedicion | date:'dd/MM/yyyy':'UTC') : '—' }}</span>
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Cargo</span>
@@ -483,6 +489,15 @@ import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aporta
             </select>
             <small *ngIf="edicionForm.estado !== 'ACTIVO'" style="color: var(--texto-terciario);">Retirado o suspendido: ya no le llegan correos de cobro.</small>
           </div>
+          <!-- 2026-10-16 (Anyi): no había dónde poner la fecha de nacimiento ni la de expedición -->
+          <div class="campo-grupo">
+            <span class="campo-etiqueta">Fecha de nacimiento</span>
+            <anturi-fecha-dmy etiqueta="Fecha de nacimiento" [(valor)]="edicionForm.fechaNacimiento"></anturi-fecha-dmy>
+          </div>
+          <div class="campo-grupo">
+            <span class="campo-etiqueta">Fecha de expedición del documento</span>
+            <anturi-fecha-dmy etiqueta="Fecha de expedición" [aniosAtras]="80" [(valor)]="edicionForm.fechaExpedicion"></anturi-fecha-dmy>
+          </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Fecha de ingreso</label>
             <input type="date" class="campo-input" [(ngModel)]="edicionForm.fechaIngreso" name="edit-fechaIngreso">
@@ -519,6 +534,11 @@ import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aporta
 
       <!-- SECCIÓN DOCUMENTOS -->
       <!-- 2026-10-15: documentos por carpetas (nombre único en todo el sistema) -->
+      <!-- 2026-10-16: familia / beneficiarios -->
+      <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
+        <anturi-familia [afiliadoId]="afiliadoId"></anturi-familia>
+      </div>
+
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
         <anturi-documentos-titular titularTipo="AFILIADO" [titularId]="afiliadoId"></anturi-documentos-titular>
       </div>
@@ -1122,7 +1142,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     this.edicionForm = {
       ...a,
       tipoDocumento: a.persona?.tipoDocumento ?? 'CC',
-      fechaIngreso: fecha(a.fechaIngreso), fechaRetiro: fecha(a.fechaRetiro), fechaNacimiento: fecha(a.fechaNacimiento),
+      fechaIngreso: fecha(a.fechaIngreso), fechaRetiro: fecha(a.fechaRetiro), fechaNacimiento: fecha(a.fechaNacimiento), fechaExpedicion: fecha(a.fechaExpedicion),
       telefonosAdicionales: this.lista(a.telefonosAdicionales), correosAdicionales: this.lista(a.correosAdicionales),
     };
     this.verTrabajo = false;
@@ -1205,7 +1225,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   private payloadEdicion(f: any): Record<string, any> {
     const texto = ['nombres', 'apellidos', 'cedula', 'telefono', 'cargo', 'claseAportante', 'asopagos', 'actividadEconomica', 'direccion', 'municipio', 'direccionTrabajo', 'municipioTrabajo', 'observaciones'];
     const numeros = ['valorAfiliacion', 'ibc', 'porcentajeArl', 'valor', 'comision', 'totalPago', 'cuatroXMil', 'cesantias', 'porcentajeSalud', 'porcentajePension', 'porcentajeSaludEmpleador', 'porcentajePensionEmpleador', 'porcentajeCaja', 'porcentajeSena', 'porcentajeIcbf'];
-    const fechas = ['fechaNacimiento', 'fechaIngreso', 'fechaRetiro'];
+    const fechas = ['fechaNacimiento', 'fechaExpedicion', 'fechaIngreso', 'fechaRetiro'];
     const otros = ['tipoAfiliacion', 'claseRiesgoArl', 'genero', 'estado'];
     const booleanos = ['notificarCorreo', 'notificarSms', 'notificarLlamada'];
     const p: Record<string, any> = {};

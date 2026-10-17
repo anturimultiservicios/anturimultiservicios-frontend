@@ -2,6 +2,8 @@
 // afiliados. Si una ficha vieja trae otro valor (del Excel), se sigue
 // mostrando como opción para no perderlo.
 export const CLASES_APORTANTE = [
+  // 2026-10-16 (Anyi): faltaba para los trabajadores de los empleadores
+  'Trabajador dependiente',
   'Independiente',
   'Independiente contrato mayor a 1 mes',
   'Independiente residente en el exterior',

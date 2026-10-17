@@ -41,6 +41,7 @@ export interface Afiliado {
   notificarSms?: boolean;
   notificarLlamada?: boolean;
   fechaNacimiento?: string;
+  fechaExpedicion?: string;
   cargo?: string;
   claseAportante?: string;
   asopagos?: string;
@@ -98,6 +99,7 @@ export interface CrearAfiliadoDto {
   notificarSms?: boolean;
   notificarLlamada?: boolean;
   fechaNacimiento?: string;
+  fechaExpedicion?: string;
   cargo?: string;
   claseAportante?: string;
   asopagos?: string;

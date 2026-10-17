@@ -38,18 +38,21 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
 
       <div *ngIf="cargando" class="sub">Cargando documentos...</div>
       <div class="dt__carpetas" *ngIf="!cargando">
-        <div *ngFor="let c of carpetasVisibles" class="carpeta" [class.carpeta--falta]="c.obligatoria && docsDe(c).length === 0" [class.carpeta--abierta]="abierta === c.clave">
-          <button type="button" class="carpeta__cab" (click)="abierta = abierta === c.clave ? '' : c.clave" [attr.aria-expanded]="abierta === c.clave">
+        <div *ngFor="let c of carpetasVisibles" class="carpeta" [class.carpeta--falta]="c.obligatoria && docsDe(c).length === 0" [class.carpeta--abierta]="estaAbierta(c)">
+          <button type="button" class="carpeta__cab" (click)="alternar(c)" [attr.aria-expanded]="estaAbierta(c)">
             <span class="carpeta__icono">📁</span>
             <span class="carpeta__nombre">{{ c.nombre }}</span>
             <span class="carpeta__cuenta" [class.falta]="c.obligatoria && docsDe(c).length === 0">{{ docsDe(c).length ? docsDe(c).length + ' archivo' + (docsDe(c).length !== 1 ? 's' : '') : (c.obligatoria ? '⚠ Falta' : 'Vacía') }}</span>
+            <span class="carpeta__flecha" aria-hidden="true">{{ estaAbierta(c) ? '▾' : '▸' }}</span>
           </button>
           <button type="button" class="boton boton-secundario boton-sm" (click)="elegirArchivos(c, selector)">Subir</button>
-          <div *ngIf="abierta === c.clave" class="carpeta__lista">
+          <div *ngIf="estaAbierta(c)" class="carpeta__lista">
             <div *ngIf="!docsDe(c).length" class="sub">Todavía no hay archivos en esta carpeta.</div>
             <div *ngFor="let d of docsDe(c)" class="doc">
               <button type="button" class="doc__nombre" (click)="ver(d)" [title]="'Ver ' + (d.nombre || d.nombreOriginal)">{{ esPdf(d) ? '📄' : '🖼️' }} {{ d.nombre || d.nombreOriginal }}</button>
               <span class="sub">{{ d.creadoEn | date:'dd/MM/yyyy' }}</span>
+              <button type="button" class="boton boton-texto boton-sm" (click)="ver(d)" [attr.aria-label]="'Ver ' + (d.nombre || d.nombreOriginal)">👁 Ver</button>
+              <button type="button" class="boton boton-texto boton-sm" (click)="descargar(d)" [attr.aria-label]="'Descargar ' + (d.nombre || d.nombreOriginal)">⬇ Descargar</button>
               <select class="campo-input campo-input--sm" (change)="mover(d, $event)" [attr.aria-label]="'Mover ' + d.nombre">
                 <option value="" selected disabled>Mover a...</option>
                 <option *ngFor="let o of carpetasDestino(c)" [value]="o.clave">{{ o.nombre }}</option>
@@ -115,7 +118,8 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
     .carpeta__cuenta { font-size: 12px; color: var(--texto-terciario); white-space: nowrap; }
     .carpeta__cuenta.falta { color: #b45309; font-weight: 700; }
     .carpeta__lista { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--borde-color, #e5e7eb); padding-top: 8px; }
-    .doc { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 8px; align-items: center; }
+    .doc { display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 8px; align-items: center; }
+    .carpeta__flecha { margin-left: 6px; color: var(--texto-terciario); }
     .doc__nombre { background: none; border: none; text-align: left; cursor: pointer; color: var(--color-primario, #1b3270); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; }
     .doc__nombre:hover { text-decoration: underline; }
     .doc__borrar { background: none; border: 1px solid var(--borde-color, #e5e7eb); border-radius: 8px; cursor: pointer; padding: 4px 8px; }
@@ -135,18 +139,53 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
     .visor__cuerpo iframe { width: 100%; height: 75vh; border: none; }
     .visor__cuerpo img { max-width: 100%; max-height: 75vh; object-fit: contain; }
     .visor .boton { align-self: flex-start; }
-    @media (max-width: 600px) { .doc { grid-template-columns: 1fr auto; } }
+    @media (max-width: 600px) { .doc { grid-template-columns: 1fr auto auto; } }
   `],
 })
 export class DocumentosTitularComponent implements OnChanges, OnDestroy {
-  @Input() titularTipo: 'AFILIADO' | 'EMPRESA' = 'AFILIADO';
+  @Input() titularTipo: 'AFILIADO' | 'EMPRESA' | 'PERSONA' = 'AFILIADO';
   @Input() titularId!: number;
 
   catalogo: CatalogoCarpetas = { fijas: [], propias: [] };
   documentos: Documento[] = [];
   carpetasCreadas: Carpeta[] = [];
   cargando = false;
-  abierta = '';
+  // 2026-10-16: las carpetas con archivos se ven abiertas (antes había que
+  // tocar la carpeta para ver los archivos y no se notaba)
+  private abiertas = new Set<string>();
+  private cerradas = new Set<string>();
+
+  estaAbierta(c: Carpeta): boolean {
+    if (this.abiertas.has(c.clave)) return true;
+    return !this.cerradas.has(c.clave) && this.docsDe(c).length > 0;
+  }
+
+  alternar(c: Carpeta): void {
+    if (this.estaAbierta(c)) { this.abiertas.delete(c.clave); this.cerradas.add(c.clave); }
+    else { this.cerradas.delete(c.clave); this.abiertas.add(c.clave); }
+  }
+
+  private abrir(clave: string): void {
+    this.cerradas.delete(clave);
+    this.abiertas.add(clave);
+  }
+
+  // descarga con la sesión (un enlace directo no lleva el inicio de sesión)
+  descargar(d: Documento): void {
+    this.docs.archivo(d.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = d.nombre || d.nombreOriginal || 'documento';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      },
+      error: () => (this.errores = ['No se pudo descargar el documento.']),
+    });
+  }
   creando = false;
   nombreNueva = '';
   avisoCarpeta = '';
@@ -222,7 +261,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
 
   cargar(): void {
     this.cargando = true;
-    const lista$ = this.titularTipo === 'EMPRESA' ? this.docs.listarDeEmpresa(this.titularId) : this.docs.listarDeAfiliado(this.titularId);
+    const lista$ = this.titularTipo === 'EMPRESA' ? this.docs.listarDeEmpresa(this.titularId) : this.titularTipo === 'PERSONA' ? this.docs.listarDePersona(this.titularId) : this.docs.listarDeAfiliado(this.titularId);
     forkJoin({
       catalogo: this.docs.carpetas().pipe(catchError(() => of({ fijas: [], propias: [] } as CatalogoCarpetas))),
       documentos: lista$.pipe(catchError(() => of([] as Documento[]))),
@@ -244,8 +283,8 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
     const ya = new Set<string>();
     const poner = (c: Carpeta) => { if (!ya.has(c.clave)) { ya.add(c.clave); lista.push(c); } };
     for (const f of this.catalogo.fijas) {
-      const c: Carpeta = { clave: 'tipo:' + f.tipo, nombre: f.nombre, tipo: f.tipo, carpetaId: null, obligatoria: this.titularTipo === 'AFILIADO' && f.tipo === 'CEDULA' };
-      if (this.titularTipo === 'AFILIADO' || this.docsDe(c).length) poner(c);
+      const c: Carpeta = { clave: 'tipo:' + f.tipo, nombre: f.nombre, tipo: f.tipo, carpetaId: null, obligatoria: this.titularTipo !== 'EMPRESA' && f.tipo === 'CEDULA' };
+      if (this.titularTipo !== 'EMPRESA' || this.docsDe(c).length) poner(c);
     }
     for (const d of this.documentos) if (d.carpeta) poner({ clave: 'c:' + d.carpeta.id, nombre: d.carpeta.nombre, tipo: 'OTRO', carpetaId: d.carpeta.id, obligatoria: false });
     for (const c of this.carpetasCreadas) poner(c);
@@ -278,7 +317,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
         if (!r.fija && !this.catalogo.propias.some((p) => p.id === r.carpeta!.id)) this.catalogo.propias = [...this.catalogo.propias, { id: r.carpeta!.id, nombre: r.nombre, clave: '' }];
         if (!this.carpetasCreadas.some((x) => x.clave === c.clave)) this.carpetasCreadas = [...this.carpetasCreadas, c];
         this.avisoCarpeta = r.existia ? `Ya existía la carpeta "${r.nombre}": se usa esa (así no quedan carpetas repetidas).` : `Carpeta "${r.nombre}" creada.`;
-        this.abierta = c.clave;
+        this.abrir(c.clave);
         this.nombreNueva = '';
         this.creando = false;
         setTimeout(() => (this.avisoCarpeta = ''), 6000);
@@ -309,7 +348,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
       if (a.size > 20 * 1024 * 1024) { this.errores.push(`"${a.name}" pesa más de 20 MB.`); continue; }
       const ok = await new Promise<boolean>((resolve) => {
         this.docs.subirA({
-          ...(this.titularTipo === 'EMPRESA' ? { empresaId: this.titularId } : { afiliadoId: this.titularId }),
+          ...(this.titularTipo === 'EMPRESA' ? { empresaId: this.titularId } : this.titularTipo === 'PERSONA' ? { personaId: this.titularId } : { afiliadoId: this.titularId }),
           tipo: destino.carpetaId ? 'OTRO' : destino.tipo,
           carpetaId: destino.carpetaId,
         }, a).subscribe({
@@ -330,7 +369,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
     if (bien) {
       this.mensaje = `${bien} archivo${bien !== 1 ? 's' : ''} subido${bien !== 1 ? 's' : ''} a "${destino.nombre}".`;
       setTimeout(() => (this.mensaje = ''), 5000);
-      this.abierta = destino.clave;
+      this.abrir(destino.clave);
       this.cargar();
     }
   }

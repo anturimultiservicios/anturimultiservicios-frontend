@@ -153,6 +153,10 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
                 <option value="TRANSFERENCIA">Transferencia</option>
               </select>
             </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="fechaPagoNoAporta">Fecha en que pagó o consignó</label>
+              <input id="fechaPagoNoAporta" type="date" class="campo-input" [(ngModel)]="fechaPago" [max]="hoyIso" [min]="minFechaPago">
+            </div>
             <div class="campo-grupo campo-grupo--ancho">
               <label class="campo-etiqueta">Motivo (opcional)</label>
               <input type="text" class="campo-input" [(ngModel)]="noAporta.motivo" maxlength="300" placeholder="Ej: solo paga la planilla">
@@ -197,6 +201,12 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
               <option value="EFECTIVO">Efectivo</option>
               <option value="TRANSFERENCIA">Transferencia</option>
             </select>
+          </div>
+          <!-- 2026-10-16 (Anyi): consignan después de las 4:30 p. m. y se registra al otro día -->
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="fechaPagoReal">Fecha en que pagó o consignó</label>
+            <input id="fechaPagoReal" type="date" class="campo-input" [(ngModel)]="fechaPago" [max]="hoyIso" [min]="minFechaPago">
+            <span class="campo-ayuda" *ngIf="fechaPago && fechaPago !== hoyIso">El pago queda con fecha del {{ fechaPago | date:'dd/MM/yyyy':'UTC' }}.</span>
           </div>
           <div *ngIf="errorRegistro" class="alerta-error">{{ errorRegistro }}</div>
           <div class="panel-confirmar__acciones">
@@ -377,6 +387,18 @@ export class RegistrarPagoComponent implements OnDestroy {
   cobro: CobroEmpresa | null = null;
   yaPagados = new Set<number>();
   canalSeleccionado: CanalPago | null = null;
+  // 2026-10-16: fecha real del pago (por defecto hoy; hasta 60 días atrás)
+  readonly hoyIso = this.isoLocal(new Date());
+  readonly minFechaPago = this.isoLocal(new Date(Date.now() - 60 * 86_400_000));
+  fechaPago = this.hoyIso;
+
+  private isoLocal(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  private get fechaPagoEnviar(): string | undefined {
+    return this.fechaPago && this.fechaPago !== this.hoyIso ? this.fechaPago : undefined;
+  }
   registrando = false;
   errorRegistro = '';
   mensajeExito = '';
@@ -544,6 +566,7 @@ export class RegistrarPagoComponent implements OnDestroy {
       monto: Number(n.monto),
       canal: n.canal!,
       motivo: n.motivo.trim() || undefined,
+      fechaPago: this.fechaPagoEnviar,
     }).pipe(
       finalize(() => { this.registrandoNoAporta = false; }),
       takeUntil(this.destruir$),
@@ -603,6 +626,7 @@ export class RegistrarPagoComponent implements OnDestroy {
     this.seleccionCuentas.clear();
     this.seleccionados.clear();
     this.canalSeleccionado = null;
+    this.fechaPago = this.hoyIso;
     this.errorRegistro = '';
   }
 
@@ -649,13 +673,13 @@ export class RegistrarPagoComponent implements OnDestroy {
     forkJoin([
       ...personas.map((a) =>
         this.pagosServicio.registrarCompleto(a.id, this.montoDe('a' + a.id, this.montoAdeudado(a)), this.canalSeleccionado!, this.mesesAdeudados(a),
-          undefined, this.montoAdeudado(a), this.motivoAjuste.trim() || undefined).pipe(
+          undefined, this.montoAdeudado(a), this.motivoAjuste.trim() || undefined, this.fechaPagoEnviar).pipe(
           catchError((err) => of({ error: true, afiliado: a, mensaje: err?.error?.message })),
         ),
       ),
       ...cuentas.map((c) =>
         this.pagosServicio.registrarEmpresa(c.empresaId, this.montoDe('e' + c.empresaId, c.montoAdeudado), this.canalSeleccionado!, Math.max(1, c.mesesAdeudados),
-          c.montoAdeudado, this.motivoAjuste.trim() || undefined).pipe(
+          c.montoAdeudado, this.motivoAjuste.trim() || undefined, this.fechaPagoEnviar).pipe(
           catchError((err) => of({ error: true, cuenta: c, mensaje: err?.error?.message })),
         ),
       ),

@@ -177,10 +177,11 @@ import { ListasEntidadesComponent } from '../../../compartido/listas-entidades/l
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
 import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aportante';
 
+import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.component';
 @Component({
   selector: 'anturi-formulario-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ListasEntidadesComponent, ContactosAdicionalesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ListasEntidadesComponent, ContactosAdicionalesComponent, FechaDmyComponent],
   template: `
     <anturi-listas-entidades></anturi-listas-entidades>
     <div class="pagina-formulario">
@@ -514,6 +515,11 @@ import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aporta
                   <option *ngFor="let a of aniosNacimiento" [ngValue]="a">{{ a }}</option>
                 </select>
               </div>
+            </div>
+            <!-- 2026-10-16 (Anyi): fecha de expedición de la cédula -->
+            <div class="campo-grupo campo-grupo--ancho">
+              <span class="campo-etiqueta">Fecha de expedición del documento</span>
+              <anturi-fecha-dmy etiqueta="Fecha de expedición" [aniosAtras]="80" [(valor)]="fechaExpedicion"></anturi-fecha-dmy>
             </div>
           </div>
 
@@ -1040,6 +1046,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
 
   // Fecha de nacimiento por 3 desplegables (ver nota arriba en el template)
   fechaNacDia: number | null = null;
+  fechaExpedicion = '';
   fechaNacMes: number | null = null;
   fechaNacAnio: number | null = null;
   readonly diasDelMes = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -1503,6 +1510,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       direccionTrabajo: this.direccionTrabajo.trim() || undefined,
       municipioTrabajo: this.municipioTrabajo.trim() || undefined,
       fechaNacimiento: this.form.fechaNacimiento || undefined,
+      fechaExpedicion: this.fechaExpedicion || undefined,
       cargo: this.form.cargo || undefined,
       claseAportante: this.form.claseAportante || undefined,
       asopagos: this.form.asopagos || undefined,

@@ -89,6 +89,7 @@ export class EmpresasServicio {
 
 export interface PersonalEmpresa {
   relacionId: number;
+  personaId: number;
   estadoRelacion: 'ACTIVA' | 'FINALIZADA' | string;
   cargo: string | null;
   // null = sede principal (sin sucursal)

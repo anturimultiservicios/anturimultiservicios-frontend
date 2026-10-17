@@ -243,7 +243,7 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
                   <td class="acciones-personal">
                     <a *ngIf="p.afiliado" [routerLink]="[prefijo, 'afiliados', p.afiliado.id]" class="boton boton-texto boton-sm">Ver ficha</a>
                     <a *ngIf="!p.afiliado && p.cuentaEmpresaId" [routerLink]="[prefijo, 'empresas', p.cuentaEmpresaId]" class="boton boton-texto boton-sm" title="Esta persona tiene su propia cuenta">Ver su cuenta</a>
-                    <span *ngIf="!p.afiliado && !p.cuentaEmpresaId" class="sin-ficha" title="Está en el personal según el Excel, pero no tiene ficha de afiliado">Sin ficha</span>
+                    <a *ngIf="!p.afiliado" [routerLink]="[prefijo, 'trabajadores', p.personaId]" class="boton boton-texto boton-sm" title="Datos, documentos y familia del trabajador">Ficha del trabajador</a>
                     <button *ngIf="!esSecretaria && p.estadoRelacion === 'ACTIVA'" class="boton boton-texto boton-sm" (click)="retirarPersonal(p)">Retirar</button>
                   </td>
                 </tr>

@@ -67,6 +67,12 @@ export const rutasSecretaria: Routes = [
             (m) => m.DetalleEmpresaComponent
           ),
       },
+      // 2026-10-16: ficha del trabajador (personal de empresa sin ficha de afiliado)
+      {
+        path: 'trabajadores/:personaId',
+        loadComponent: () =>
+          import('../compartido/ficha-trabajador/ficha-trabajador.component').then((m) => m.FichaTrabajadorComponent),
+      },
       {
         path: 'mis-solicitudes',
         loadComponent: () =>
