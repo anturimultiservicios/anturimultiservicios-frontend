@@ -116,7 +116,13 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Clase aportante</label>
-            <input type="text" class="campo-input" [(ngModel)]="edicionForm.claseAportante" name="edit-claseAportante">
+            <input type="text" class="campo-input" [(ngModel)]="edicionForm.claseAportante" name="edit-claseAportante" list="clases-empleador" autocomplete="off">
+            <datalist id="clases-empleador"><option *ngFor="let c of clasesEmpleador" [value]="c"></option></datalist>
+          </div>
+          <!-- 2026-10-16: en el Excel las fincas venían en "Clase aportante" -->
+          <div class="campo-grupo campo-grupo--ancho">
+            <label class="campo-etiqueta" for="edit-lugarTrabajo">Lugares de trabajo (fincas, obras, sedes)</label>
+            <textarea id="edit-lugarTrabajo" class="campo-input" rows="2" [(ngModel)]="edicionForm.lugarTrabajo" name="edit-lugarTrabajo" placeholder="Ej. Finca La Negrita, vereda El Gigante, Montenegro"></textarea>
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Días de pago</label>
@@ -161,6 +167,10 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
             <div class="dato-item">
               <span class="dato-etiqueta">Clase aportante</span>
               <span class="dato-valor">{{ empresa.claseAportante || '—' }}</span>
+            </div>
+            <div class="dato-item dato-item--ancho" *ngIf="empresa.lugarTrabajo">
+              <span class="dato-etiqueta">Lugares de trabajo</span>
+              <span class="dato-valor">{{ empresa.lugarTrabajo }}</span>
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Días de pago</span>
@@ -474,6 +484,7 @@ export class DetalleEmpresaComponent implements OnInit {
   // ── Edición de empresa ──
   modoEdicion = false;
   edicionForm: Partial<Empresa> = {};
+  readonly clasesEmpleador = ['Empleador', 'Doméstica', 'Servicio doméstico', 'Obra', 'Construcción', 'Finca', 'Trabajadores', 'Independiente', 'Cooperativa'];
   motivoEdicion = '';
   guardandoEdicion = false;
 
@@ -719,6 +730,7 @@ export class DetalleEmpresaComponent implements OnInit {
       direccion: this.edicionForm.direccion,
       municipio: this.edicionForm.municipio,
       claseAportante: this.edicionForm.claseAportante,
+      lugarTrabajo: (this.edicionForm.lugarTrabajo ?? '').trim() || undefined,
       diasPago: this.edicionForm.diasPago == null || (this.edicionForm.diasPago as any) === '' ? undefined : Number(this.edicionForm.diasPago),
       telefonosAdicionales: limpiarContactos(this.telefonosAdicionales),
       correosAdicionales: limpiarContactos(this.correosAdicionales),

@@ -21,6 +21,8 @@ export interface Empresa {
   clave?: string;
   diasPago?: number;
   claseAportante?: string;
+  // 2026-10-16: fincas / obras donde trabaja la gente
+  lugarTrabajo?: string | null;
   activa: boolean;
   sucursales?: any[];
   creadoEn: string;

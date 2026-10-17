@@ -701,8 +701,8 @@ export class RegistrarPagoComponent implements OnDestroy {
       if (exitosos.length > 0) {
         this.mensajeExito = `${exitosos.length} pago(s) registrado(s) correctamente.`;
         setTimeout(() => { this.mensajeExito = ''; }, 5000);
-        this.cargarResumen();
-        this.cargarResumenMensual();
+        // el resumen de dinero es solo de Admin (a la Asistente le daba 403)
+        if (this.esAdmin) { this.cargarResumen(); this.cargarResumenMensual(); }
       }
       if (fallidos.length > 0) {
         const nombres = fallidos.map((f: any) => f.cuenta ? f.cuenta.razonSocial : `${f.afiliado.nombres} ${f.afiliado.apellidos}`).join(', ');

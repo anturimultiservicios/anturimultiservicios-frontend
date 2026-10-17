@@ -31,11 +31,12 @@ export function recargarSiFaltaArchivo(error: NavigationError): void {
   window.location.assign(error.url);
 }
 
+import { mensajesErrorInterceptor } from './nucleo/interceptores/mensajes-error.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(rutas, withViewTransitions(), withNavigationErrorHandler(recargarSiFaltaArchivo)),
     // sinInternet va por fuera: si el servidor no responde, contesta la copia local
-    provideHttpClient(withInterceptors([sinInternetInterceptor, tokenInterceptor])),
+    provideHttpClient(withInterceptors([mensajesErrorInterceptor, sinInternetInterceptor, tokenInterceptor])),
     provideAnimations(),
     // 2026-10-09 (plan "sin internet", paso 1): la página queda guardada en
     // el equipo y abre/funciona aunque se vaya el internet. Solo en producción.
