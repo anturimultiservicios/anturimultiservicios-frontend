@@ -11,7 +11,9 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 //  - A la Asistente: a quién le toca llamar hoy.
 // "Más tarde" lo esconde 2 horas. Para verlo de prueba: ?probar-bot
 interface Recordatorio {
-  tipo: 'revisar' | 'llamar';
+  tipo: 'revisar' | 'llamar' | 'tareas';
+  tareas?: number;
+  titulosTareas?: string[];
   cantidad: number;
   dias?: number;
   avisosViejos?: number;
@@ -40,15 +42,18 @@ const POSPONER = 2 * 60 * 60 * 1000;
             Tiene <b>{{ r.cantidad }} {{ r.cantidad === 1 ? 'cambio' : 'cambios' }} por revisar</b>{{ r.dias ? ', el más viejo de hace ' + r.dias + ' días' : '' }}.
             La Asistente ya los ve hechos, pero usted tiene la última palabra.
           </p>
-          <p *ngIf="!r.cantidad && r.avisosViejos" class="bot__texto">
+          <p *ngIf="r.tareas" class="bot__texto">Tiene <b>{{ r.tareas }} {{ r.tareas === 1 ? 'tarea' : 'tareas' }} por resolver</b>: {{ r.titulosTareas?.join(', ') }}.</p>
+          <p *ngIf="!r.cantidad && !r.tareas && r.avisosViejos" class="bot__texto">
             Tiene <b>{{ r.avisosViejos }} {{ r.avisosViejos === 1 ? 'notificación' : 'notificaciones' }}</b> sin ver de hace más de 2 días.
           </p>
         </ng-container>
         <ng-container *ngIf="r.tipo === 'llamar'">
           <p class="bot__texto">Hoy le toca <b>llamar a {{ r.cantidad }} {{ r.cantidad === 1 ? 'persona' : 'personas' }}</b>{{ r.nombres?.length ? ': ' + r.nombres!.join(', ') + (r.cantidad > r.nombres!.length ? ' y más' : '') : '' }}.</p>
         </ng-container>
+        <p *ngIf="r.tipo !== 'revisar' && r.tareas" class="bot__texto">Tiene <b>{{ r.tareas }} {{ r.tareas === 1 ? 'tarea' : 'tareas' }} por resolver</b>: {{ r.titulosTareas?.join(', ') }}.</p>
         <div class="bot__acciones">
-          <button type="button" class="bot__btn bot__btn--ir" (click)="ir()">{{ r.tipo === 'llamar' ? 'Ver a quién llamar' : 'Revisar ahora' }}</button>
+          <button type="button" class="bot__btn bot__btn--ir" (click)="ir()">{{ r.tipo === 'llamar' ? 'Ver a quién llamar' : r.tipo === 'tareas' || (!r.cantidad && r.tareas) ? 'Ver mis tareas' : 'Revisar ahora' }}</button>
+          <button *ngIf="r.tipo === 'llamar' && r.tareas" type="button" class="bot__btn bot__btn--luego" (click)="verTareas()">Ver mis tareas</button>
           <button type="button" class="bot__btn bot__btn--luego" (click)="masTarde()">Más tarde</button>
         </div>
       </div>
@@ -126,9 +131,17 @@ export class RecordatorioBotComponent implements OnInit, OnDestroy {
     if (v.paused) v.play().catch(() => undefined);
   }
 
+  verTareas(): void {
+    this.r = null;
+    this.posponer(POSPONER);
+    // después del clic (si no, el mismo clic cierra la campana)
+    setTimeout(() => window.dispatchEvent(new Event('anturi-abrir-campana')), 50);
+  }
+
   ir(): void {
     const r = this.r;
     if (!r) return;
+    if (r.tipo === 'tareas' || (r.tipo === 'revisar' && !r.cantidad && r.tareas)) { this.verTareas(); return; }
     this.r = null;
     this.posponer(POSPONER);
     // solo avisos viejos (sin solicitudes): la campana está en el panel

@@ -30,6 +30,8 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
     { icono: 'resumen', etiqueta: 'Resumen', ruta: '/admin/resumen' },
     { icono: 'afiliados', etiqueta: 'Afiliados', ruta: '/admin/afiliados' },
     { icono: 'empresas', etiqueta: 'Empresas', ruta: '/admin/empresas' },
+    // 2026-10-16: organizar las fincas de los empleadores
+    { icono: 'empresas', etiqueta: 'Organizar fincas', ruta: '/admin/fincas' },
     { icono: 'calendario', etiqueta: 'Calendario', ruta: '/admin/calendario' },
     { icono: 'llamadas', etiqueta: 'Llamadas y mensajes', ruta: '/admin/recordatorios-llamada' },
     { icono: 'pagos', etiqueta: 'Registrar pago', ruta: '/admin/registrar-pago' },

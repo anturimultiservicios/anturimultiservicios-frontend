@@ -83,6 +83,17 @@ import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servici
                 <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Empresas</span>
               </a>
             </li>
+            <!-- 2026-10-16: organizar las fincas de los empleadores -->
+            <li>
+              <a routerLink="/asistente/fincas" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Organizar fincas' : ''">
+                <span class="barra-lateral__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 21h18"></path><path d="M5 21V10l7-5 7 5v11"></path><path d="M10 21v-6h4v6"></path>
+                  </svg>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Organizar fincas</span>
+              </a>
+            </li>
             <li>
               <a routerLink="/asistente/calendario" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Calendario' : ''">
                 <span class="barra-lateral__icono">

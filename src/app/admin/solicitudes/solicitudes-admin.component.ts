@@ -117,8 +117,13 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
                   Rechazar
                 </button>
               </div>
-              <span *ngIf="sol.estado !== 'PENDIENTE'" class="badge-estado" [ngClass]="claseBadgeEstado(sol.estado)">
+              <span *ngIf="sol.estado !== 'PENDIENTE' && sol.aplicacion !== 'FALLIDA'" class="badge-estado" [ngClass]="claseBadgeEstado(sol.estado)">
                 {{ sol.estado }}
+              </span>
+              <!-- 2026-10-16: aprobada pero NO quedó hecha (antes salía "APROBADA" como si nada) -->
+              <span *ngIf="sol.aplicacion === 'FALLIDA'" class="no-aplicada" (click)="$event.stopPropagation()">
+                <span class="badge-estado badge-no-aplicada" [title]="sol.motivoFalla || ''">Aprobada, pero no se aplicó</span>
+                <button type="button" class="boton boton-primario boton-sm" [disabled]="reaplicando === sol.id" (click)="reaplicar(sol)">{{ reaplicando === sol.id ? 'Aplicando…' : 'Volver a aplicar' }}</button>
               </span>
               <svg
                 class="icono-expandir"
@@ -141,6 +146,7 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
               el {{ sol.revisadoEn | date:'dd/MM/yyyy HH:mm' }}
             </div>
 
+            <p *ngIf="sol.aplicacion === 'FALLIDA'" class="falla-motivo"><b>No se aplicó:</b> {{ sol.motivoFalla }}</p>
             <!-- 2026-10-15: documentos de la Asistente - comparativo con el archivo para verlo -->
             <div *ngIf="sol.tabla === 'documentos'" class="doc-comparativo">
               <p class="doc-comparativo__nota"><strong>Nota de {{ sol.creadoPor?.nombre }}:</strong> {{ sol.motivo }}</p>
@@ -265,6 +271,9 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     .tab-activo { color: var(--color-primario) !important; border-bottom-color: var(--color-primario) !important; font-weight: 600; }
     .tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--color-advertencia); color: white; font-size: 0.7rem; font-weight: 700; }
     .tab-badge--aprobado { background: #15803d; }
+    .no-aplicada { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .badge-no-aplicada { background: #fdecea; color: #b42318; }
+    .falla-motivo { margin: 4px 0 0; padding: 8px 12px; border-radius: 8px; background: #fdecea; color: #7a1d14; font-size: var(--tamano-sm); }
     .tab-badge--rechazado { background: var(--color-error); }
 
     /* Solicitudes */
@@ -374,6 +383,20 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destruir$.next();
     this.destruir$.complete();
+  }
+
+  reaplicando: number | null = null;
+
+  reaplicar(sol: SolicitudCambio): void {
+    this.reaplicando = sol.id;
+    this.solicitudesServicio.reaplicar(sol.id).subscribe({
+      next: (r) => {
+        this.reaplicando = null;
+        if (r.aplicada) { alert('Listo, ya quedó aplicada.'); this.cargarSolicitudes(); }
+        else alert('Todavía no se pudo aplicar: ' + (r.motivo || 'error desconocido'));
+      },
+      error: (e) => { this.reaplicando = null; alert(e?.error?.message || 'No se pudo volver a aplicar.'); },
+    });
   }
 
   cargarSolicitudes(): void {

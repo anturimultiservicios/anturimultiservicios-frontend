@@ -39,7 +39,16 @@ const TIPOS_AFILIADO = [
             <div class="campana__texto">
               <span class="campana__titulo">{{ p.titulo }}</span>
               <span class="campana__mensaje">{{ p.mensaje }}</span>
-              <button *ngIf="p.tipo === 'revision_valor'" type="button" class="campana__resolver" (click)="resolverRevision(p, $event)">Ya lo revisé</button>
+              <!-- 2026-10-16: tareas con opciones para responder con un clic -->
+              <div *ngIf="p.tipo === 'revision_valor'" class="campana__opciones">
+                <button *ngIf="p.ruta" type="button" class="campana__resolver campana__resolver--ir" (click)="irA(p, $event)">Abrir</button>
+                <ng-container *ngIf="p.opciones?.length; else sinOpciones">
+                  <button *ngFor="let o of p.opciones" type="button" class="campana__resolver" (click)="responder(p, o, $event)">{{ o.etiqueta }}</button>
+                </ng-container>
+                <ng-template #sinOpciones>
+                  <button type="button" class="campana__resolver" (click)="resolverRevision(p, $event)">Ya lo revisé</button>
+                </ng-template>
+              </div>
             </div>
           </li>
         </ul>
@@ -79,6 +88,9 @@ const TIPOS_AFILIADO = [
     .campana__punto--pendiente { background: #eab308; }
     .campana__resolver { align-self: flex-start; margin-top: 4px; border: 1px solid #ca8a04; background: transparent; color: inherit; border-radius: 6px; padding: 2px 8px; font-size: 12px; cursor: pointer; }
     .campana__resolver:hover { background: rgba(234,179,8,0.15); }
+    .campana__opciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .campana__opciones .campana__resolver { margin-top: 0; }
+    .campana__resolver--ir { border-color: var(--color-primario, #1B3270); font-weight: 700; }
     .campana__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .campana__titulo { font-weight: 600; font-size: var(--tamano-sm, 14px); color: var(--texto-principal, #111827); }
     .campana__mensaje { font-size: var(--tamano-xs, 12px); color: var(--texto-secundario, #4b5563); overflow-wrap: anywhere; }
@@ -120,6 +132,13 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
   alternar(): void {
     this.abierta = !this.abierta;
     if (this.abierta) this.cargar();
+  }
+
+  // 2026-10-16: el bot abre la campana en "Por resolver"
+  @HostListener('window:anturi-abrir-campana')
+  abrirDesdeBot(): void {
+    this.abierta = true;
+    this.cargar();
   }
 
   private cargar(): void {
@@ -164,6 +183,30 @@ export class CampanaNotificacionesComponent implements OnInit, OnDestroy {
     this.servicio.resolverRevision(p.referenciaId, nota.trim()).subscribe({
       next: () => (this.pendientes = this.pendientes.filter((x) => x.clave !== p.clave)),
       error: () => alert('No se pudo marcar como revisado. Intente de nuevo.'),
+    });
+  }
+
+  // 2026-10-16: lleva a la pantalla de la tarea (ej. organizar fincas)
+  irA(p: PendienteSistema, ev: Event): void {
+    ev.stopPropagation();
+    if (!p.ruta) return;
+    const prefijo = this.router.url.startsWith('/asistente') ? '/asistente' : '/admin';
+    this.abierta = false;
+    this.router.navigateByUrl(`${prefijo}/${p.ruta.replace(/^\/+/, '')}`);
+  }
+
+  responder(p: PendienteSistema, o: { valor: string; etiqueta: string; paraAnturi?: boolean }, ev: Event): void {
+    ev.stopPropagation();
+    if (!p.referenciaId) return;
+    const nota = prompt(`${p.titulo}
+
+Respuesta: ${o.etiqueta}${o.paraAnturi ? ' (le queda a Anturi para que lo resuelva)' : ''}
+
+¿Quiere agregar una nota? (opcional)`);
+    if (nota === null) return; // canceló
+    this.servicio.resolverRevision(p.referenciaId, nota.trim(), o.valor).subscribe({
+      next: () => (this.pendientes = this.pendientes.filter((x) => x.clave !== p.clave)),
+      error: (e) => alert(e?.error?.message || 'No se pudo guardar la respuesta. Intente de nuevo.'),
     });
   }
 

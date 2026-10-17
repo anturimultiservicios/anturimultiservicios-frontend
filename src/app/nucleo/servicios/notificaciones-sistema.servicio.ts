@@ -28,6 +28,9 @@ export interface PendienteSistema {
   // revisiones (2026-10-09): a qué cuenta o ficha lleva
   empresaId?: number | null;
   afiliadoId?: number | null;
+  // 2026-10-16: respuestas para escoger y a qué pantalla lleva (ej. 'fincas')
+  opciones?: { valor: string; etiqueta: string; paraAnturi?: boolean }[] | null;
+  ruta?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -45,8 +48,8 @@ export class NotificacionesSistemaServicio {
   }
 
   // 2026-10-09: marcar revisada una revisión pendiente, con lo que se encontró
-  resolverRevision(id: number, nota: string): Observable<unknown> {
-    return this.http.put(`${this.URL}/revisiones/${id}/resolver`, { nota });
+  resolverRevision(id: number, nota: string, opcion?: string): Observable<unknown> {
+    return this.http.put(`${this.URL}/revisiones/${id}/resolver`, opcion ? { nota, opcion } : { nota });
   }
 
   contarSinLeer(): Observable<number> {

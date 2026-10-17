@@ -17,6 +17,9 @@ export interface SolicitudCambio {
   revisadoPor?: { id: number; nombre: string; apellido: string };
   creadoEn: string;
   revisadoEn?: string;
+  // 2026-10-16: aprobada pero no se pudo aplicar (y por qué)
+  aplicacion?: 'FALLIDA' | null;
+  motivoFalla?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -52,6 +55,11 @@ export class SolicitudesServicio {
   pendientesDe(tabla: string, registroId: number): Observable<SolicitudCambio[]> {
     const params = new HttpParams().set('estado', 'PENDIENTE').set('tabla', tabla).set('registroId', String(registroId));
     return this.http.get<SolicitudCambio[]>(this.URL, { params });
+  }
+
+  // 2026-10-16: volver a aplicar una solicitud aprobada que no se aplicó
+  reaplicar(id: number): Observable<{ aplicada: boolean; motivo?: string }> {
+    return this.http.post<{ aplicada: boolean; motivo?: string }>(`${this.URL}/${id}/reaplicar`, {});
   }
 
   obtener(id: number): Observable<SolicitudCambio> {

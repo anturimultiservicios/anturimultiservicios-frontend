@@ -67,6 +67,12 @@ export const rutasSecretaria: Routes = [
             (m) => m.DetalleEmpresaComponent
           ),
       },
+      // 2026-10-16: organizar las fincas de los empleadores (venían en Clase aportante)
+      {
+        path: 'fincas',
+        loadComponent: () =>
+          import('../compartido/organizar-fincas/organizar-fincas.component').then((m) => m.OrganizarFincasComponent),
+      },
       // 2026-10-16: ficha del trabajador (personal de empresa sin ficha de afiliado)
       {
         path: 'trabajadores/:personaId',
