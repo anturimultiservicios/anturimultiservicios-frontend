@@ -14,7 +14,8 @@
     "botonContacto": "Nous contacter",
     "aniosExp": "Années d'expérience",
     "serviciosDisp": "Services disponibles",
-    "compromiso": "Engagement"
+    "compromiso": "Engagement",
+    "etiqueta": "Service dans toute la Colombie · Siège à Quimbaya, Quindío"
   },
   "servicios": {
     "titulo": "Nos Services",
@@ -47,14 +48,14 @@
   },
   "nosotros": {
     "titulo": "Qui Sommes-Nous",
-    "subtitulo": "Plus de deux ans d'accompagnement des entreprises et travailleurs du Quindío",
+    "subtitulo": "Plus de deux ans d'accompagnement des entreprises et travailleurs dans toute la Colombie",
     "mision": {
       "titulo": "Mission",
-      "texto": "Nous sommes une entreprise dédiée à fournir des solutions intégrales en sécurité sociale, facilitant les démarches d'affiliation et de conseil pour les particuliers et les entreprises du Quindío."
+      "texto": "Nous sommes une entreprise dédiée à fournir des solutions intégrales en sécurité sociale, facilitant les démarches d'affiliation et de conseil pour les particuliers et les entreprises dans tout le pays. Nous recevons nos clients à notre siège de Quimbaya et les accompagnons à distance dans n'importe quelle ville de Colombie."
     },
     "vision": {
       "titulo": "Vision",
-      "texto": "Être reconnus d'ici 2030 comme l'entreprise leader en gestion de sécurité sociale dans la région Eje Cafetero, en nous distinguant par notre innovation technologique et notre excellence de service."
+      "texto": "Être reconnus d'ici 2030 comme une entreprise leader en gestion de sécurité sociale en Colombie, en nous distinguant par notre innovation technologique et notre excellence de service."
     }
   },
   "contacto": {
@@ -79,7 +80,7 @@
     "preguntas": {
       "servicios": "Quels services proposez-vous?",
       "afiliacion": "Comment s'affilier?",
-      "ubicacion": "Où êtes-vous situés?",
+      "ubicacion": "Où intervenez-vous ?",
       "horarios": "Quels sont vos horaires?",
       "documentos": "Quels documents faut-il?",
       "beneficiarios": "Qui peut être bénéficiaire ?",
@@ -89,7 +90,7 @@
     "respuestas": {
       "servicios": "Nous offrons :\n1. Affiliations à l’EPS (santé), la retraite, l’ARL (risques professionnels) et la Caisse de compensation familiale, transferts d’EPS et ajout de bénéficiaires.\n2. Paiement du formulaire de sécurité sociale pour indépendants et entreprises.\n3. Liquidations de travail et conseil en paie.\n4. Vente d’assurances vie, santé, automobile, etc.\n5. Certificats de propriété.\n6. SOAT (assurance automobile obligatoire).",
       "afiliacion": "INDÉPENDANT :\nIl faut la carte d’identité. Pour s’affilier à l’ARL, un examen médical est nécessaire.\n\nPOUR AFFILIER UNE ENTREPRISE IL FAUT :\n1. RUT.\n2. Pièce d’identité du représentant légal.\n3. Certificat de la Chambre de commerce de moins de 30 jours.\n4. Attestation bancaire de l’entreprise.\n\nVous pouvez les envoyer par WhatsApp au 316 285 2138 ou nous appeler pour un conseil selon votre cas.",
-      "ubicacion": "Nous sommes situés au Carrera 7 # 15-24, Quimbaya, Quindío, Colombie. Vous pouvez nous contacter via WhatsApp au 316 285 2138.",
+      "ubicacion": "Nous intervenons dans toute la Colombie : vous pouvez faire vos démarches à distance depuis n'importe quelle ville en envoyant vos documents par WhatsApp au 316 285 2138. Notre siège se trouve Carrera 7 # 15-24, Quimbaya, Quindío, Colombie, où nous vous recevons aussi en personne.",
       "horarios": "Nous sommes ouverts du lundi au vendredi de 8h30 à 12h00 et de 14h00 à 18h00, et le samedi de 8h00 à 12h00.",
       "documentos": "Documents de base: Pièce d'identité nationale. Pour les entreprises: RUT, Chambre de Commerce, liste des employés.",
       "beneficiarios": "Les enfants, beaux-enfants, conjoints, frères et sœurs et parents qui dépendent financièrement du salarié, de l’indépendant ou du retraité affilié ont droit aux mêmes avantages.",
@@ -100,9 +101,10 @@
     "cerrar": "Fermer"
   },
   "pie": {
-    "descripcion": "Solutions intégrales en sécurité sociale pour particuliers et entreprises du Quindío.",
+    "descripcion": "Solutions intégrales en sécurité sociale pour particuliers et entreprises dans toute la Colombie.",
     "derechos": "Tous droits réservés",
-    "marca": "Marque Déposée"
+    "marca": "Marque Déposée",
+    "ubicacion": "Siège : Quimbaya, Quindío · Service dans toute la Colombie"
   },
   "login": {
     "titulo": "Bienvenue",

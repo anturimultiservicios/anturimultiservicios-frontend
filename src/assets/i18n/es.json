@@ -14,7 +14,8 @@
     "botonContacto": "Contáctenos",
     "aniosExp": "Años de experiencia",
     "serviciosDisp": "Servicios disponibles",
-    "compromiso": "Compromiso"
+    "compromiso": "Compromiso",
+    "etiqueta": "Atención en toda Colombia · Sede en Quimbaya, Quindío"
   },
   "servicios": {
     "titulo": "Nuestros Servicios",
@@ -47,14 +48,14 @@
   },
   "nosotros": {
     "titulo": "Conózcanos",
-    "subtitulo": "Más de dos años acompañando a las empresas y trabajadores del Quindío",
+    "subtitulo": "Más de dos años acompañando a empresas y trabajadores en toda Colombia",
     "mision": {
       "titulo": "Misión",
-      "texto": "Somos una empresa dedicada a brindar soluciones integrales en seguridad social, facilitando los trámites de afiliación y asesoría a personas naturales y jurídicas del Quindío. Nos comprometemos con la calidad, la transparencia y la eficiencia en cada servicio, contribuyendo al bienestar y la protección social de nuestra comunidad."
+      "texto": "Somos una empresa dedicada a brindar soluciones integrales en seguridad social, facilitando los trámites de afiliación y asesoría a personas naturales y jurídicas en todo el país. Atendemos de manera presencial en nuestra sede de Quimbaya y de forma virtual a clientes de cualquier ciudad de Colombia. Nos comprometemos con la calidad, la transparencia y la eficiencia en cada servicio, contribuyendo al bienestar y la protección social de nuestros clientes."
     },
     "vision": {
       "titulo": "Visión",
-      "texto": "Ser reconocidos para el año 2030 como la empresa líder en gestión de seguridad social del Eje Cafetero, destacándonos por nuestra innovación tecnológica, excelencia en el servicio y el compromiso permanente con el bienestar de nuestros clientes y sus colaboradores."
+      "texto": "Ser reconocidos para el año 2030 como una empresa líder en gestión de seguridad social en Colombia, destacándonos por nuestra innovación tecnológica, excelencia en el servicio y el compromiso permanente con el bienestar de nuestros clientes y sus colaboradores."
     }
   },
   "contacto": {
@@ -79,7 +80,7 @@
     "preguntas": {
       "servicios": "¿Qué servicios ofrecen?",
       "afiliacion": "¿Cómo me puedo afiliar?",
-      "ubicacion": "¿Dónde están ubicados?",
+      "ubicacion": "¿Dónde atienden?",
       "horarios": "¿Cuáles son los horarios?",
       "documentos": "¿Qué documentos necesito?",
       "beneficiarios": "¿Quiénes pueden ser beneficiarios?",
@@ -89,7 +90,7 @@
     "respuestas": {
       "servicios": "Ofrecemos:\n1. Afiliaciones a EPS, Pensión, ARL y Caja de Compensación Familiar, traslados de EPS e inclusión de beneficiarios.\n2. Pago de la planilla de seguridad social para independientes y empresas.\n3. Liquidación laboral y asesoría en el pago de nómina.\n4. Venta de seguros de vida, médicos, de vehículos, etc.\n5. Certificados de tradición.\n6. SOAT.",
       "afiliacion": "INDEPENDIENTE:\nSe necesita la cédula de ciudadanía. Para afiliarse a ARL se necesita examen médico.\n\nPARA AFILIAR LA EMPRESA SE NECESITA:\n1. RUT.\n2. Cédula del representante legal.\n3. Cámara de Comercio con vigencia no mayor a 30 días.\n4. Certificado bancario de la empresa.\n\nPuede enviarlos vía WhatsApp al 316 285 2138 o llamarnos para asesorarle según su caso.",
-      "ubicacion": "Estamos ubicados en la Carrera 7 # 15-24, Quimbaya, Quindío. También puede comunicarse vía WhatsApp al 316 285 2138.",
+      "ubicacion": "Atendemos a nivel nacional: puede hacer sus trámites desde cualquier ciudad de Colombia de forma virtual, enviando sus documentos por WhatsApp al 316 285 2138. Nuestra sede está en la Carrera 7 # 15-24, Quimbaya, Quindío, donde también lo atendemos de forma presencial.",
       "horarios": "Atendemos de lunes a viernes de 8:30 am a 12:00 m y de 2:00 pm a 6:00 pm, y los sábados de 8:00 am a 12:00 m.",
       "documentos": "Documentos básicos: Cédula de ciudadanía. Para empresa: RUT, Cámara de Comercio, planilla de trabajadores. Según el servicio pueden requerirse documentos adicionales.",
       "beneficiarios": "Los hijos, hijastros, cónyuges, hermanos y padres que dependan económicamente del trabajador dependiente, independiente o pensionado afiliado tienen derecho a los mismos beneficios.",
@@ -100,9 +101,10 @@
     "cerrar": "Cerrar"
   },
   "pie": {
-    "descripcion": "Soluciones integrales en seguridad social para personas y empresas del Quindío.",
+    "descripcion": "Soluciones integrales en seguridad social para personas y empresas en toda Colombia.",
     "derechos": "Todos los derechos reservados",
-    "marca": "Marca Registrada"
+    "marca": "Marca Registrada",
+    "ubicacion": "Sede: Quimbaya, Quindío · Atención en toda Colombia"
   },
   "login": {
     "titulo": "Bienvenido",

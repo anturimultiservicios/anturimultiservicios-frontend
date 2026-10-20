@@ -14,7 +14,8 @@
     "botonContacto": "Kontakt aufnehmen",
     "aniosExp": "Jahre Erfahrung",
     "serviciosDisp": "Verfügbare Dienste",
-    "compromiso": "Verpflichtung"
+    "compromiso": "Verpflichtung",
+    "etiqueta": "Service in ganz Kolumbien · Sitz in Quimbaya, Quindío"
   },
   "servicios": {
     "titulo": "Unsere Leistungen",
@@ -47,14 +48,14 @@
   },
   "nosotros": {
     "titulo": "Über Uns",
-    "subtitulo": "Mehr als zwei Jahre an der Seite der Unternehmen und Arbeitnehmer in Quindío",
+    "subtitulo": "Mehr als zwei Jahre an der Seite von Unternehmen und Arbeitnehmern in ganz Kolumbien",
     "mision": {
       "titulo": "Mission",
-      "texto": "Wir sind ein Unternehmen, das sich der Bereitstellung umfassender Lösungen im Bereich der sozialen Sicherheit widmet und Einzelpersonen und Unternehmen in Quindío Anmeldungs- und Beratungsleistungen erleichtert."
+      "texto": "Wir sind ein Unternehmen, das umfassende Lösungen im Bereich der sozialen Sicherheit anbietet und Anmeldungs- und Beratungsleistungen für Privatpersonen und Unternehmen im ganzen Land erleichtert. Wir betreuen Kunden persönlich an unserem Sitz in Quimbaya und digital in jeder Stadt Kolumbiens."
     },
     "vision": {
       "titulo": "Vision",
-      "texto": "Bis 2030 als führendes Unternehmen im Bereich soziale Sicherheit in der Region Eje Cafetero anerkannt zu werden, durch technologische Innovation und Serviceexzellenz."
+      "texto": "Bis 2030 als eines der führenden Unternehmen im Bereich soziale Sicherheit in Kolumbien anerkannt zu werden, durch technologische Innovation und Serviceexzellenz."
     }
   },
   "contacto": {
@@ -79,7 +80,7 @@
     "preguntas": {
       "servicios": "Welche Leistungen bieten Sie an?",
       "afiliacion": "Wie kann ich mich anmelden?",
-      "ubicacion": "Wo sind Sie ansässig?",
+      "ubicacion": "Wo bieten Sie Ihre Dienste an?",
       "horarios": "Was sind Ihre Öffnungszeiten?",
       "documentos": "Welche Dokumente benötige ich?",
       "beneficiarios": "Wer kann begünstigt werden?",
@@ -89,7 +90,7 @@
     "respuestas": {
       "servicios": "Wir bieten:\n1. Anmeldung bei EPS (Krankenkasse), Rente, ARL (Berufsrisiko) und Familienausgleichskasse, EPS-Wechsel und Aufnahme von Begünstigten.\n2. Zahlung des Sozialversicherungsformulars für Selbständige und Unternehmen.\n3. Arbeitsrechtliche Abrechnungen und Beratung zur Lohnabrechnung.\n4. Lebens-, Kranken- und Kfz-Versicherungen u. a.\n5. Eigentumsnachweise.\n6. SOAT (Kfz-Pflichtversicherung).",
       "afiliacion": "SELBSTÄNDIGE:\nBenötigt wird der Personalausweis. Für die ARL ist eine ärztliche Untersuchung erforderlich.\n\nFÜR DIE ANMELDUNG EINES UNTERNEHMENS BENÖTIGEN SIE:\n1. RUT.\n2. Ausweis des gesetzlichen Vertreters.\n3. Handelskammerauszug, nicht älter als 30 Tage.\n4. Bankbescheinigung des Unternehmens.\n\nSie können sie per WhatsApp an 316 285 2138 senden oder uns für eine Beratung anrufen.",
-      "ubicacion": "Wir befinden uns in der Carrera 7 # 15-24, Quimbaya, Quindío, Kolumbien. Sie können uns auch per WhatsApp unter 316 285 2138 erreichen.",
+      "ubicacion": "Wir arbeiten landesweit: Sie können Ihre Anliegen aus jeder Stadt Kolumbiens digital erledigen und Ihre Unterlagen per WhatsApp an 316 285 2138 senden. Unser Sitz ist in der Carrera 7 # 15-24, Quimbaya, Quindío, Kolumbien, wo wir Sie auch persönlich betreuen.",
       "horarios": "Wir sind Montag bis Freitag von 8:30 bis 12:00 Uhr und von 14:00 bis 18:00 Uhr geöffnet, samstags von 8:00 bis 12:00 Uhr.",
       "documentos": "Grunddokumente: Nationalausweis. Für Unternehmen: RUT, Handelskammer, Mitarbeiterliste.",
       "beneficiarios": "Kinder, Stiefkinder, Ehepartner, Geschwister und Eltern, die wirtschaftlich vom versicherten Arbeitnehmer, Selbständigen oder Rentner abhängen, haben Anspruch auf dieselben Leistungen.",
@@ -100,9 +101,10 @@
     "cerrar": "Schließen"
   },
   "pie": {
-    "descripcion": "Umfassende Lösungen im Bereich soziale Sicherheit für Privatpersonen und Unternehmen in Quindío.",
+    "descripcion": "Umfassende Lösungen im Bereich soziale Sicherheit für Privatpersonen und Unternehmen in ganz Kolumbien.",
     "derechos": "Alle Rechte vorbehalten",
-    "marca": "Eingetragene Marke"
+    "marca": "Eingetragene Marke",
+    "ubicacion": "Sitz: Quimbaya, Quindío · Service in ganz Kolumbien"
   },
   "login": {
     "titulo": "Willkommen",

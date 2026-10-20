@@ -14,7 +14,8 @@
     "botonContacto": "Contact us",
     "aniosExp": "Years of experience",
     "serviciosDisp": "Available services",
-    "compromiso": "Commitment"
+    "compromiso": "Commitment",
+    "etiqueta": "Serving all of Colombia · Office in Quimbaya, Quindío"
   },
   "servicios": {
     "titulo": "Our Services",
@@ -47,14 +48,14 @@
   },
   "nosotros": {
     "titulo": "About Us",
-    "subtitulo": "More than two years accompanying the companies and workers of Quindío",
+    "subtitulo": "More than two years supporting companies and workers throughout Colombia",
     "mision": {
       "titulo": "Mission",
-      "texto": "We are a company dedicated to providing comprehensive social security solutions, facilitating affiliation and advisory processes for individuals and companies in Quindío. We are committed to quality, transparency and efficiency in every service, contributing to the well-being and social protection of our community."
+      "texto": "We are a company dedicated to providing comprehensive social security solutions, facilitating affiliation and advisory processes for individuals and companies throughout the country. We serve clients in person at our office in Quimbaya and remotely in any city in Colombia. We are committed to quality, transparency and efficiency in every service, contributing to the well-being and social protection of our clients."
     },
     "vision": {
       "titulo": "Vision",
-      "texto": "To be recognized by 2030 as the leading company in social security management in the Eje Cafetero region, standing out for our technological innovation, service excellence and permanent commitment to the well-being of our clients and their employees."
+      "texto": "To be recognized by 2030 as a leading social security management company in Colombia, standing out for our technological innovation, service excellence and permanent commitment to the well-being of our clients and their employees."
     }
   },
   "contacto": {
@@ -79,7 +80,7 @@
     "preguntas": {
       "servicios": "What services do you offer?",
       "afiliacion": "How can I enroll?",
-      "ubicacion": "Where are you located?",
+      "ubicacion": "Where do you provide service?",
       "horarios": "What are your hours?",
       "documentos": "What documents do I need?",
       "beneficiarios": "Who can be beneficiaries?",
@@ -89,7 +90,7 @@
     "respuestas": {
       "servicios": "We offer:\n1. Enrollment in EPS (health), Pension, ARL (occupational risk) and Family Compensation Fund, EPS transfers and adding beneficiaries.\n2. Payment of the social security form for self-employed workers and companies.\n3. Labor settlements and payroll advice.\n4. Life, medical and vehicle insurance, among others.\n5. Property title certificates.\n6. SOAT (mandatory vehicle insurance).",
       "afiliacion": "SELF-EMPLOYED:\nYou need your national ID card. To enroll in ARL a medical exam is required.\n\nTO ENROLL A COMPANY YOU NEED:\n1. RUT.\n2. ID of the legal representative.\n3. Chamber of Commerce certificate issued no more than 30 days ago.\n4. Company bank certificate.\n\nYou can send them via WhatsApp to 316 285 2138 or call us for advice on your case.",
-      "ubicacion": "We are located at Carrera 7 # 15-24, Quimbaya, Quindío, Colombia. You can also reach us via WhatsApp at 316 285 2138.",
+      "ubicacion": "We serve clients nationwide: you can complete your procedures remotely from any city in Colombia by sending your documents via WhatsApp to 316 285 2138. Our office is at Carrera 7 # 15-24, Quimbaya, Quindío, Colombia, where we also serve you in person.",
       "horarios": "We serve Monday to Friday from 8:30 am to 12:00 pm and from 2:00 pm to 6:00 pm, and Saturdays from 8:00 am to 12:00 pm.",
       "documentos": "Basic documents: National ID card. For companies: RUT, Chamber of Commerce, employee payroll. Additional documents may be required depending on the service.",
       "beneficiarios": "Children, stepchildren, spouses, siblings and parents who depend financially on the affiliated employee, self-employed worker or pensioner are entitled to the same benefits.",
@@ -100,9 +101,10 @@
     "cerrar": "Close"
   },
   "pie": {
-    "descripcion": "Comprehensive social security solutions for individuals and businesses in Quindío.",
+    "descripcion": "Comprehensive social security solutions for individuals and businesses throughout Colombia.",
     "derechos": "All rights reserved",
-    "marca": "Registered Trademark"
+    "marca": "Registered Trademark",
+    "ubicacion": "Office: Quimbaya, Quindío · Serving all of Colombia"
   },
   "login": {
     "titulo": "Welcome",
