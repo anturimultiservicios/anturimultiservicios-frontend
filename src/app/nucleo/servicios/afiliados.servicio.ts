@@ -11,6 +11,7 @@ export type TipoAfiliacion =
   | 'INDEPENDIENTE_CONTRATISTA'
   | 'EMPRESA_EXONERADA'
   | 'EMPRESA_NO_EXONERADA'
+  | 'EMPRESA_SERVICIO_DOMESTICO'
   | 'COOPERATIVA';
 
 export type ClaseRiesgoArl = 'I' | 'II' | 'III' | 'IV' | 'V';

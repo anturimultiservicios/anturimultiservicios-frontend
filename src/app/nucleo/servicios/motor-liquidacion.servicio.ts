@@ -62,7 +62,7 @@ export class MotorLiquidacionServicio {
     return this.http.post<ResultadoMotorLiquidacion>(`${this.URL}/simular/independiente`, dto);
   }
 
-  simularEmpleador(dto: { modalidad: 'EMPRESA_EXONERADA' | 'EMPRESA_NO_EXONERADA'; ibc: number; claseRiesgoArl: string; diasMora?: number; diasCotizados?: number; valorAfiliacion?: number }): Observable<ResultadoMotorLiquidacion> {
+  simularEmpleador(dto: { modalidad: 'EMPRESA_EXONERADA' | 'EMPRESA_NO_EXONERADA' | 'EMPRESA_SERVICIO_DOMESTICO'; ibc: number; claseRiesgoArl: string; diasMora?: number; diasCotizados?: number; valorAfiliacion?: number }): Observable<ResultadoMotorLiquidacion> {
     return this.http.post<ResultadoMotorLiquidacion>(`${this.URL}/simular/empleador`, dto);
   }
 

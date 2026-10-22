@@ -103,6 +103,12 @@ const PORCENTAJES_POR_TIPO: Record<TipoAfiliacion, Porcentajes> = {
     saludEmpleador: 8.5, pensionEmpleador: 12,
     caja: 4, sena: 2, icbf: 3,
   },
+  // 2026-10-22 (Anyi): servicio doméstico - sin exoneración de salud, sin parafiscales
+  EMPRESA_SERVICIO_DOMESTICO: {
+    salud: 4, pension: 4,
+    saludEmpleador: 8.5, pensionEmpleador: 12,
+    caja: 4, sena: 0, icbf: 0,
+  },
 };
 
 const TIPOS: TipoAfiliacionInfo[] = [
@@ -161,6 +167,15 @@ const TIPOS: TipoAfiliacionInfo[] = [
     icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`,
     descripcion: 'Empresa que paga todos los aportes parafiscales. Incluye SENA, ICBF y salud empleador además de pensión y caja.',
     tags: ['Empleado: Salud 4% + Pensión 4%', 'Empleador: Salud 8.5% + Pensión 12% + Caja 4% + SENA 2% + ICBF 3%'],
+  },
+  {
+    // 2026-10-22 (Anyi): empleada/o doméstica/o
+    valor: 'EMPRESA_SERVICIO_DOMESTICO',
+    titulo: 'Servicio Doméstico',
+    subtitulo: 'Sin SENA ni ICBF',
+    icono: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M3 10.5L12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path><circle cx="12" cy="14" r="2.5"></circle></svg>`,
+    descripcion: 'Empleador de servicio doméstico. Se liquida normal, sin exoneración de salud (el empleador paga su 8.5%), pero no paga parafiscales: no se cobra SENA ni ICBF.',
+    tags: ['Empleado: Salud 4% + Pensión 4%', 'Empleador: Salud 8.5% + Pensión 12% + Caja 4%', 'Sin SENA ni ICBF'],
   },
   {
     // 2026-10-09 (pedido de Cristopher): abre su propia plantilla
@@ -351,6 +366,37 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             <div class="pct-item pct-item--exonerado">
               <span class="pct-label">Salud emp. / SENA / ICBF</span>
               <span class="pct-valor">Exonerado</span>
+            </div>
+          </ng-container>
+          <!-- 2026-10-22: servicio doméstico -->
+          <ng-container *ngIf="tipoSeleccionado === 'EMPRESA_SERVICIO_DOMESTICO'">
+            <div class="pct-item pct-item--empleado">
+              <span class="pct-label">Salud (empleado)</span>
+              <span class="pct-valor">4%</span>
+            </div>
+            <div class="pct-item pct-item--empleado">
+              <span class="pct-label">Pensión (empleado)</span>
+              <span class="pct-valor">4%</span>
+            </div>
+            <div class="pct-item pct-item--empleador">
+              <span class="pct-label">Salud (empleador)</span>
+              <span class="pct-valor">8.5%</span>
+            </div>
+            <div class="pct-item pct-item--empleador">
+              <span class="pct-label">Pensión (empleador)</span>
+              <span class="pct-valor">12%</span>
+            </div>
+            <div class="pct-item pct-item--empleador">
+              <span class="pct-label">Caja (empleador)</span>
+              <span class="pct-valor">4%</span>
+            </div>
+            <div class="pct-item pct-item--arl">
+              <span class="pct-label">ARL (clase {{ form.claseRiesgoArl || '?' }})</span>
+              <span class="pct-valor">{{ form.porcentajeArl || '—' }}%</span>
+            </div>
+            <div class="pct-item pct-item--exonerado">
+              <span class="pct-label">SENA / ICBF</span>
+              <span class="pct-valor">No aplica</span>
             </div>
           </ng-container>
           <ng-container *ngIf="tipoSeleccionado === 'EMPRESA_NO_EXONERADA'">
@@ -648,7 +694,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
               </div>
             </ng-container>
 
-            <ng-container *ngIf="tipoSeleccionado === 'EMPRESA_EXONERADA' || tipoSeleccionado === 'EMPRESA_NO_EXONERADA'">
+            <ng-container *ngIf="tipoSeleccionado === 'EMPRESA_EXONERADA' || tipoSeleccionado === 'EMPRESA_NO_EXONERADA' || tipoSeleccionado === 'EMPRESA_SERVICIO_DOMESTICO'">
               <div class="campo-grupo">
                 <label class="campo-etiqueta">Salud empleador (%)</label>
                 <input type="number" class="campo-input campo-input--readonly" [(ngModel)]="form.porcentajeSaludEmpleador"
@@ -1280,7 +1326,7 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
         : {};
 
       if (this.tipoSeleccionado && ibc > 0 && diasValidos) {
-        if (this.tipoSeleccionado === 'EMPRESA_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_NO_EXONERADA') {
+        if (this.tipoSeleccionado === 'EMPRESA_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_NO_EXONERADA' || this.tipoSeleccionado === 'EMPRESA_SERVICIO_DOMESTICO') {
           if (this.form.claseRiesgoArl) {
             const modalidad = this.tipoSeleccionado;
             const clase = this.form.claseRiesgoArl;

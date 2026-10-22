@@ -356,6 +356,9 @@ export class MotorCalculo {
     const usados: ParametroUsado[] = [];
     const multiploRedondeo = await this.leerParametro('REDONDEO_MULTIPLO', fecha, usados);
     const esNoExonerada = entrada.modalidad === 'EMPRESA_NO_EXONERADA';
+    // 2026-10-22 (Anyi): el servicio doméstico no tiene exoneración de salud
+    // (paga la salud del empleador), pero no paga parafiscales (SENA, ICBF).
+    const pagaSaludEmpleador = esNoExonerada || entrada.modalidad === 'EMPRESA_SERVICIO_DOMESTICO';
     const { dias, afiliacion } = this.validarOpciones(entrada);
     await this.validarBaseMinima(entrada.ibc, fecha, usados);
     const base = this.baseProporcional(entrada.ibc, dias);
@@ -380,7 +383,7 @@ export class MotorCalculo {
     };
 
     await agregar('EPS', 'Salud (empleado)', 'SALUD_EMPLEADO');
-    if (esNoExonerada) {
+    if (pagaSaludEmpleador) {
       await agregar('EPS', 'Salud (empleador)', 'SALUD_EMPLEADOR');
     }
     await agregar('PENSION', 'Pensión (empleado)', 'PENSION_EMPLEADO');

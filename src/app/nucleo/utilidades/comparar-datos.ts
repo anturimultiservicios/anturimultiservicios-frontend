@@ -32,7 +32,7 @@ const VALORES: Record<string, string> = {
   ACTIVO: 'Activo', RETIRADO: 'Retirado', SUSPENDIDO: 'Suspendido',
   INDEPENDIENTE: 'Independiente', INDEPENDIENTE_PARCIAL: 'Independiente parcial',
   INDEPENDIENTE_RESIDENTE_EXTERIOR: 'Residente en el exterior', INDEPENDIENTE_VOLUNTARIO_ARL: 'Independiente voluntario ARL',
-  INDEPENDIENTE_CONTRATISTA: 'Independiente contratista', EMPRESA_EXONERADA: 'Empresa exonerada', EMPRESA_NO_EXONERADA: 'Empresa no exonerada',
+  INDEPENDIENTE_CONTRATISTA: 'Independiente contratista', EMPRESA_EXONERADA: 'Empresa exonerada', EMPRESA_NO_EXONERADA: 'Empresa no exonerada', EMPRESA_SERVICIO_DOMESTICO: 'Servicio doméstico',
   COOPERATIVA: 'Cooperativa',
 };
 // Datos internos que no le dicen nada a una persona

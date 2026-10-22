@@ -10,13 +10,14 @@ export type ClaseRiesgoArl = 'I' | 'II' | 'III' | 'IV' | 'V';
 //   INDEPENDIENTE_CONTRATISTA           → liquidarIndependiente(tipo, ...) (= "Contrato Mayor Un Mes")
 //   INDEPENDIENTE_RESIDENTE_EXTERIOR    → liquidarIndependiente(tipo, ...) (plantilla 35, solo pensión - 2026-10-08)
 //   INDEPENDIENTE_PARCIAL               → liquidarParcial(...) (cotización por semanas, Decreto 2616/2013)
-//   EMPRESA_EXONERADA / NO_EXONERADA    → liquidarEmpleador(modalidad, ...)
+//   EMPRESA_EXONERADA / NO_EXONERADA / SERVICIO_DOMESTICO → liquidarEmpleador(modalidad, ...)
 // Las 4 modalidades de independiente comparten el mismo camino de cálculo
 // (vía PlantillaLiquidacion, tipo 1-34) - lo que cambia es CUÁL tipo/fila
 // corresponde, decisión que ya toma la pantalla de afiliados hoy, no el
 // motor.
 
-export type ModalidadEmpleador = 'EMPRESA_EXONERADA' | 'EMPRESA_NO_EXONERADA';
+// 2026-10-22: + servicio doméstico (salud del empleador sí, SENA/ICBF no)
+export type ModalidadEmpleador = 'EMPRESA_EXONERADA' | 'EMPRESA_NO_EXONERADA' | 'EMPRESA_SERVICIO_DOMESTICO';
 
 // Una línea de cálculo explicable - un componente del total, con su base y
 // tarifa visibles, nunca solo el resultado final. Mapea 1:1 a
