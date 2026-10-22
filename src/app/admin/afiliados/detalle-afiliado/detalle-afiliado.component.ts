@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, takeUntil, catchError, of, finalize } from 'rxjs';
 import { HttpEventType } from '@angular/common/http';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
+import { EmpresasServicio } from '../../../nucleo/servicios/empresas.servicio';
 import { DocumentosServicio, Documento, TipoDocumento, TipoDocumentoRequerido } from '../../../nucleo/servicios/documentos.servicio';
 import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
@@ -36,6 +37,8 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
         <div class="detalle-encabezado__info">
           <h2 class="pagina-titulo" *ngIf="afiliado">{{ afiliado.nombres }} {{ afiliado.apellidos }}</h2>
           <h2 class="pagina-titulo" *ngIf="!afiliado && !cargando">Detalle de afiliado</h2>
+          <!-- 2026-10-22: la misma persona también es empleadora (sus trabajadores van en esa cuenta) -->
+          <a *ngFor="let c of cuentasEmpleadora" [routerLink]="[prefijo, 'empresas', c.id]" class="enlace-cruzado">También es empleadora → ver su cuenta{{ cuentasEmpleadora.length > 1 ? ' (' + c.razonSocial + ')' : '' }}{{ c.activa ? '' : ' (inactiva)' }}</a>
           <span *ngIf="afiliado" class="badge-estado" [ngClass]="claseBadge(afiliado.estado)">{{ afiliado.estado }}</span>
           <span *ngIf="eliminacionPendiente" class="badge-pendiente badge-pendiente--eliminar">Eliminación pendiente</span>
           <span *ngIf="edicionesPendientes.length && !eliminacionPendiente" class="badge-pendiente">Cambios pendientes</span>
@@ -637,6 +640,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
     </div>
   `,
   styles: [`
+    .enlace-cruzado { font-size: var(--tamano-sm); font-weight: 600; color: var(--color-secundario, #E8570C); display: block; }
     .detalle-contenedor { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .detalle-encabezado { display: flex; align-items: center; gap: var(--espacio-4); flex-wrap: wrap; }
     .detalle-encabezado__info { display: flex; align-items: center; gap: var(--espacio-3); flex: 1; flex-wrap: wrap; }
@@ -836,7 +840,8 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     public docServicio: DocumentosServicio,
     private solicitudesServicio: SolicitudesServicio,
     private auth: AutenticacionServicio,
-    private pagosServicio: PagosServicio
+    private pagosServicio: PagosServicio,
+    private empresasServicio: EmpresasServicio,
   ) {}
 
   protected get prefijo(): string {
@@ -856,6 +861,19 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     this.destruir$.complete();
   }
 
+  // 2026-10-22: cuentas de empleador con la misma cédula (ej. Tatiana Hernández)
+  cuentasEmpleadora: { id: number; razonSocial: string; activa: boolean }[] = [];
+  private buscarCuentasEmpleadora(cedula: string | null | undefined): void {
+    const doc = String(cedula ?? '').replace(/\D/g, '');
+    this.cuentasEmpleadora = [];
+    if (doc.length < 5) return;
+    this.empresasServicio.listar(doc, false).pipe(catchError(() => of([]))).subscribe((lista: any[]) => {
+      this.cuentasEmpleadora = lista
+        .filter((e) => String(e.nit ?? '').replace(/\D/g, '') === doc)
+        .map((e) => ({ id: e.id, razonSocial: e.razonSocial, activa: e.activa !== false }));
+    });
+  }
+
   cargarAfiliado(): void {
     this.cargando = true;
     this.errorCarga = '';
@@ -870,6 +888,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       if (af) {
         this.afiliadoBase = af;
         this.afiliado = af;
+        this.buscarCuentasEmpleadora(af.cedula);
         this.cargarDocumentos();
         this.cargarPagos();
         this.cargarPendientes();

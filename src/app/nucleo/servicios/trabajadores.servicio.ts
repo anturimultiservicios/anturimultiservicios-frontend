@@ -49,11 +49,25 @@ export const PARENTESCOS: { valor: string; nombre: string }[] = [
   { valor: 'OTRO', nombre: 'Otro' },
 ];
 
+// 2026-10-22: resultado de buscar a quién agregar a una empresa
+export interface PersonaEncontrada {
+  personaId: number;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombre: string;
+  afiliado: { id: number; estado: string } | null;
+  trabajaEn: { empresaId: number; razonSocial: string }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrabajadoresServicio {
   private readonly URL = entorno.urlApi;
 
   constructor(private http: HttpClient) {}
+
+  buscar(texto: string): Observable<PersonaEncontrada[]> {
+    return this.http.get<PersonaEncontrada[]>(`${this.URL}/trabajadores`, { params: { buscar: texto } });
+  }
 
   obtener(personaId: number): Observable<FichaTrabajador> {
     return this.http.get<FichaTrabajador>(`${this.URL}/trabajadores/${personaId}`);

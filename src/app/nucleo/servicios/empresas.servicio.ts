@@ -75,8 +75,13 @@ export class EmpresasServicio {
     return this.http.get<PersonalEmpresa[]>(`${this.URL}/${id}/personal`);
   }
 
-  agregarPersonal(id: number, datos: { afiliadoId: number; cargo?: string; fechaIngreso?: string; sucursalId?: number | null }): Observable<unknown> {
-    return this.http.post(`${this.URL}/${id}/personal`, datos);
+  // 2026-10-22: afiliado, persona ya conocida o trabajador nuevo (sin ficha de afiliado)
+  agregarPersonal(id: number, datos: {
+    afiliadoId?: number; personaId?: number;
+    nuevo?: { tipoDocumento: string; numeroDocumento: string; nombres: string; apellidos?: string; telefono?: string };
+    cargo?: string; fechaIngreso?: string; sucursalId?: number | null;
+  }): Observable<{ personaId?: number }> {
+    return this.http.post<{ personaId?: number }>(`${this.URL}/${id}/personal`, datos);
   }
 
   // 2026-10-09: null = sede principal

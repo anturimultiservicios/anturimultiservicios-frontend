@@ -17,6 +17,7 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 // sucursales (crear/editar, directo para ambos roles con permiso
 // granular - sucursales no pasa por SolicitudCambio, a diferencia de
 // Empresa, ver empresas.controlador.ts/sucursales.controlador.ts reales).
+import { TrabajadoresServicio, PersonaEncontrada } from '../../../nucleo/servicios/trabajadores.servicio';
 import { DocumentosTitularComponent } from '../../../compartido/documentos-titular/documentos-titular.component';
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
 
@@ -35,6 +36,8 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
         <div class="detalle-encabezado__info">
           <h2 class="pagina-titulo" *ngIf="empresa">{{ empresa.razonSocial }}</h2>
           <h2 class="pagina-titulo" *ngIf="!empresa && !cargando">Detalle de empresa</h2>
+          <!-- 2026-10-22: la misma persona también paga como independiente -->
+          <a *ngIf="fichaIndependiente" [routerLink]="[prefijo, 'afiliados', fichaIndependiente.id]" class="enlace-cruzado">También paga como independiente → ver su ficha</a>
           <span *ngIf="empresa" class="badge-estado" [ngClass]="empresa.activa ? 'badge-activo' : 'badge-inactivo'">
             {{ empresa.activa ? 'ACTIVA' : 'INACTIVA' }}
           </span>
@@ -320,33 +323,72 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
       <div class="modal-form" (click)="$event.stopPropagation()">
         <div class="modal-header"><h3 class="modal-titulo">Agregar persona a {{ empresa?.razonSocial }}</h3></div>
         <div class="modal-cuerpo">
-        <div class="campo-grupo">
-          <label class="campo-etiqueta">Buscar afiliado por nombre o documento</label>
-          <input type="text" class="campo-input" [(ngModel)]="busquedaPersonal" name="busquedaPersonal"
-                 placeholder="Ej. 1094933466 o Pérez" (ngModelChange)="buscarPersonal()">
-        </div>
-        <div *ngIf="buscandoPersonal" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">Buscando...</div>
-        <ul class="lista-busqueda" *ngIf="resultadosPersonal.length > 0">
-          <li *ngFor="let a of resultadosPersonal" [class.seleccionado]="seleccionPersonal?.id === a.id" (click)="seleccionPersonal = a">
-            <strong>{{ a.nombres }} {{ a.apellidos }}</strong>
-            <span>{{ sigla(a.persona?.tipoDocumento) }} {{ a.cedula }} · {{ a.estado }}</span>
-          </li>
-        </ul>
-        <div *ngIf="!buscandoPersonal && busquedaPersonal.trim().length >= 3 && resultadosPersonal.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">
-          No se encontró. Si es una persona nueva, primero créela en Afiliados → Nuevo afiliado.
-        </div>
-        <div class="campo-grupo" *ngIf="seleccionPersonal && sucursales.length > 0">
+        <!-- 2026-10-22 (Anyi): el trabajador NO tiene que ser afiliado - paga la empresa con la cédula del empleador -->
+        <ng-container *ngIf="!modoNuevoTrabajador">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="busquedaPersonal">Buscar por nombre o documento</label>
+            <input id="busquedaPersonal" type="text" class="campo-input" [(ngModel)]="busquedaPersonal" name="busquedaPersonal"
+                   placeholder="Ej. 1094933466 o Pérez" (ngModelChange)="buscarPersonal()">
+            <small class="ayuda-personal">Busca afiliados y trabajadores de otras empresas. Si no está, créelo como trabajador nuevo (no hace falta crearlo como afiliado).</small>
+          </div>
+          <div *ngIf="buscandoPersonal" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">Buscando...</div>
+          <ul class="lista-busqueda" *ngIf="resultadosPersonal.length > 0">
+            <li *ngFor="let p of resultadosPersonal" [class.seleccionado]="seleccionPersonal?.personaId === p.personaId" (click)="seleccionPersonal = p">
+              <strong>{{ p.nombre }}</strong>
+              <span>{{ sigla(p.tipoDocumento) }} {{ p.numeroDocumento }}
+                · {{ p.afiliado ? 'Afiliado (' + p.afiliado.estado + ')' : 'Trabajador' }}{{ p.trabajaEn.length ? ' · trabaja en ' + nombresEmpresas(p) : '' }}</span>
+            </li>
+          </ul>
+          <div *ngIf="!buscandoPersonal && busquedaPersonal.trim().length >= 3 && resultadosPersonal.length === 0" style="color: var(--texto-terciario); font-size: var(--tamano-sm);">
+            No se encontró a nadie con ese nombre o documento.
+          </div>
+          <button type="button" class="boton boton-secundario boton-sm" style="align-self: flex-start;" (click)="iniciarTrabajadorNuevo()">+ Crear trabajador nuevo</button>
+        </ng-container>
+
+        <ng-container *ngIf="modoNuevoTrabajador">
+          <p class="ayuda-personal">Trabajador nuevo de {{ empresa?.razonSocial }}. Queda en el personal de la empresa con su ficha de trabajador (documentos, familia, fecha de nacimiento…).</p>
+          <div class="fila-doc-personal">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnTipo">Tipo de documento</label>
+              <select id="tnTipo" class="campo-input" [(ngModel)]="nuevoTrabajador.tipoDocumento" name="tnTipo">
+                <option value="CC">CC - Cédula</option><option value="CE">CE - Cédula de extranjería</option>
+                <option value="PPT">PPT - Permiso de protección temporal</option><option value="PE">PE - Permiso especial</option>
+                <option value="TI">TI - Tarjeta de identidad</option><option value="PP">Pasaporte</option>
+              </select>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnNumero">Número de documento *</label>
+              <input id="tnNumero" class="campo-input" [(ngModel)]="nuevoTrabajador.numeroDocumento" name="tnNumero" inputmode="numeric">
+            </div>
+          </div>
+          <div class="fila-doc-personal">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnNombres">Nombres *</label>
+              <input id="tnNombres" class="campo-input" [(ngModel)]="nuevoTrabajador.nombres" name="tnNombres">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnApellidos">Apellidos</label>
+              <input id="tnApellidos" class="campo-input" [(ngModel)]="nuevoTrabajador.apellidos" name="tnApellidos">
+            </div>
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="tnTel">Celular</label>
+            <input id="tnTel" class="campo-input" [(ngModel)]="nuevoTrabajador.telefono" name="tnTel" inputmode="tel">
+          </div>
+          <button type="button" class="boton boton-texto boton-sm" style="align-self: flex-start;" (click)="modoNuevoTrabajador = false">← Volver a buscar</button>
+        </ng-container>
+        <div class="campo-grupo" *ngIf="puedeGuardarPersonal && sucursales.length > 0">
           <label class="campo-etiqueta" for="sucursalPersonal">Sucursal donde trabaja</label>
           <select id="sucursalPersonal" class="campo-input" [(ngModel)]="sucursalPersonal" name="sucursalPersonal">
             <option [ngValue]="null">Sede principal</option>
             <option *ngFor="let s of sucursales" [ngValue]="s.id">{{ s.nombre }}</option>
           </select>
         </div>
-        <div class="campo-grupo" *ngIf="seleccionPersonal">
+        <div class="campo-grupo" *ngIf="puedeGuardarPersonal">
           <label class="campo-etiqueta">Cargo (opcional)</label>
           <input type="text" class="campo-input" [(ngModel)]="cargoPersonal" name="cargoPersonal" placeholder="Ej. Auxiliar de bodega">
         </div>
-        <div class="campo-grupo" *ngIf="seleccionPersonal">
+        <div class="campo-grupo" *ngIf="puedeGuardarPersonal">
           <label class="campo-etiqueta">Fecha de ingreso a la empresa</label>
           <input type="date" class="campo-input" [(ngModel)]="fechaIngresoPersonal" name="fechaIngresoPersonal">
         </div>
@@ -354,8 +396,8 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
         </div>
         <div class="modal-pie">
           <button class="boton boton-secundario" (click)="modalPersonal = false">Cancelar</button>
-          <button class="boton boton-primario" [disabled]="!seleccionPersonal || guardandoPersonal" (click)="guardarPersonal()">
-            {{ guardandoPersonal ? 'Guardando...' : 'Vincular a la empresa' }}
+          <button class="boton boton-primario" [disabled]="!puedeGuardarPersonal || guardandoPersonal" (click)="guardarPersonal()">
+            {{ guardandoPersonal ? 'Guardando...' : (modoNuevoTrabajador ? 'Crear y agregar a la empresa' : 'Vincular a la empresa') }}
           </button>
         </div>
       </div>
@@ -404,6 +446,10 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
     </div>
   `,
   styles: [`
+    .enlace-cruzado { font-size: var(--tamano-sm); font-weight: 600; color: var(--color-secundario, #E8570C); }
+    .ayuda-personal { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 4px 0 0; display: block; }
+    .fila-doc-personal { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 520px) { .fila-doc-personal { grid-template-columns: 1fr; } }
     .detalle-contenedor { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .detalle-encabezado { display: flex; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; }
     .detalle-encabezado__info { display: flex; align-items: center; gap: var(--espacio-3); flex: 1; flex-wrap: wrap; }
@@ -499,8 +545,40 @@ export class DetalleEmpresaComponent implements OnInit {
   modalPersonal = false;
   busquedaPersonal = '';
   buscandoPersonal = false;
-  resultadosPersonal: Afiliado[] = [];
-  seleccionPersonal: Afiliado | null = null;
+  resultadosPersonal: PersonaEncontrada[] = [];
+  seleccionPersonal: PersonaEncontrada | null = null;
+  // 2026-10-22: crear el trabajador aquí mismo (sin ficha de afiliado)
+  modoNuevoTrabajador = false;
+  nuevoTrabajador = { tipoDocumento: 'CC', numeroDocumento: '', nombres: '', apellidos: '', telefono: '' };
+  // casos como Tatiana: la misma persona es independiente y empleadora
+  fichaIndependiente: { id: number; estado: string } | null = null;
+
+  get puedeGuardarPersonal(): boolean {
+    if (this.modoNuevoTrabajador) return this.nuevoTrabajador.numeroDocumento.replace(/\D/g, '').length >= 4 && this.nuevoTrabajador.nombres.trim().length >= 2;
+    return !!this.seleccionPersonal;
+  }
+
+  private buscarFichaIndependiente(nit: string | null | undefined): void {
+    const doc = String(nit ?? '').replace(/\D/g, '');
+    this.fichaIndependiente = null;
+    if (doc.length < 5) return;
+    this.afiliadosServicio.listar(doc, undefined, undefined, 1, 5).pipe(catchError(() => of({ datos: [] } as any))).subscribe((r: any) => {
+      const a = (r.datos ?? []).find((x: Afiliado) => String(x.cedula ?? '').replace(/\D/g, '') === doc);
+      this.fichaIndependiente = a ? { id: a.id, estado: a.estado } : null;
+    });
+  }
+
+  nombresEmpresas(p: PersonaEncontrada): string {
+    return p.trabajaEn.map((t) => t.razonSocial).join(', ');
+  }
+
+  iniciarTrabajadorNuevo(): void {
+    const t = this.busquedaPersonal.trim();
+    const digitos = t.replace(/\D/g, '');
+    this.nuevoTrabajador = { tipoDocumento: 'CC', numeroDocumento: digitos.length >= 4 ? digitos : '', nombres: digitos.length >= 4 ? '' : t, apellidos: '', telefono: '' };
+    this.seleccionPersonal = null;
+    this.modoNuevoTrabajador = true;
+  }
   cargoPersonal = '';
   fechaIngresoPersonal = new Date().toISOString().slice(0, 10);
   guardandoPersonal = false;
@@ -562,6 +640,7 @@ export class DetalleEmpresaComponent implements OnInit {
     this.busquedaPersonal = '';
     this.resultadosPersonal = [];
     this.seleccionPersonal = null;
+    this.modoNuevoTrabajador = false;
     this.cargoPersonal = '';
     this.sucursalPersonal = null;
     this.errorPersonal = '';
@@ -575,29 +654,34 @@ export class DetalleEmpresaComponent implements OnInit {
     if (termino.length < 3) { this.resultadosPersonal = []; return; }
     this.temporizadorBusqueda = setTimeout(() => {
       this.buscandoPersonal = true;
-      this.afiliadosServicio.listar(termino, undefined, undefined, 1, 15).pipe(
-        catchError(() => of({ datos: [] as Afiliado[] } as any)),
+      this.trabajadoresServicio.buscar(termino).pipe(
+        catchError(() => of([] as PersonaEncontrada[])),
         finalize(() => (this.buscandoPersonal = false)),
-      ).subscribe((r: any) => {
-        const vinculados = new Set(this.personalActivo.map((p) => p.afiliado?.id).filter(Boolean));
-        this.resultadosPersonal = (r.datos ?? []).filter((a: Afiliado) => !vinculados.has(a.id));
+      ).subscribe((lista) => {
+        const vinculados = new Set(this.personalActivo.map((p) => p.personaId));
+        this.resultadosPersonal = lista.filter((p) => !vinculados.has(p.personaId));
       });
     }, 350);
   }
 
   guardarPersonal(): void {
-    if (!this.seleccionPersonal) return;
+    if (!this.puedeGuardarPersonal) return;
     this.guardandoPersonal = true;
     this.errorPersonal = '';
+    const sel = this.seleccionPersonal;
+    const n = this.nuevoTrabajador;
+    const quien = this.modoNuevoTrabajador
+      ? { nuevo: { tipoDocumento: n.tipoDocumento, numeroDocumento: n.numeroDocumento.trim(), nombres: n.nombres.trim(), apellidos: n.apellidos.trim() || undefined, telefono: n.telefono.trim() || undefined } }
+      : sel!.afiliado ? { afiliadoId: sel!.afiliado.id } : { personaId: sel!.personaId };
     this.empresasServicio.agregarPersonal(this.id, {
-      afiliadoId: this.seleccionPersonal.id,
+      ...quien,
       cargo: this.cargoPersonal.trim() || undefined,
       fechaIngreso: this.fechaIngresoPersonal || undefined,
       sucursalId: this.sucursalPersonal,
     }).pipe(finalize(() => (this.guardandoPersonal = false))).subscribe({
       next: () => {
         this.modalPersonal = false;
-        this.mensajeExito = 'Persona vinculada a la empresa.';
+        this.mensajeExito = this.modoNuevoTrabajador ? 'Trabajador creado y agregado a la empresa. En "Ficha del trabajador" puede completar sus datos, documentos y familia.' : 'Persona vinculada a la empresa.';
         setTimeout(() => (this.mensajeExito = ''), 4000);
         this.cargarPersonal();
       },
@@ -634,6 +718,7 @@ export class DetalleEmpresaComponent implements OnInit {
     private sucursalesServicio: SucursalesServicio,
     private solicitudesServicio: SolicitudesServicio,
     private auth: AutenticacionServicio,
+    private trabajadoresServicio: TrabajadoresServicio,
   ) {}
 
   get esSecretaria(): boolean {
@@ -657,6 +742,7 @@ export class DetalleEmpresaComponent implements OnInit {
       this.empresa = resp;
       this.cargando = false;
       if (resp) {
+        this.buscarFichaIndependiente(resp.nit);
         this.cargarSucursales();
         this.cargarPendientes();
         this.cargarPersonal();
