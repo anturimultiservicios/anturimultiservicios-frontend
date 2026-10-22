@@ -55,6 +55,12 @@ export const rutasAdmin: Routes = [
         loadComponent: () =>
           import('./empresas/detalle-empresa/detalle-empresa.component').then((m) => m.DetalleEmpresaComponent),
       },
+      // 2026-10-22: organizar los nombres que traían notas entre paréntesis
+      {
+        path: 'nombres',
+        loadComponent: () =>
+          import('../compartido/organizar-nombres/organizar-nombres.component').then((m) => m.OrganizarNombresComponent),
+      },
       // 2026-10-16: organizar las fincas de los empleadores (venían en Clase aportante)
       {
         path: 'fincas',

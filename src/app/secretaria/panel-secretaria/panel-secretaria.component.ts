@@ -94,6 +94,17 @@ import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servici
                 <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Organizar fincas</span>
               </a>
             </li>
+            <!-- 2026-10-22: organizar los nombres con notas entre paréntesis -->
+            <li>
+              <a routerLink="/asistente/nombres" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Organizar nombres' : ''">
+                <span class="barra-lateral__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6"></path><path d="M22 11h-6"></path>
+                  </svg>
+                </span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Organizar nombres</span>
+              </a>
+            </li>
             <li>
               <a routerLink="/asistente/calendario" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Calendario' : ''">
                 <span class="barra-lateral__icono">

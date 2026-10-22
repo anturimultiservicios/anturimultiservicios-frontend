@@ -23,6 +23,12 @@ export interface Empresa {
   claseAportante?: string;
   // 2026-10-16: fincas / obras donde trabaja la gente
   lugarTrabajo?: string | null;
+  // 2026-10-22
+  representanteLegal?: string | null;
+  representanteDocumento?: string | null;
+  conocidoComo?: string | null;
+  contactoNombre?: string | null;
+  contactoTelefono?: string | null;
   activa: boolean;
   sucursales?: any[];
   creadoEn: string;

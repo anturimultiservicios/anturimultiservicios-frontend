@@ -18,12 +18,13 @@ import { DocumentosTitularComponent } from '../../../compartido/documentos-titul
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
 import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aportante';
 import { FamiliaComponent } from '../../../compartido/familia/familia.component';
+import { VinculosClienteComponent } from '../../../compartido/vinculos-cliente/vinculos-cliente.component';
 import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.component';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, FamiliaComponent, FechaDmyComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, FamiliaComponent, FechaDmyComponent, VinculosClienteComponent],
   template: `
     <div class="detalle-contenedor">
 
@@ -219,6 +220,14 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             <div class="dato-item">
               <span class="dato-etiqueta">Expedición del documento</span>
               <span class="dato-valor">{{ $any(afiliado).fechaExpedicion ? ($any(afiliado).fechaExpedicion | date:'dd/MM/yyyy':'UTC') : '—' }}</span>
+            </div>
+            <div class="dato-item" *ngIf="afiliado.conocidoComo">
+              <span class="dato-etiqueta">Conocido como</span>
+              <span class="dato-valor">{{ afiliado.conocidoComo }}</span>
+            </div>
+            <div class="dato-item" *ngIf="afiliado.contactoNombre || afiliado.contactoTelefono">
+              <span class="dato-etiqueta">Contacto</span>
+              <span class="dato-valor">{{ afiliado.contactoNombre || '—' }}{{ afiliado.contactoTelefono ? ' · ' + afiliado.contactoTelefono : '' }}</span>
             </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Cargo</span>
@@ -501,6 +510,19 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             <span class="campo-etiqueta">Fecha de expedición del documento</span>
             <anturi-fecha-dmy etiqueta="Fecha de expedición" [aniosAtras]="80" [(valor)]="edicionForm.fechaExpedicion"></anturi-fecha-dmy>
           </div>
+          <!-- 2026-10-22 -->
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-conocido">Conocido como / negocio</label>
+            <input id="edit-conocido" type="text" class="campo-input" [(ngModel)]="edicionForm.conocidoComo" name="edit-conocido">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-contacto">Contacto (quién responde por él/ella)</label>
+            <input id="edit-contacto" type="text" class="campo-input" [(ngModel)]="edicionForm.contactoNombre" name="edit-contacto">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-contactoTel">Celular del contacto</label>
+            <input id="edit-contactoTel" type="text" class="campo-input" [(ngModel)]="edicionForm.contactoTelefono" name="edit-contactoTel" inputmode="tel">
+          </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Fecha de ingreso</label>
             <input type="date" class="campo-input" [(ngModel)]="edicionForm.fechaIngreso" name="edit-fechaIngreso">
@@ -537,6 +559,11 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
 
       <!-- SECCIÓN DOCUMENTOS -->
       <!-- 2026-10-15: documentos por carpetas (nombre único en todo el sistema) -->
+      <!-- 2026-10-22: familia o relación con otros clientes -->
+      <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
+        <anturi-vinculos-cliente tipo="AFILIADO" [id]="afiliadoId"></anturi-vinculos-cliente>
+      </div>
+
       <!-- 2026-10-16: familia / beneficiarios -->
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
         <anturi-familia [afiliadoId]="afiliadoId"></anturi-familia>
@@ -1242,7 +1269,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
   }
 
   private payloadEdicion(f: any): Record<string, any> {
-    const texto = ['nombres', 'apellidos', 'cedula', 'telefono', 'cargo', 'claseAportante', 'asopagos', 'actividadEconomica', 'direccion', 'municipio', 'direccionTrabajo', 'municipioTrabajo', 'observaciones'];
+    const texto = ['nombres', 'apellidos', 'cedula', 'telefono', 'cargo', 'claseAportante', 'asopagos', 'actividadEconomica', 'direccion', 'municipio', 'direccionTrabajo', 'municipioTrabajo', 'observaciones', 'conocidoComo', 'contactoNombre', 'contactoTelefono'];
     const numeros = ['valorAfiliacion', 'ibc', 'porcentajeArl', 'valor', 'comision', 'totalPago', 'cuatroXMil', 'cesantias', 'porcentajeSalud', 'porcentajePension', 'porcentajeSaludEmpleador', 'porcentajePensionEmpleador', 'porcentajeCaja', 'porcentajeSena', 'porcentajeIcbf'];
     const fechas = ['fechaNacimiento', 'fechaExpedicion', 'fechaIngreso', 'fechaRetiro'];
     const otros = ['tipoAfiliacion', 'claseRiesgoArl', 'genero', 'estado'];

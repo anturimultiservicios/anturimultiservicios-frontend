@@ -14,6 +14,8 @@ interface Recordatorio {
   tipo: 'revisar' | 'llamar' | 'tareas';
   tareas?: number;
   titulosTareas?: string[];
+  // 2026-10-22: mensaje de novedades que el bot dice completo
+  novedad?: { id: number; titulo: string; mensaje: string } | null;
   cantidad: number;
   dias?: number;
   avisosViejos?: number;
@@ -29,20 +31,21 @@ const POSPONER = 2 * 60 * 60 * 1000;
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="r" class="bot" role="dialog" aria-live="polite">
+    <div *ngIf="r" class="bot" [class.bot--novedad]="!!r.novedad" role="dialog" aria-live="polite">
       <div class="bot__cara">
         <video #v src="/assets/bot/bot-anturi.mp4" poster="/assets/bot/bot-anturi-poster.jpg"
           autoplay loop muted playsinline disablepictureinpicture [muted]="true"
           (loadedmetadata)="iniciarVideo(v)" (canplay)="iniciarVideo(v)"></video>
       </div>
       <div class="bot__nube">
-        <p class="bot__saludo">¡{{ nombre ? nombre + ', ' : '' }}un recordatorio! 🔔</p>
+        <p class="bot__saludo">{{ r.novedad ? r.novedad.titulo : '¡' + (nombre ? nombre + ', ' : '') + 'un recordatorio! 🔔' }}</p>
+        <div *ngIf="r.novedad" class="bot__novedad">{{ r.novedad.mensaje }}</div>
         <ng-container *ngIf="r.tipo === 'revisar'">
           <p *ngIf="r.cantidad" class="bot__texto">
             Tiene <b>{{ r.cantidad }} {{ r.cantidad === 1 ? 'cambio' : 'cambios' }} por revisar</b>{{ r.dias ? ', el más viejo de hace ' + r.dias + ' días' : '' }}.
             La Asistente ya los ve hechos, pero usted tiene la última palabra.
           </p>
-          <p *ngIf="r.tareas" class="bot__texto">Tiene <b>{{ r.tareas }} {{ r.tareas === 1 ? 'tarea' : 'tareas' }} por resolver</b>: {{ r.titulosTareas?.join(', ') }}.</p>
+          <p *ngIf="otrasTareas(r)" class="bot__texto">{{ r.novedad ? 'Además tiene' : 'Tiene' }} <b>{{ otrasTareas(r) }} {{ otrasTareas(r) === 1 ? 'tarea' : 'tareas' }} por resolver</b>{{ r.novedad ? '' : ': ' + (r.titulosTareas || []).join(', ') }}.</p>
           <p *ngIf="!r.cantidad && !r.tareas && r.avisosViejos" class="bot__texto">
             Tiene <b>{{ r.avisosViejos }} {{ r.avisosViejos === 1 ? 'notificación' : 'notificaciones' }}</b> sin ver de hace más de 2 días.
           </p>
@@ -50,7 +53,7 @@ const POSPONER = 2 * 60 * 60 * 1000;
         <ng-container *ngIf="r.tipo === 'llamar'">
           <p class="bot__texto">Hoy le toca <b>llamar a {{ r.cantidad }} {{ r.cantidad === 1 ? 'persona' : 'personas' }}</b>{{ r.nombres?.length ? ': ' + r.nombres!.join(', ') + (r.cantidad > r.nombres!.length ? ' y más' : '') : '' }}.</p>
         </ng-container>
-        <p *ngIf="r.tipo !== 'revisar' && r.tareas" class="bot__texto">Tiene <b>{{ r.tareas }} {{ r.tareas === 1 ? 'tarea' : 'tareas' }} por resolver</b>: {{ r.titulosTareas?.join(', ') }}.</p>
+        <p *ngIf="r.tipo !== 'revisar' && otrasTareas(r)" class="bot__texto">{{ r.novedad ? 'Además tiene' : 'Tiene' }} <b>{{ otrasTareas(r) }} {{ otrasTareas(r) === 1 ? 'tarea' : 'tareas' }} por resolver</b>{{ r.novedad ? '' : ': ' + (r.titulosTareas || []).join(', ') }}.</p>
         <div class="bot__acciones">
           <button type="button" class="bot__btn bot__btn--ir" (click)="ir()">{{ r.tipo === 'llamar' ? 'Ver a quién llamar' : r.tipo === 'tareas' || (!r.cantidad && r.tareas) ? 'Ver mis tareas' : 'Revisar ahora' }}</button>
           <button *ngIf="r.tipo === 'llamar' && r.tareas" type="button" class="bot__btn bot__btn--luego" (click)="verTareas()">Ver mis tareas</button>
@@ -69,6 +72,7 @@ const POSPONER = 2 * 60 * 60 * 1000;
       box-shadow: 0 20px 50px rgba(27, 50, 112, 0.3), 0 0 0 5px rgba(232, 87, 12, 0.12);
       animation: botEntrar 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
     }
+    .bot--novedad { width: min(560px, calc(100vw - 32px)); align-items: flex-start; }
     .bot__cara { flex-shrink: 0; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; background: #fff;
       box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--color-secundario, #E8570C); }
     .bot__cara video { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
@@ -76,6 +80,7 @@ const POSPONER = 2 * 60 * 60 * 1000;
     .bot__saludo { margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--color-primario, #1B3270); }
     .bot__texto { margin: 0 0 8px; font-size: 13.5px; line-height: 1.4; color: var(--texto-principal, #1f2937); }
     .bot__texto b { color: var(--color-secundario, #E8570C); }
+    .bot__novedad { white-space: pre-line; font-size: 13px; line-height: 1.45; color: var(--texto-principal, #1f2937); max-height: 46vh; overflow-y: auto; margin: 0 0 8px; padding-right: 4px; }
     .bot__acciones { display: flex; gap: 8px; flex-wrap: wrap; }
     .bot__btn { padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 700; cursor: pointer; border: 2px solid transparent; }
     .bot__btn--ir { background: var(--color-secundario, #E8570C); color: #fff; }
@@ -129,6 +134,11 @@ export class RecordatorioBotComponent implements OnInit, OnDestroy {
   iniciarVideo(v: HTMLVideoElement): void {
     v.muted = true;
     if (v.paused) v.play().catch(() => undefined);
+  }
+
+  // sin contar el mensaje de novedades (ese ya lo dice el bot completo)
+  otrasTareas(r: Recordatorio): number {
+    return Math.max(0, (r.tareas ?? 0) - (r.novedad ? 1 : 0));
   }
 
   verTareas(): void {

@@ -79,6 +79,10 @@ export interface Afiliado {
   documentos?: any[];
   historial?: any[];
   creadoEn: string;
+  // 2026-10-22
+  conocidoComo?: string | null;
+  contactoNombre?: string | null;
+  contactoTelefono?: string | null;
 }
 
 export interface CrearAfiliadoDto {

@@ -18,13 +18,14 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 // granular - sucursales no pasa por SolicitudCambio, a diferencia de
 // Empresa, ver empresas.controlador.ts/sucursales.controlador.ts reales).
 import { TrabajadoresServicio, PersonaEncontrada } from '../../../nucleo/servicios/trabajadores.servicio';
+import { VinculosClienteComponent } from '../../../compartido/vinculos-cliente/vinculos-cliente.component';
 import { DocumentosTitularComponent } from '../../../compartido/documentos-titular/documentos-titular.component';
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
 
 @Component({
   selector: 'anturi-detalle-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, VinculosClienteComponent],
   template: `
     <div class="detalle-contenedor">
       <div class="detalle-encabezado">
@@ -127,6 +128,27 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
             <label class="campo-etiqueta" for="edit-lugarTrabajo">Lugares de trabajo (fincas, obras, sedes)</label>
             <textarea id="edit-lugarTrabajo" class="campo-input" rows="2" [(ngModel)]="edicionForm.lugarTrabajo" name="edit-lugarTrabajo" placeholder="Ej. Finca La Negrita, vereda El Gigante, Montenegro"></textarea>
           </div>
+          <!-- 2026-10-22 -->
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-repLegal">Representante legal</label>
+            <input id="edit-repLegal" type="text" class="campo-input" [(ngModel)]="edicionForm.representanteLegal" name="edit-repLegal">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-repDoc">Documento del representante</label>
+            <input id="edit-repDoc" type="text" class="campo-input" [(ngModel)]="edicionForm.representanteDocumento" name="edit-repDoc" inputmode="numeric">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-conocido">Conocido como / negocio</label>
+            <input id="edit-conocido" type="text" class="campo-input" [(ngModel)]="edicionForm.conocidoComo" name="edit-conocido">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-contacto">Contacto (contador, secretaria…)</label>
+            <input id="edit-contacto" type="text" class="campo-input" [(ngModel)]="edicionForm.contactoNombre" name="edit-contacto">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-contactoTel">Celular del contacto</label>
+            <input id="edit-contactoTel" type="text" class="campo-input" [(ngModel)]="edicionForm.contactoTelefono" name="edit-contactoTel" inputmode="tel">
+          </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Días de pago</label>
             <input type="number" class="campo-input" [(ngModel)]="edicionForm.diasPago" name="edit-diasPago">
@@ -175,6 +197,18 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
               <span class="dato-etiqueta">Lugares de trabajo</span>
               <span class="dato-valor">{{ empresa.lugarTrabajo }}</span>
             </div>
+            <div class="dato-item" *ngIf="empresa.representanteLegal">
+              <span class="dato-etiqueta">Representante legal</span>
+              <span class="dato-valor">{{ empresa.representanteLegal }}{{ empresa.representanteDocumento ? ' · CC ' + empresa.representanteDocumento : '' }}</span>
+            </div>
+            <div class="dato-item" *ngIf="empresa.conocidoComo">
+              <span class="dato-etiqueta">Conocido como</span>
+              <span class="dato-valor">{{ empresa.conocidoComo }}</span>
+            </div>
+            <div class="dato-item" *ngIf="empresa.contactoNombre || empresa.contactoTelefono">
+              <span class="dato-etiqueta">Contacto</span>
+              <span class="dato-valor">{{ empresa.contactoNombre || '—' }}{{ empresa.contactoTelefono ? ' · ' + empresa.contactoTelefono : '' }}</span>
+            </div>
             <div class="dato-item">
               <span class="dato-etiqueta">Días de pago</span>
               <span class="dato-valor">{{ empresa.diasPago ?? '—' }}</span>
@@ -207,6 +241,11 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
         <!-- 2026-10-15: documentos de la empresa, por carpetas -->
         <div class="tarjeta seccion-datos">
           <anturi-documentos-titular titularTipo="EMPRESA" [titularId]="empresa.id"></anturi-documentos-titular>
+        </div>
+
+        <!-- 2026-10-22: familia o relación con otros clientes -->
+        <div class="tarjeta seccion-datos" *ngIf="empresa">
+          <anturi-vinculos-cliente tipo="EMPRESA" [id]="empresa.id"></anturi-vinculos-cliente>
         </div>
 
         <!-- 2026-10-08: personal de la empresa (antes solo se veían sucursales) -->
@@ -817,6 +856,11 @@ export class DetalleEmpresaComponent implements OnInit {
       municipio: this.edicionForm.municipio,
       claseAportante: this.edicionForm.claseAportante,
       lugarTrabajo: (this.edicionForm.lugarTrabajo ?? '').trim() || undefined,
+      representanteLegal: (this.edicionForm.representanteLegal ?? '').trim() || undefined,
+      representanteDocumento: (this.edicionForm.representanteDocumento ?? '').trim() || undefined,
+      conocidoComo: (this.edicionForm.conocidoComo ?? '').trim() || undefined,
+      contactoNombre: (this.edicionForm.contactoNombre ?? '').trim() || undefined,
+      contactoTelefono: (this.edicionForm.contactoTelefono ?? '').trim() || undefined,
       diasPago: this.edicionForm.diasPago == null || (this.edicionForm.diasPago as any) === '' ? undefined : Number(this.edicionForm.diasPago),
       telefonosAdicionales: limpiarContactos(this.telefonosAdicionales),
       correosAdicionales: limpiarContactos(this.correosAdicionales),
