@@ -8,6 +8,7 @@ import {
   ConfiguracionHorarioAcceso,
   ExcepcionHorarioAcceso,
 } from '../../nucleo/servicios/horario-acceso.servicio';
+import { MantenimientoServicio, EstadoMantenimiento } from '../../nucleo/servicios/mantenimiento.servicio';
 import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuarios.servicio';
 
 // 2026-10-01 (decisión de Cristopher, seguridad): pantalla exclusiva
@@ -30,6 +31,44 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
       <div *ngIf="cargando" class="estado-carga"><div class="spinner"></div></div>
 
       <ng-container *ngIf="!cargando && config">
+        <!-- 2026-10-23: mantenimiento programado de toda la página -->
+        <div class="tarjeta seccion-datos" [class.mant-activo]="mantenimiento?.activo" style="margin-bottom: var(--espacio-5);">
+          <h3 class="seccion-titulo">Mantenimiento de la página</h3>
+          <ng-container *ngIf="mantenimiento?.desde; else sinMantenimiento">
+            <p class="mant-estado" *ngIf="mantenimiento?.activo">
+              🛠️ <b>La página está en mantenimiento</b> desde {{ mantenimiento?.desde | date:'dd/MM/yyyy h:mm a' }}. Nadie más puede entrar; usted sí.
+            </p>
+            <p class="mant-estado" *ngIf="!mantenimiento?.activo">
+              Programado para el <b>{{ mantenimiento?.desde | date:'dd/MM/yyyy h:mm a' }}</b>.
+              <ng-container *ngIf="mantenimiento?.avisoDesde">El bot les avisa a Anturi y a la Asistente el {{ mantenimiento?.avisoDesde | date:'dd/MM/yyyy h:mm a' }}.</ng-container>
+            </p>
+            <div class="form-acciones" style="margin-top: var(--espacio-4);">
+              <button class="boton boton-primario" (click)="terminarMantenimiento()" [disabled]="guardandoMant">
+                {{ mantenimiento?.activo ? 'Terminar mantenimiento y abrir la página' : 'Cancelar el mantenimiento' }}
+              </button>
+            </div>
+          </ng-container>
+          <ng-template #sinMantenimiento>
+            <p class="campo-ayuda" style="margin-bottom: var(--espacio-4);">
+              Desde la hora de inicio toda la página muestra el letrero "Página en mantenimiento" y nadie puede entrar, salvo usted. A la hora del aviso, el bot les cuenta a Anturi y a la Asistente.
+            </p>
+            <div class="campos-grid">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta">Avisar desde</label>
+                <input type="datetime-local" class="campo-input" [(ngModel)]="formMant.avisoDesde">
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta">Empieza el mantenimiento</label>
+                <input type="datetime-local" class="campo-input" [(ngModel)]="formMant.desde">
+              </div>
+            </div>
+            <div class="form-acciones" style="margin-top: var(--espacio-4);">
+              <button class="boton boton-primario" (click)="programarMantenimiento()" [disabled]="guardandoMant">Programar mantenimiento</button>
+            </div>
+          </ng-template>
+          <div *ngIf="errorMant" class="mensaje-error" style="margin-top: var(--espacio-3);">{{ errorMant }}</div>
+        </div>
+
         <!-- Configuración -->
         <div class="tarjeta seccion-datos">
           <h3 class="seccion-titulo">Configuración</h3>
@@ -197,6 +236,8 @@ import { UsuariosServicio, UsuarioSistema } from '../../nucleo/servicios/usuario
     </div>
   `,
   styles: [`
+    .mant-activo { border: 2px solid var(--color-advertencia); }
+    .mant-estado { margin: 0; font-size: var(--tamano-sm); color: var(--texto-principal); }
     .fila-sin-horario { display: flex; justify-content: space-between; align-items: center; gap: var(--espacio-3); padding: var(--espacio-2) 0; border-bottom: 1px solid var(--borde-color, #e5e7eb); }
     .fila-sin-horario small { color: var(--texto-terciario); margin-left: 6px; }
     .interruptor-sh { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: var(--tamano-sm); color: var(--texto-secundario); }
@@ -253,15 +294,22 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
   sinHorario: UsuarioSinHorario[] = [];
   cambiandoSinHorario: number | null = null;
 
+  mantenimiento: EstadoMantenimiento | null = null;
+  guardandoMant = false;
+  errorMant = '';
+  formMant = { avisoDesde: this.horaDeHoy(17), desde: this.horaDeHoy(19) };
+
   private destruir$ = new Subject<void>();
 
   constructor(
     private horarioServicio: HorarioAccesoServicio,
     private usuariosServicio: UsuariosServicio,
+    private mantenimientoServicio: MantenimientoServicio,
   ) {}
 
   ngOnInit(): void {
     this.cargarTodo();
+    this.mantenimientoServicio.consultar().pipe(catchError(() => of(null))).subscribe((e) => (this.mantenimiento = e));
     this.horarioServicio.listarSinHorario().pipe(catchError(() => of([] as UsuarioSinHorario[]))).subscribe((l) => (this.sinHorario = l));
   }
 
@@ -372,6 +420,45 @@ export class HorarioAccesoComponent implements OnInit, OnDestroy {
         this.otorgando = false;
         this.errorExcepcion = err?.error?.message || 'No se pudo otorgar la excepción.';
       },
+    });
+  }
+
+  // 'YYYY-MM-DDTHH:00' de hoy, para los campos datetime-local
+  private horaDeHoy(h: number): string {
+    const d = new Date();
+    const dd = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${dd(d.getMonth() + 1)}-${dd(d.getDate())}T${dd(h)}:00`;
+  }
+
+  programarMantenimiento(): void {
+    if (!this.formMant.desde) {
+      this.errorMant = 'Escoja la hora en que empieza el mantenimiento.';
+      return;
+    }
+    const desde = new Date(this.formMant.desde);
+    const aviso = this.formMant.avisoDesde ? new Date(this.formMant.avisoDesde) : null;
+    if (aviso && aviso.getTime() > desde.getTime()) {
+      this.errorMant = 'El aviso debe ser antes del inicio del mantenimiento.';
+      return;
+    }
+    const texto = desde.toLocaleString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+    if (!confirm(`¿Programar el mantenimiento para el ${texto}? Desde esa hora nadie más podrá entrar a la página.`)) return;
+    this.guardandoMant = true;
+    this.errorMant = '';
+    this.mantenimientoServicio.programar(desde.toISOString(), aviso ? aviso.toISOString() : null).pipe(takeUntil(this.destruir$)).subscribe({
+      next: (e) => { this.guardandoMant = false; this.mantenimiento = e; },
+      error: (err) => { this.guardandoMant = false; this.errorMant = err?.error?.message || 'No se pudo programar.'; },
+    });
+  }
+
+  terminarMantenimiento(): void {
+    const activo = this.mantenimiento?.activo;
+    if (!confirm(activo ? '¿Terminar el mantenimiento y abrir la página para todos?' : '¿Cancelar el mantenimiento programado?')) return;
+    this.guardandoMant = true;
+    this.errorMant = '';
+    this.mantenimientoServicio.terminar().pipe(takeUntil(this.destruir$)).subscribe({
+      next: (e) => { this.guardandoMant = false; this.mantenimiento = e; },
+      error: (err) => { this.guardandoMant = false; this.errorMant = err?.error?.message || 'No se pudo cambiar.'; },
     });
   }
 

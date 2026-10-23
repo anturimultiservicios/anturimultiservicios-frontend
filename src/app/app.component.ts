@@ -9,12 +9,13 @@ import { AvisoHorarioComponent } from './compartido/aviso-horario/aviso-horario.
 import { AvisoActualizacionComponent } from './compartido/aviso-actualizacion/aviso-actualizacion.component';
 import { AvisoConexionComponent } from './compartido/aviso-conexion/aviso-conexion.component';
 import { RecordatorioBotComponent } from './compartido/recordatorio-bot/recordatorio-bot.component';
+import { AvisoMantenimientoComponent } from './compartido/aviso-mantenimiento/aviso-mantenimiento.component';
 
 @Component({
   selector: 'anturi-raiz',
   standalone: true,
-  imports: [RouterOutlet, AvisoHorarioComponent, AvisoActualizacionComponent, AvisoConexionComponent, RecordatorioBotComponent],
-  template: '<router-outlet /><anturi-aviso-horario /><anturi-aviso-actualizacion /><anturi-aviso-conexion /><anturi-recordatorio-bot />',
+  imports: [RouterOutlet, AvisoHorarioComponent, AvisoActualizacionComponent, AvisoConexionComponent, RecordatorioBotComponent, AvisoMantenimientoComponent],
+  template: '<router-outlet /><anturi-aviso-horario /><anturi-aviso-actualizacion /><anturi-aviso-conexion /><anturi-recordatorio-bot /><anturi-aviso-mantenimiento />',
   styles: [':host { display: block; min-height: 100vh; }'],
 })
 export class AppComponent implements OnInit {

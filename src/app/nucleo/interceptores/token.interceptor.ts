@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, throwError, Observable, shareReplay, finalize } from 'rxjs';
 import { AutenticacionServicio } from '../servicios/autenticacion.servicio';
 import { HorarioAccesoServicio } from '../servicios/horario-acceso.servicio';
+import { MantenimientoServicio } from '../servicios/mantenimiento.servicio';
 
 // Refresco compartido (2026-09-28): si varias peticiones fallan con 401 al
 // mismo tiempo (ej. el Resumen, que dispara 3 peticiones en paralelo por
@@ -25,9 +26,15 @@ let refrescoEnCurso$: Observable<{ acceso: string }> | null = null;
 const esCorteFueraDeHorario = (error: HttpErrorResponse): boolean =>
   typeof error.error?.message === 'string' && error.error.message.includes('Fuera de horario de acceso');
 
+// 2026-10-23: lo mismo cuando la página está en mantenimiento programado
+// (HorarioAccesoServicio.puedeIngresarAhora en el backend).
+const esCortePorMantenimiento = (error: HttpErrorResponse): boolean =>
+  typeof error.error?.message === 'string' && error.error.message.startsWith('Página en mantenimiento');
+
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AutenticacionServicio);
   const horarioServicio = inject(HorarioAccesoServicio);
+  const mantenimiento = inject(MantenimientoServicio);
   const token = auth.obtenerToken();
 
   const solicitudConToken = token
@@ -36,6 +43,13 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(solicitudConToken).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && esCortePorMantenimiento(error)) {
+        auth.cerrarSesion();
+        try { sessionStorage.removeItem('anturi_mantenimiento_ingreso'); } catch {}
+        mantenimiento.marcarActivo(error.error.message);
+        return throwError(() => error);
+      }
+
       if (error.status === 401 && esCorteFueraDeHorario(error)) {
         auth.cerrarSesion();
         horarioServicio.anunciarCierreForzado(error.error.message);

@@ -22,7 +22,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      Esta página se cerrará en {{ minutosParaCierre }} minuto{{ minutosParaCierre === 1 ? '' : 's' }} por el horario de acceso. Guardá lo que estés haciendo.
+      Esta página se cerrará en {{ minutosParaCierre }} minuto{{ minutosParaCierre === 1 ? '' : 's' }}. Guardá lo que estés haciendo.
     </div>
 
     <!-- Pantalla completa: cierre ya ocurrió -->
