@@ -24,7 +24,7 @@ const CLAVE_AVISO_VISTO = 'anturi_mantenimiento_aviso_visto';
     <!-- A la hora del aviso: ventana encima de lo que estén haciendo, una sola vez -->
     <div class="ventana-aviso" *ngIf="mostrarVentanaAviso" role="dialog" aria-modal="true">
       <div class="ventana-aviso__tarjeta">
-        <div class="ventana-aviso__icono">🛠️</div>
+        <img class="ventana-aviso__robot" src="/assets/bot/bot-anturi-poster.jpg" alt="Anturi, el asistente de la página">
         <h2>Mantenimiento programado</h2>
         <p>Les informamos que <b>{{ cuandoTexto }}</b> la página entrará en mantenimiento para reforzar la seguridad y dejar listos los arreglos pendientes.</p>
         <p>Durante ese tiempo no se podrá ingresar. Por favor guarden su trabajo antes de esa hora.</p>
@@ -84,7 +84,7 @@ const CLAVE_AVISO_VISTO = 'anturi_mantenimiento_aviso_visto';
       box-shadow: var(--sombra-xl);
     }
 
-    .ventana-aviso__icono { font-size: 48px; }
+    .ventana-aviso__robot { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-secundario); }
     .ventana-aviso__tarjeta h2 { margin: 0; color: var(--texto-principal); }
     .ventana-aviso__tarjeta p { margin: 0; color: var(--texto-secundario); line-height: 1.5; }
     .ventana-aviso__firma { font-weight: 600; color: var(--color-primario) !important; }
