@@ -21,6 +21,7 @@ export interface FichaTrabajador {
   afiliado: { id: number } | null;
   relacionesLaborales: {
     id: number; cargo: string | null; estado: string; fechaIngreso: string | null; fechaRetiro: string | null;
+    salario?: string | number | null; otrosIngresos?: string | number | null; auxilioTransporte?: string | number | null;
     empresa: { id: number; razonSocial: string; nit: string }; sucursal: { id: number; nombre: string } | null;
   }[];
 }
@@ -35,6 +36,10 @@ export interface Familiar {
   numeroDocumento: string | null;
   parentesco: string;
   fechaNacimiento: string | null;
+  // 2026-10-22 (Anyi)
+  correo?: string | null;
+  telefono?: string | null;
+  direccion?: string | null;
   observaciones: string | null;
 }
 
@@ -75,6 +80,11 @@ export class TrabajadoresServicio {
 
   actualizar(personaId: number, datos: Partial<FichaTrabajador> & { motivo?: string }): Observable<FichaTrabajador> {
     return this.http.put<FichaTrabajador>(`${this.URL}/trabajadores/${personaId}`, datos);
+  }
+
+  // 2026-10-22 (Anyi): cargo y lo que gana en una empresa
+  actualizarRelacion(relacionId: number, datos: { cargo?: string; salario?: number | null; otrosIngresos?: number | null; auxilioTransporte?: number | null }): Observable<unknown> {
+    return this.http.put(`${this.URL}/trabajadores/relacion/${relacionId}`, datos);
   }
 
   familia(titular: { afiliadoId?: number; personaId?: number }): Observable<Familiar[]> {

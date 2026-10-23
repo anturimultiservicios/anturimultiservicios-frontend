@@ -19,6 +19,8 @@ export interface SolicitudCambio {
   revisadoEn?: string;
   // 2026-10-16: aprobada pero no se pudo aplicar (y por qué)
   aplicacion?: 'FALLIDA' | null;
+  // 2026-10-22 (Anyi): de quién es el cambio
+  titular?: string | null;
   motivoFalla?: string | null;
 }
 
@@ -58,6 +60,10 @@ export class SolicitudesServicio {
   }
 
   // 2026-10-16: volver a aplicar una solicitud aprobada que no se aplicó
+  reaplicarFallidas(): Observable<{ total: number; aplicadas: number; siguenFallando: { id: number; motivo: string }[] }> {
+    return this.http.post<{ total: number; aplicadas: number; siguenFallando: { id: number; motivo: string }[] }>(`${this.URL}/reaplicar-fallidas`, {});
+  }
+
   reaplicar(id: number): Observable<{ aplicada: boolean; motivo?: string }> {
     return this.http.post<{ aplicada: boolean; motivo?: string }>(`${this.URL}/${id}/reaplicar`, {});
   }

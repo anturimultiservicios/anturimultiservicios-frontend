@@ -27,6 +27,12 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
         </button>
       </div>
 
+      <!-- 2026-10-22: aprobadas que no se aplicaron (ej. 75 del 22 de octubre) -->
+      <div *ngIf="fallidas > 0" class="banner-fallidas" role="alert">
+        <span><b>{{ fallidas }}</b> {{ fallidas === 1 ? 'solicitud aprobada no se aplicó' : 'solicitudes aprobadas no se aplicaron' }} por una falla del sistema que ya se arregló.</span>
+        <button type="button" class="boton boton-primario boton-sm" [disabled]="reaplicandoTodas" (click)="reaplicarTodas()">{{ reaplicandoTodas ? 'Aplicando…' : 'Volver a aplicar todas' }}</button>
+      </div>
+
       <!-- Alertas -->
       <div *ngIf="mensajeExito" class="alerta-exito">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -98,7 +104,7 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
             <div class="solicitud-header__izq">
               <span class="badge-tipo" [ngClass]="claseBadgeTipo(sol.tipo)">{{ sol.tipo }}</span>
               <div class="solicitud-info">
-                <span class="solicitud-tabla">{{ sol.tabla === 'documentos' ? 'Documento' : 'Tabla' }}: <strong>{{ sol.tabla === 'documentos' ? (docAntes(sol)?.titular || 'documento') : sol.tabla }}</strong></span>
+                <span class="solicitud-tabla"><strong>{{ sol.titular || (sol.tabla === 'documentos' ? (docAntes(sol)?.titular || 'Documento') : sol.tabla) }}</strong>{{ sol.titular ? ' · ' + nombreTabla(sol.tabla) : '' }}</span>
                 <span class="solicitud-motivo">{{ sol.motivo }}</span>
               </div>
             </div>
@@ -271,6 +277,7 @@ type TabActiva = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
     .tab-activo { color: var(--color-primario) !important; border-bottom-color: var(--color-primario) !important; font-weight: 600; }
     .tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--color-advertencia); color: white; font-size: 0.7rem; font-weight: 700; }
     .tab-badge--aprobado { background: #15803d; }
+    .banner-fallidas { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #7a1d14; margin-bottom: 12px; }
     .no-aplicada { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .badge-no-aplicada { background: #fdecea; color: #b42318; }
     .falla-motivo { margin: 4px 0 0; padding: 8px 12px; border-radius: 8px; background: #fdecea; color: #7a1d14; font-size: var(--tamano-sm); }
@@ -386,6 +393,29 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
   }
 
   reaplicando: number | null = null;
+  fallidas = 0;
+  reaplicandoTodas = false;
+
+  nombreTabla(t: string): string {
+    return ({ afiliados: 'independiente', empresas: 'empresa', documentos: 'documento', familiares: 'familia' } as Record<string, string>)[t] ?? t;
+  }
+
+  private contarFallidas(): void {
+    this.solicitudesServicio.listar('APROBADA').subscribe({ next: (l) => (this.fallidas = l.filter((s) => s.aplicacion === 'FALLIDA').length), error: () => undefined });
+  }
+
+  reaplicarTodas(): void {
+    if (!confirm(`¿Volver a aplicar las ${this.fallidas} solicitudes aprobadas que no se aplicaron? Se aplican en orden, como si las aprobara de nuevo.`)) return;
+    this.reaplicandoTodas = true;
+    this.solicitudesServicio.reaplicarFallidas().subscribe({
+      next: (r) => {
+        this.reaplicandoTodas = false;
+        alert(`Listo: se aplicaron ${r.aplicadas} de ${r.total}.` + (r.siguenFallando.length ? ` ${r.siguenFallando.length} siguen sin poderse aplicar (las verá marcadas).` : ''));
+        this.cargarSolicitudes();
+      },
+      error: (e) => { this.reaplicandoTodas = false; alert(e?.error?.message || 'No se pudo. Intente de nuevo.'); },
+    });
+  }
 
   reaplicar(sol: SolicitudCambio): void {
     this.reaplicando = sol.id;
@@ -400,6 +430,7 @@ export class SolicitudesAdminComponent implements OnInit, OnDestroy {
   }
 
   cargarSolicitudes(): void {
+    this.contarFallidas();
     this.cargando = true;
     this.errorCarga = '';
     this.solicitudesServicio.listar().pipe(

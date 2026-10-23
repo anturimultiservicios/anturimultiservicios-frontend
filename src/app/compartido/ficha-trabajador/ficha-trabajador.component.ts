@@ -65,18 +65,39 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
           <h3 class="seccion-titulo">Dónde trabaja</h3>
           <div class="tabla-contenedor">
             <table class="tabla">
-              <thead><tr><th>Empresa</th><th>Cargo</th><th>Sede</th><th>Desde</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Empresa</th><th>Cargo</th><th>Salario</th><th>Otros ingresos</th><th>Aux. transporte</th><th>Total devengado</th><th>Sede</th><th>Desde</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 <tr *ngFor="let r of t.relacionesLaborales">
                   <td><a [routerLink]="[prefijo, 'empresas', r.empresa.id]">{{ r.empresa.razonSocial }}</a></td>
-                  <td>{{ r.cargo || '—' }}</td>
+                  <ng-container *ngIf="editandoRelacion?.id !== r.id; else edicionRel">
+                    <td>{{ r.cargo || '—' }}</td>
+                    <td>{{ r.salario != null ? (num(r.salario) | currency:'COP':'symbol-narrow':'1.0-0') : '—' }}</td>
+                    <td>{{ r.otrosIngresos != null ? (num(r.otrosIngresos) | currency:'COP':'symbol-narrow':'1.0-0') : '—' }}</td>
+                    <td>{{ r.auxilioTransporte != null ? (num(r.auxilioTransporte) | currency:'COP':'symbol-narrow':'1.0-0') : '—' }}</td>
+                    <td class="total-dev">{{ devengado(r) ? (devengado(r) | currency:'COP':'symbol-narrow':'1.0-0') : '—' }}</td>
+                  </ng-container>
+                  <ng-template #edicionRel>
+                    <td><input class="campo-input campo-input--sm" [(ngModel)]="editandoRelacion!.cargo" aria-label="Cargo"></td>
+                    <td><input class="campo-input campo-input--sm" type="number" min="0" step="1000" [(ngModel)]="editandoRelacion!.salario" aria-label="Salario"></td>
+                    <td><input class="campo-input campo-input--sm" type="number" min="0" step="1000" [(ngModel)]="editandoRelacion!.otrosIngresos" aria-label="Otros ingresos"></td>
+                    <td><input class="campo-input campo-input--sm" type="number" min="0" step="100" [(ngModel)]="editandoRelacion!.auxilioTransporte" aria-label="Auxilio de transporte"></td>
+                    <td class="total-dev">{{ devengado(editandoRelacion) | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                  </ng-template>
                   <td>{{ r.sucursal?.nombre || 'Sede principal' }}</td>
                   <td>{{ r.fechaIngreso ? (r.fechaIngreso | date:'dd/MM/yyyy':'UTC') : '—' }}</td>
                   <td>{{ r.estado === 'ACTIVA' ? 'Trabaja aquí' : 'Retirado' + (r.fechaRetiro ? ' ' + (r.fechaRetiro | date:'dd/MM/yyyy':'UTC') : '') }}</td>
+                  <td class="acciones-rel">
+                    <button *ngIf="editandoRelacion?.id !== r.id" type="button" class="boton boton-texto boton-sm" (click)="editarRelacion(r)">Editar</button>
+                    <ng-container *ngIf="editandoRelacion?.id === r.id">
+                      <button type="button" class="boton boton-primario boton-sm" (click)="guardarRelacion()">Guardar</button>
+                      <button type="button" class="boton boton-texto boton-sm" (click)="editandoRelacion = null">Cancelar</button>
+                    </ng-container>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <p class="sub">Total devengado = salario + otros ingresos + auxilio de transporte. El auxilio de transporte le corresponde si gana hasta 2 salarios mínimos.</p>
         </div>
 
         <div class="tarjeta seccion-datos">
@@ -102,6 +123,9 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
     .dato-etiqueta { font-size: 12px; color: var(--texto-terciario); text-transform: uppercase; font-weight: 600; }
     .dato-valor { color: var(--texto-principal); }
     .aviso-ok { color: #1f7a3d; font-size: var(--tamano-sm); }
+    .total-dev { font-weight: 700; color: var(--color-secundario, #E8570C); white-space: nowrap; }
+    .acciones-rel { white-space: nowrap; }
+    td .campo-input--sm { min-width: 100px; }
     .aviso-error { color: #b42318; font-size: var(--tamano-sm); }
   `],
 })
@@ -174,6 +198,31 @@ export class FichaTrabajadorComponent implements OnInit {
         const m = e?.error?.message;
         this.error = Array.isArray(m) ? m.join('. ') : m || 'No se pudo guardar.';
       },
+    });
+  }
+
+  // ── 2026-10-22 (Anyi): cargo y lo que gana ──
+  editandoRelacion: { id: number; cargo: string; salario: number | null; otrosIngresos: number | null; auxilioTransporte: number | null } | null = null;
+
+  num(v: unknown): number { return Number(v ?? 0) || 0; }
+
+  devengado(r: { salario?: unknown; otrosIngresos?: unknown; auxilioTransporte?: unknown } | null): number {
+    if (!r) return 0;
+    return this.num(r.salario) + this.num(r.otrosIngresos) + this.num(r.auxilioTransporte);
+  }
+
+  editarRelacion(r: FichaTrabajador['relacionesLaborales'][number]): void {
+    const n = (v: unknown) => (v == null || v === '' ? null : Number(v));
+    this.editandoRelacion = { id: r.id, cargo: r.cargo ?? '', salario: n(r.salario), otrosIngresos: n(r.otrosIngresos), auxilioTransporte: n(r.auxilioTransporte) };
+  }
+
+  guardarRelacion(): void {
+    const e = this.editandoRelacion;
+    if (!e) return;
+    const n = (v: unknown) => (v == null || (v as any) === '' ? null : Number(v));
+    this.servicio.actualizarRelacion(e.id, { cargo: e.cargo.trim(), salario: n(e.salario), otrosIngresos: n(e.otrosIngresos), auxilioTransporte: n(e.auxilioTransporte) }).subscribe({
+      next: () => { this.editandoRelacion = null; this.mensaje = 'Guardado.'; setTimeout(() => (this.mensaje = ''), 4000); this.cargar(); },
+      error: (err) => { const m = err?.error?.message; this.error = Array.isArray(m) ? m.join('. ') : m || 'No se pudo guardar.'; },
     });
   }
 

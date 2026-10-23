@@ -63,6 +63,21 @@ export interface CuentaCobro {
   mesesAdeudados: number;
   pagadoEsteMes: boolean;
   montoAdeudado: number;
+  // 2026-10-22: desglose y hasta qué mes está pagada
+  partes?: { seguridadSocial: number; cuatroXMil: number; comision: number };
+  cubiertoHasta?: string | null;
+  periodoSiguiente?: string;
+}
+
+// 2026-10-22 (Anyi): estado de pago de un independiente
+export interface EstadoPagoAfiliado {
+  afiliadoId: number;
+  mesesAdeudados: number;
+  pagadoEsteMes: boolean;
+  cubiertoHasta: string | null;
+  periodoSiguiente: string;
+  esPrimerPago: boolean;
+  partes: { seguridadSocial: number; cuatroXMil: number; comision: number; valorAfiliacion: number };
 }
 
 export interface CobroEmpresa {
@@ -120,8 +135,12 @@ export class PagosServicio {
     return this.http.post(`${this.URL}/no-aporta`, datos);
   }
 
-  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string, montoEsperado?: number, motivoAjuste?: string, fechaPago?: string): Observable<any> {
-    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia, montoEsperado, motivoAjuste, fechaPago });
+  registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string, montoEsperado?: number, motivoAjuste?: string, fechaPago?: string, periodo?: string): Observable<any> {
+    return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia, montoEsperado, motivoAjuste, fechaPago, periodo });
+  }
+
+  estadoAfiliados(ids: number[]): Observable<EstadoPagoAfiliado[]> {
+    return this.http.get<EstadoPagoAfiliado[]>(`${this.URL}/estado-afiliados`, { params: { ids: ids.join(',') } });
   }
 
   resumen(desde: string, hasta: string): Observable<ResumenPagos> {

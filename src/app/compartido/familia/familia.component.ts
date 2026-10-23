@@ -51,6 +51,19 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
         <span class="campo-etiqueta">Fecha de nacimiento</span>
         <anturi-fecha-dmy etiqueta="Fecha de nacimiento del familiar" [(valor)]="form.fechaNacimiento"></anturi-fecha-dmy>
       </div>
+      <!-- 2026-10-22 (Anyi) -->
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="famTel">Teléfono</label>
+        <input id="famTel" class="campo-input" [(ngModel)]="form.telefono" name="telefono" inputmode="tel">
+      </div>
+      <div class="campo-grupo">
+        <label class="campo-etiqueta" for="famCorreo">Correo</label>
+        <input id="famCorreo" type="email" class="campo-input" [(ngModel)]="form.correo" name="correo">
+      </div>
+      <div class="campo-grupo fam-ancho">
+        <label class="campo-etiqueta" for="famDir">Dirección</label>
+        <input id="famDir" class="campo-input" [(ngModel)]="form.direccion" name="direccion">
+      </div>
       <div class="campo-grupo fam-ancho">
         <label class="campo-etiqueta" for="famObs">Nota</label>
         <input id="famObs" class="campo-input" [(ngModel)]="form.observaciones" name="observaciones" placeholder="Ej. estudia, depende económicamente">
@@ -64,13 +77,14 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
     <p *ngIf="!cargando && !familia.length && !form" class="vacio">Todavía no tiene familiares registrados.</p>
     <div class="tabla-contenedor" *ngIf="familia.length">
       <table class="tabla">
-        <thead><tr><th>Parentesco</th><th>Nombre</th><th>Documento</th><th>Nacimiento</th><th></th></tr></thead>
+        <thead><tr><th>Parentesco</th><th>Nombre</th><th>Documento</th><th>Nacimiento</th><th>Contacto</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let f of familia">
             <td>{{ nombreParentesco(f.parentesco) }}</td>
             <td>{{ f.nombres }} {{ f.apellidos }}<div *ngIf="f.observaciones" class="nota">{{ f.observaciones }}</div></td>
             <td>{{ f.numeroDocumento ? f.tipoDocumento + ' ' + f.numeroDocumento : '—' }}</td>
             <td>{{ f.fechaNacimiento ? (f.fechaNacimiento | date:'dd/MM/yyyy':'UTC') : '—' }}{{ edad(f) }}</td>
+            <td>{{ f.telefono || '' }}<div *ngIf="f.correo" class="nota">{{ f.correo }}</div><div *ngIf="f.direccion" class="nota">{{ f.direccion }}</div><span *ngIf="!f.telefono && !f.correo && !f.direccion">—</span></td>
             <td class="acciones">
               <button type="button" class="boton boton-texto boton-sm" (click)="editar(f)">Editar</button>
               <button type="button" class="boton boton-texto boton-sm" (click)="pedirQuitar(f)">Quitar</button>
@@ -157,12 +171,12 @@ export class FamiliaComponent implements OnChanges {
 
   nuevo(): void {
     this.error = '';
-    this.form = { parentesco: '', nombres: '', apellidos: '', tipoDocumento: 'RC', numeroDocumento: '', fechaNacimiento: '', observaciones: '' };
+    this.form = { parentesco: '', nombres: '', apellidos: '', tipoDocumento: 'RC', numeroDocumento: '', fechaNacimiento: '', correo: '', telefono: '', direccion: '', observaciones: '' };
   }
 
   editar(f: Familiar): void {
     this.error = '';
-    this.form = { ...f, fechaNacimiento: f.fechaNacimiento ? f.fechaNacimiento.slice(0, 10) : '', numeroDocumento: f.numeroDocumento ?? '', observaciones: f.observaciones ?? '' };
+    this.form = { ...f, fechaNacimiento: f.fechaNacimiento ? f.fechaNacimiento.slice(0, 10) : '', numeroDocumento: f.numeroDocumento ?? '', correo: f.correo ?? '', telefono: f.telefono ?? '', direccion: f.direccion ?? '', observaciones: f.observaciones ?? '' };
   }
 
   guardar(): void {
@@ -172,6 +186,7 @@ export class FamiliaComponent implements OnChanges {
       parentesco: f.parentesco, nombres: f.nombres.trim(), apellidos: (f.apellidos ?? '').trim(),
       tipoDocumento: f.tipoDocumento || 'CC', numeroDocumento: (f.numeroDocumento ?? '').trim(),
       fechaNacimiento: f.fechaNacimiento || '', observaciones: (f.observaciones ?? '').trim(),
+      correo: (f.correo ?? '').trim(), telefono: (f.telefono ?? '').trim(), direccion: (f.direccion ?? '').trim(),
     } as any;
     this.guardando = true;
     const peticion = f.id ? this.servicio.editarFamiliar(f.id, datos) : this.servicio.agregarFamiliar({ ...datos, ...this.titular });

@@ -28,7 +28,8 @@ export class BarraLateralComponent implements OnInit, OnDestroy {
 
   items: ItemMenu[] = [
     { icono: 'resumen', etiqueta: 'Resumen', ruta: '/admin/resumen' },
-    { icono: 'afiliados', etiqueta: 'Afiliados', ruta: '/admin/afiliados' },
+    // 2026-10-22 (Anyi): se llaman Independientes
+    { icono: 'afiliados', etiqueta: 'Independientes', ruta: '/admin/afiliados' },
     { icono: 'empresas', etiqueta: 'Empresas', ruta: '/admin/empresas' },
     // 2026-10-16: organizar las fincas de los empleadores
     { icono: 'empresas', etiqueta: 'Organizar fincas', ruta: '/admin/fincas' },

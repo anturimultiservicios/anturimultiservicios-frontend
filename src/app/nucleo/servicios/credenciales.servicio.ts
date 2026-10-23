@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { entorno } from '../../../environments/entorno';
 
 // 2026-10-08: usuarios y claves de portales externos por empresa o persona.
-export type TipoCredencial = 'OPERADOR_PILA' | 'EPS' | 'PENSION' | 'ARL' | 'CAJA' | 'CESANTIAS' | 'OTRO';
+export type TipoCredencial = 'OPERADOR_PILA' | 'EPS' | 'PENSION' | 'ARL' | 'CAJA' | 'CESANTIAS' | 'OTRO' | 'CORREO';
 
 export const TIPOS_CREDENCIAL: { valor: TipoCredencial; nombre: string; ejemplo: string }[] = [
   { valor: 'OPERADOR_PILA', nombre: 'Operador PILA', ejemplo: 'Asopagos, Aportes en Línea, SOI' },
@@ -13,6 +13,8 @@ export const TIPOS_CREDENCIAL: { valor: TipoCredencial; nombre: string; ejemplo:
   { valor: 'ARL', nombre: 'ARL', ejemplo: 'Positiva, Sura, Bolívar' },
   { valor: 'CAJA', nombre: 'Caja de compensación', ejemplo: 'Comfenalco Quindío' },
   { valor: 'CESANTIAS', nombre: 'Cesantías', ejemplo: 'Porvenir, Protección' },
+  // 2026-10-22 (Anyi): otro correo de la persona con su clave
+  { valor: 'CORREO', nombre: 'Correo electrónico', ejemplo: 'Gmail, Hotmail, Outlook' },
   { valor: 'OTRO', nombre: 'Otro portal', ejemplo: 'DIAN, banco...' },
 ];
 

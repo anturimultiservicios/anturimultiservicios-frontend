@@ -26,7 +26,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
           </div>
           <div>
             <p class="resumen-tarjeta__numero">{{ cargando ? '...' : stats.afiliadosActivos }}</p>
-            <p class="resumen-tarjeta__etiqueta">Afiliados activos</p>
+            <p class="resumen-tarjeta__etiqueta">Independientes activos</p>
           </div>
         </div>
 
@@ -39,7 +39,7 @@ import { SolicitudesServicio } from '../../../nucleo/servicios/solicitudes.servi
           </div>
           <div>
             <p class="resumen-tarjeta__numero">{{ cargando ? '...' : stats.afiliadosRetirados }}</p>
-            <p class="resumen-tarjeta__etiqueta">Afiliados retirados</p>
+            <p class="resumen-tarjeta__etiqueta">Independientes retirados</p>
           </div>
         </div>
 

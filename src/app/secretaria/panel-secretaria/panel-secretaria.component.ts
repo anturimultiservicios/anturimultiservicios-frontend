@@ -60,7 +60,7 @@ import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servici
               </a>
             </li>
             <li>
-              <a routerLink="/asistente/afiliados" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Afiliados' : ''">
+              <a routerLink="/asistente/afiliados" routerLinkActive="activo" class="barra-lateral__item" [title]="!barraExpandida ? 'Independientes' : ''">
                 <span class="barra-lateral__icono">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -69,7 +69,7 @@ import { ColaCambiosServicio } from '../../nucleo/servicios/cola-cambios.servici
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                   </svg>
                 </span>
-                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Afiliados</span>
+                <span class="barra-lateral__etiqueta" *ngIf="barraExpandida">Independientes</span>
               </a>
             </li>
             <li>

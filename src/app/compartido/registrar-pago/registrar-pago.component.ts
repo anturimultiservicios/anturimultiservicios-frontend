@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of, switchMap, takeUntil } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../nucleo/servicios/afiliados.servicio';
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
-import { PagosServicio, CanalPago, ResumenPagos, ResumenMensual, CobroEmpresa, CuentaCobro } from '../../nucleo/servicios/pagos.servicio';
+import { PagosServicio, EstadoPagoAfiliado, CanalPago, ResumenPagos, ResumenMensual, CobroEmpresa, CuentaCobro } from '../../nucleo/servicios/pagos.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 // 2026-10-07 (decisión de Cristopher): "no tenemos esa parte" - marcar que
@@ -14,6 +14,7 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 // Anturi. Se busca por nombre/cédula (persona) o NIT/razón social
 // (empresa, con varios empleados a cargo - cada uno con SU PROPIO monto,
 // no uno a repartir).
+import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/utilidades/desglose-pago';
 @Component({
   selector: 'anturi-registrar-pago',
   standalone: true,
@@ -55,6 +56,9 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
               <span class="dato-secundario">CC {{ a.cedula }}</span>
               <span *ngIf="a.estado !== 'ACTIVO'" class="badge-estado-pago">{{ a.estado === 'RETIRADO' ? 'Retirado' : 'Inactivo' }}</span>
               <span *ngIf="a.estado === 'ACTIVO' && mesesAdeudados(a) > 1" class="badge-mora">Debe {{ mesesAdeudados(a) }} meses</span>
+              <!-- 2026-10-22 (Anyi): hasta qué mes está pagado (antes no se veía y se podía registrar doble) -->
+              <span *ngIf="estados.get(a.id)?.pagadoEsteMes" class="badge-pagado" [title]="'El próximo pago quedaría para ' + mesTexto(estados.get(a.id)?.periodoSiguiente)">Pagado ✓ hasta {{ mesTexto(estados.get(a.id)?.cubiertoHasta) }}</span>
+              <span *ngIf="estados.get(a.id) && !estados.get(a.id)?.pagadoEsteMes && estados.get(a.id)?.cubiertoHasta" class="dato-secundario">pagado hasta {{ mesTexto(estados.get(a.id)?.cubiertoHasta) }}</span>
             </label>
             <span *ngIf="a.estado === 'ACTIVO'" class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="yaPagados.has(a.id)" class="badge-pagado">Pagado ✓</span>
@@ -186,7 +190,28 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
               <span *ngIf="montoDe(it.clave, it.esperado) !== it.esperado" class="item-pago__esperado">calculado {{ it.esperado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
               <input type="number" class="campo-input item-pago__monto" min="0" step="100"
                 [ngModel]="montoDe(it.clave, it.esperado)" (ngModelChange)="cambiarMonto(it.clave, $event)" [name]="'monto-' + it.clave">
+              <!-- 2026-10-22 (Anyi): qué mes paga y de qué se compone -->
+              <label *ngIf="it.clave.startsWith('a')" class="item-pago__mes">Mes que paga
+                <select class="campo-input campo-input--sm" [ngModel]="periodoDe(it.clave)" (ngModelChange)="periodos.set(it.clave, $event)" [name]="'periodo-' + it.clave">
+                  <option *ngFor="let m of mesesPara(it.clave)" [value]="m.valor">{{ m.nombre }}</option>
+                </select>
+              </label>
+              <span *ngIf="avisoAdelantado(it.clave) as aviso" class="item-pago__aviso">{{ aviso }}</span>
+              <div *ngIf="desgloseDe(it.clave, montoDe(it.clave, it.esperado)) as d" class="item-pago__desglose">
+                <span>Trámite <b>{{ d.comision | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+                <span>Seguridad social <b>{{ d.seguridadSocial | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+                <span>4x1000 <b>{{ d.cuatroXMil | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+                <span *ngIf="d.afiliacion">Afiliación <b>{{ d.afiliacion | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+                <span class="item-pago__total">Total <b>{{ d.total | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+              </div>
             </div>
+          </div>
+          <div *ngIf="totalesDesglose as t" class="desglose-total">
+            <span>Trámite <b>{{ t.comision | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+            <span>Seguridad social <b>{{ t.seguridadSocial | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+            <span>4x1000 <b>{{ t.cuatroXMil | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+            <span *ngIf="t.afiliacion">Afiliación <b>{{ t.afiliacion | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
+            <span class="item-pago__total">Total a pagar <b>{{ t.total | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
           </div>
           <div *ngIf="hayAjustes" class="campo-grupo">
             <label class="campo-etiqueta">¿Por qué cambia el valor? <span class="requerido">*</span></label>
@@ -305,6 +330,13 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
     </div>
   `,
   styles: [`
+    .item-pago { flex-wrap: wrap; }
+    .item-pago__mes { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto-secundario); }
+    .item-pago__aviso { flex-basis: 100%; font-size: 12px; color: #b45309; font-weight: 600; }
+    .item-pago__desglose, .desglose-total { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--texto-secundario); }
+    .item-pago__desglose b, .desglose-total b { color: var(--texto-principal); }
+    .item-pago__total b { color: var(--color-secundario, #E8570C); }
+    .desglose-total { padding: 10px 12px; border-radius: 10px; background: rgba(27, 50, 112, 0.05); margin-top: 6px; font-size: 13.5px; }
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .pagina-encabezado { display: flex; justify-content: space-between; align-items: center; }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
@@ -459,6 +491,7 @@ export class RegistrarPagoComponent implements OnDestroy {
       if (res) {
         this.resultadosPersonas = res.personas.datos;
         this.resultadosEmpresas = res.empresas;
+        this.cargarEstados(this.resultadosPersonas.map((a) => a.id));
       }
     });
 
@@ -586,6 +619,64 @@ export class RegistrarPagoComponent implements OnDestroy {
 
   // ── Valor editable por pago ──
   private montos = new Map<string, number>();
+
+  // ── 2026-10-22 (Anyi): estado de pago, mes que paga y desglose ──
+  readonly mesTexto = nombreMes;
+  estados = new Map<number, EstadoPagoAfiliado>();
+  periodos = new Map<string, string>();
+
+  private cargarEstados(ids: number[]): void {
+    const faltan = ids.filter((id) => !this.estados.has(id));
+    if (!faltan.length) return;
+    this.pagosServicio.estadoAfiliados(faltan).pipe(catchError(() => of([] as EstadoPagoAfiliado[]))).subscribe((lista) => {
+      for (const e of lista) this.estados.set(e.afiliadoId, e);
+    });
+  }
+
+  periodoDe(clave: string): string {
+    const guardado = this.periodos.get(clave);
+    if (guardado) return guardado;
+    const e = this.estados.get(Number(clave.slice(1)));
+    return e?.periodoSiguiente ?? this.fechaPago.slice(0, 7);
+  }
+
+  mesesPara(clave: string): { valor: string; nombre: string }[] {
+    return mesesCercanos(this.periodoDe(clave), 3, 3);
+  }
+
+  avisoAdelantado(clave: string): string {
+    const e = this.estados.get(Number(clave.slice(1)));
+    if (!e?.cubiertoHasta) return '';
+    const elegido = this.periodoDe(clave);
+    if (elegido <= e.cubiertoHasta) return `Ojo: ${nombreMes(elegido)} ya está pagado (pagado hasta ${nombreMes(e.cubiertoHasta)}).`;
+    if (e.pagadoEsteMes) return `Ya pagó este mes: este pago queda adelantado para ${nombreMes(elegido)}.`;
+    return '';
+  }
+
+  desgloseDe(clave: string, monto: number): Desglose | null {
+    if (clave.startsWith('a')) {
+      const id = Number(clave.slice(1));
+      const e = this.estados.get(id);
+      const a = this.seleccionados.get(id);
+      if (!e || !a) return null;
+      return desglosar(Number(monto) || 0, this.mesesAdeudados(a), e.partes, e.esPrimerPago);
+    }
+    const c = this.seleccionCuentas.get(Number(clave.slice(1)));
+    if (!c?.partes) return null;
+    return desglosar(Number(monto) || 0, Math.max(1, c.mesesAdeudados), c.partes);
+  }
+
+  get totalesDesglose(): Desglose | null {
+    const items = this.itemsSeleccionados;
+    if (items.length < 2) return null;
+    const t: Desglose = { seguridadSocial: 0, cuatroXMil: 0, comision: 0, afiliacion: 0, total: 0 };
+    for (const it of items) {
+      const d = this.desgloseDe(it.clave, this.montoDe(it.clave, it.esperado));
+      if (!d) return null;
+      t.seguridadSocial += d.seguridadSocial; t.cuatroXMil += d.cuatroXMil; t.comision += d.comision; t.afiliacion += d.afiliacion; t.total += d.total;
+    }
+    return t;
+  }
   motivoAjuste = '';
 
   get itemsSeleccionados(): { clave: string; nombre: string; esperado: number }[] {
@@ -637,6 +728,8 @@ export class RegistrarPagoComponent implements OnDestroy {
   // atrasado del afiliado (el peor caso real), usando los datos que
   // AfiliadosServicio.listar() ya trae anidados (afiliado.seguros).
   mesesAdeudados(a: Afiliado): number {
+    const e = this.estados.get(a.id);
+    if (e) return Math.max(1, e.pagadoEsteMes ? 1 : e.mesesAdeudados);
     const seguros = (a as any).seguros as { fechaVencimiento?: string | null }[] | undefined;
     if (!seguros || seguros.length === 0) return 1;
     const hoy = new Date();
@@ -673,7 +766,7 @@ export class RegistrarPagoComponent implements OnDestroy {
     forkJoin([
       ...personas.map((a) =>
         this.pagosServicio.registrarCompleto(a.id, this.montoDe('a' + a.id, this.montoAdeudado(a)), this.canalSeleccionado!, this.mesesAdeudados(a),
-          undefined, this.montoAdeudado(a), this.motivoAjuste.trim() || undefined, this.fechaPagoEnviar).pipe(
+          undefined, this.montoAdeudado(a), this.motivoAjuste.trim() || undefined, this.fechaPagoEnviar, this.periodoDe('a' + a.id)).pipe(
           catchError((err) => of({ error: true, afiliado: a, mensaje: err?.error?.message })),
         ),
       ),

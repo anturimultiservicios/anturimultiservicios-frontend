@@ -15,7 +15,7 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
     <div class="pagina-lista">
       <!-- Encabezado -->
       <div class="pagina-encabezado">
-        <h2 class="pagina-titulo">Afiliados</h2>
+        <h2 class="pagina-titulo">Independientes</h2>
         <div class="pagina-acciones">
           <a *ngIf="prefijo === '/admin'" [routerLink]="[prefijo, 'afiliados', 'papelera']" class="boton boton-secundario">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">

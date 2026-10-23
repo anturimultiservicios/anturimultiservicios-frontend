@@ -32,8 +32,8 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
       </form>
       <div *ngIf="avisoCarpeta" class="dt__aviso">{{ avisoCarpeta }}</div>
 
-      <input type="file" #selector multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none" (change)="archivosElegidos($event)">
-      <input type="file" #selectorReemplazo accept=".pdf,.jpg,.jpeg,.png" style="display:none" (change)="reemplazoElegido($event)">
+      <input type="file" #selector multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx" style="display:none" (change)="archivosElegidos($event)">
+      <input type="file" #selectorReemplazo accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx" style="display:none" (change)="reemplazoElegido($event)">
       <div *ngIf="esAsistente" class="sub">Lo que elimine, reemplace o mueva se aplica de una vez y le llega a Anturi para que lo confirme.</div>
 
       <div *ngIf="cargando" class="sub">Cargando documentos...</div>
@@ -49,7 +49,7 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
           <div *ngIf="estaAbierta(c)" class="carpeta__lista">
             <div *ngIf="!docsDe(c).length" class="sub">Todavía no hay archivos en esta carpeta.</div>
             <div *ngFor="let d of docsDe(c)" class="doc">
-              <button type="button" class="doc__nombre" (click)="ver(d)" [title]="'Ver ' + (d.nombre || d.nombreOriginal)">{{ esPdf(d) ? '📄' : '🖼️' }} {{ d.nombre || d.nombreOriginal }}</button>
+              <button type="button" class="doc__nombre" (click)="ver(d)" [title]="'Ver ' + (d.nombre || d.nombreOriginal)">{{ icono(d) }} {{ d.nombre || d.nombreOriginal }}</button>
               <span class="sub">{{ d.creadoEn | date:'dd/MM/yyyy' }}</span>
               <button type="button" class="boton boton-texto boton-sm" (click)="ver(d)" [attr.aria-label]="'Ver ' + (d.nombre || d.nombreOriginal)">👁 Ver</button>
               <button type="button" class="boton boton-texto boton-sm" (click)="descargar(d)" [attr.aria-label]="'Descargar ' + (d.nombre || d.nombreOriginal)">⬇ Descargar</button>
@@ -346,6 +346,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
       this.subiendoNombre = a.name;
       this.progreso = 0;
       if (a.size > 20 * 1024 * 1024) { this.errores.push(`"${a.name}" pesa más de 20 MB.`); continue; }
+      if (!/\.(pdf|jpe?g|png|webp|heic|heif|docx?|xlsx?)$/i.test(a.name)) { this.errores.push(`"${a.name}" no se puede subir. Se aceptan PDF, fotos (JPG, PNG, HEIC, WEBP), Word y Excel.`); continue; }
       const ok = await new Promise<boolean>((resolve) => {
         this.docs.subirA({
           ...(this.titularTipo === 'EMPRESA' ? { empresaId: this.titularId } : this.titularTipo === 'PERSONA' ? { personaId: this.titularId } : { afiliadoId: this.titularId }),
@@ -396,7 +397,26 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
     return this.docs.esPdf(d.extension);
   }
 
+  // 2026-10-22: tipos que el navegador puede mostrar; el resto (Word, Excel,
+  // fotos HEIC) se descarga al tocar "Ver"
+  private ext(d: Documento): string {
+    return String(d.extension || (d.nombreOriginal ?? '').replace(/^.*(\.[^.]+)$/, '$1') || '').toLowerCase();
+  }
+
+  icono(d: Documento): string {
+    const e = this.ext(d);
+    if (e === '.pdf') return '📄';
+    if (['.doc', '.docx'].includes(e)) return '📝';
+    if (['.xls', '.xlsx'].includes(e)) return '📊';
+    return '🖼️';
+  }
+
+  private sePuedeVer(d: Documento): boolean {
+    return ['.pdf', '.jpg', '.jpeg', '.png', '.webp'].includes(this.ext(d));
+  }
+
   ver(d: Documento): void {
+    if (!this.sePuedeVer(d)) { this.descargar(d); return; }
     this.docs.archivo(d.id).subscribe({
       next: (blob) => {
         this.cerrarVista();
