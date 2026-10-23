@@ -6,6 +6,7 @@ import { MantenimientoServicio, EstadoMantenimiento } from '../../nucleo/servici
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 
 const CLAVE_INGRESO_ADMIN = 'anturi_mantenimiento_ingreso';
+const CLAVE_AVISO_VISTO = 'anturi_mantenimiento_aviso_visto';
 
 // 2026-10-23 (Cristopher): letrero de mantenimiento para TODA la página
 // (también la parte pública) y, antes, una franja avisando la hora. Vive en
@@ -18,6 +19,18 @@ const CLAVE_INGRESO_ADMIN = 'anturi_mantenimiento_ingreso';
   template: `
     <div class="franja-mantenimiento" *ngIf="avisoPrevio">
       🛠️ {{ avisoPrevio }}
+    </div>
+
+    <!-- A la hora del aviso: ventana encima de lo que estén haciendo, una sola vez -->
+    <div class="ventana-aviso" *ngIf="mostrarVentanaAviso" role="dialog" aria-modal="true">
+      <div class="ventana-aviso__tarjeta">
+        <div class="ventana-aviso__icono">🛠️</div>
+        <h2>Mantenimiento programado</h2>
+        <p>Les informamos que <b>{{ cuandoTexto }}</b> la página entrará en mantenimiento para reforzar la seguridad y dejar listos los arreglos pendientes.</p>
+        <p>Durante ese tiempo no se podrá ingresar. Por favor guarden su trabajo antes de esa hora.</p>
+        <p class="ventana-aviso__firma">Lamentamos los inconvenientes: estamos trabajando para ustedes. ¡Gracias por su comprensión!</p>
+        <button type="button" class="boton boton-primario" (click)="cerrarVentanaAviso()">Entendido</button>
+      </div>
     </div>
 
     <div class="pantalla-mantenimiento" *ngIf="mostrarLetrero">
@@ -46,6 +59,35 @@ const CLAVE_INGRESO_ADMIN = 'anturi_mantenimiento_ingreso';
       font-size: var(--tamano-sm);
       font-weight: 600;
     }
+
+    .ventana-aviso {
+      position: fixed;
+      inset: 0;
+      z-index: 2050;
+      background: rgba(15, 23, 42, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--espacio-4);
+    }
+
+    .ventana-aviso__tarjeta {
+      background: var(--fondo-tarjeta);
+      border-radius: var(--radio-2xl);
+      padding: var(--espacio-8);
+      max-width: 460px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--espacio-3);
+      box-shadow: var(--sombra-xl);
+    }
+
+    .ventana-aviso__icono { font-size: 48px; }
+    .ventana-aviso__tarjeta h2 { margin: 0; color: var(--texto-principal); }
+    .ventana-aviso__tarjeta p { margin: 0; color: var(--texto-secundario); line-height: 1.5; }
+    .ventana-aviso__firma { font-weight: 600; color: var(--color-primario) !important; }
 
     .pantalla-mantenimiento {
       position: fixed;
@@ -89,6 +131,8 @@ const CLAVE_INGRESO_ADMIN = 'anturi_mantenimiento_ingreso';
 export class AvisoMantenimientoComponent implements OnInit, OnDestroy {
   mostrarLetrero = false;
   avisoPrevio = '';
+  mostrarVentanaAviso = false;
+  cuandoTexto = '';
 
   private estado: EstadoMantenimiento | null = null;
   private destruir$ = new Subject<void>();
@@ -142,6 +186,16 @@ export class AvisoMantenimientoComponent implements OnInit, OnDestroy {
     this.avisoPrevio = !activo && desde !== null && desde > ahora && (aviso === null || aviso <= ahora)
       ? `Hoy a las ${this.hora(new Date(desde))} la página entrará en mantenimiento. Por favor guarde su trabajo antes de esa hora.`
       : '';
+
+    // La ventana sale una vez por cada mantenimiento programado (por su hora de inicio).
+    let visto = '';
+    try { visto = localStorage.getItem(CLAVE_AVISO_VISTO) || ''; } catch {}
+    this.mostrarVentanaAviso = !!this.avisoPrevio && !!this.auth.usuarioActual && visto !== e?.desde;
+    if (this.mostrarVentanaAviso && desde !== null) {
+      const f = new Date(desde);
+      const dia = f.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+      this.cuandoTexto = `hoy ${dia} a las ${this.hora(f)}`;
+    }
   }
 
   private hora(f: Date): string {
@@ -149,6 +203,11 @@ export class AvisoMantenimientoComponent implements OnInit, OnDestroy {
     const m = String(f.getMinutes()).padStart(2, '0');
     if (h === 12 && m === '00') return '12:00 m.';
     return `${h % 12 === 0 ? 12 : h % 12}:${m} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+  }
+
+  cerrarVentanaAviso(): void {
+    try { localStorage.setItem(CLAVE_AVISO_VISTO, this.estado?.desde || ''); } catch {}
+    this.mostrarVentanaAviso = false;
   }
 
   ingresoAdministrador(): void {
