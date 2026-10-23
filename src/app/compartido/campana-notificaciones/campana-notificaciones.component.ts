@@ -73,11 +73,11 @@ const TIPOS_AFILIADO = [
     .campana__boton { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--borde-color, #e5e7eb); background: var(--fondo-tarjeta, #fff); color: var(--texto-secundario, #4b5563); cursor: pointer; }
     .campana__boton:hover { color: var(--color-primario, #1e3a8a); }
     .campana__contador { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--color-error, #dc2626); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
-    .campana__panel { position: absolute; right: 0; top: calc(100% + 8px); width: min(380px, calc(100vw - 32px)); max-height: 70vh; display: flex; flex-direction: column; background: var(--fondo-tarjeta, #fff); border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-lg, 12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; overflow: hidden; }
-    .campana__encabezado { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--borde-color, #e5e7eb); color: var(--texto-principal, #111827); font-size: var(--tamano-sm, 14px); }
+    .campana__panel { position: absolute; right: 0; top: calc(100% + 8px); width: min(380px, calc(100vw - 32px)); max-height: 70vh; display: flex; flex-direction: column; background: var(--fondo-tarjeta, #fff); border: 1px solid var(--borde-color, #e5e7eb); border-radius: var(--radio-lg, 12px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; overflow-y: auto; overscroll-behavior: contain; }
+    .campana__encabezado { position: sticky; top: 0; z-index: 1; background: var(--fondo-tarjeta, #fff); display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--borde-color, #e5e7eb); color: var(--texto-principal, #111827); font-size: var(--tamano-sm, 14px); }
     .campana__enlace { background: none; border: none; color: var(--color-primario, #1e3a8a); font-size: var(--tamano-xs, 12px); cursor: pointer; padding: 0; }
     .campana__vacio { padding: 24px 14px; text-align: center; color: var(--texto-terciario, #6b7280); font-size: var(--tamano-sm, 14px); }
-    .campana__lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+    .campana__lista { list-style: none; margin: 0; padding: 0; flex-shrink: 0; }
     .campana__item { position: relative; display: flex; gap: 8px; padding: 10px 14px 10px 24px; border-bottom: 1px solid var(--borde-color, #f1f1f1); cursor: pointer; }
     .campana__item:hover { background: rgba(0,0,0,0.03); }
     .campana__item--nueva { background: rgba(30,58,138,0.05); }
