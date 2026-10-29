@@ -220,7 +220,7 @@ Respuesta: ${o.etiqueta}${o.paraAnturi ? ' (le queda a Anturi para que lo resuel
     if (n.referenciaId && TIPOS_AFILIADO.includes(n.tipo)) {
       this.abierta = false;
       this.router.navigate([prefijo, 'afiliados', n.referenciaId]);
-    } else if (n.tipo === 'solicitud_pendiente' || n.tipo === 'solicitud_aprobada' || n.tipo === 'solicitud_rechazada') {
+    } else if (n.tipo === 'solicitud_pendiente' || n.tipo === 'solicitud_aprobada' || n.tipo === 'solicitud_rechazada' || n.tipo === 'solicitud_aplicada') {
       this.abierta = false;
       this.router.navigate([prefijo, prefijo === '/admin' ? 'solicitudes' : 'mis-solicitudes']);
     } else if (n.referenciaId && n.tipo === 'empresa_creada') {

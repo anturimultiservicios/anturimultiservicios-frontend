@@ -24,6 +24,18 @@ export interface SolicitudCambio {
   motivoFalla?: string | null;
 }
 
+// 2026-10-29: la Asistente de confianza (Anyi) aplica sus cambios de una vez;
+// solo si cae en la "trampa" (muchas eliminaciones o desactivaciones en un
+// día) queda esperando a Anturi.
+export type SolicitudCreada = SolicitudCambio & { aplicadaDirecto?: boolean; porQueEspera?: string; falloAplicar?: string | null };
+
+export function mensajeSolicitud(res: SolicitudCreada, siQuedaPendiente: string): string {
+  if (res.aplicadaDirecto) return 'Listo, quedó hecho. A Anturi le llegó el aviso.';
+  if (res.falloAplicar) return `Quedó aprobado pero no se pudo aplicar: ${res.falloAplicar}. Anturi lo ve en Solicitudes.`;
+  if (res.porQueEspera) return `Queda pendiente hasta que Anturi lo confirme, porque ${res.porQueEspera}.`;
+  return siQuedaPendiente;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SolicitudesServicio {
   private readonly URL = `${entorno.urlApi}/solicitudes-cambio`;
@@ -37,8 +49,8 @@ export class SolicitudesServicio {
     motivo: string;
     datosOriginales?: any;
     datosNuevos?: any;
-  }): Observable<SolicitudCambio> {
-    return this.http.post<SolicitudCambio>(this.URL, {
+  }): Observable<SolicitudCreada> {
+    return this.http.post<SolicitudCreada>(this.URL, {
       ...datos,
       datosOriginales: datos.datosOriginales ? JSON.stringify(datos.datosOriginales) : undefined,
       datosNuevos: datos.datosNuevos ? JSON.stringify(datos.datosNuevos) : undefined,

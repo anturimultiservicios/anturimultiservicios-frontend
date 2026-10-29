@@ -8,7 +8,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
 import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 import { CredencialesTitularComponent } from '../../../compartido/credenciales-titular/credenciales-titular.component';
 import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
-import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
+import { SolicitudesServicio, SolicitudCambio, mensajeSolicitud } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 
 // 2026-10-07: dejó de ser de solo lectura - editar/activar/desactivar
@@ -881,9 +881,10 @@ export class DetalleEmpresaComponent implements OnInit {
         finalize(() => { this.guardandoEdicion = false; }),
       ).subscribe((res) => {
         if (res) {
-          this.mensajeExito = 'Cambio guardado. Queda pendiente hasta que Anturi lo confirme.';
+          this.mensajeExito = mensajeSolicitud(res, 'Cambio guardado. Queda pendiente hasta que Anturi lo confirme.');
           this.modoEdicion = false;
           this.cargarPendientes();
+          if (res.aplicadaDirecto) this.cargar();
           setTimeout(() => { this.mensajeExito = ''; }, 5000);
         }
       });
@@ -925,9 +926,10 @@ export class DetalleEmpresaComponent implements OnInit {
         finalize(() => { this.guardandoEstado = false; }),
       ).subscribe((res) => {
         if (res) {
-          this.mensajeExito = 'Solicitud guardada. Queda pendiente hasta que Anturi la confirme.';
+          this.mensajeExito = mensajeSolicitud(res, 'Solicitud guardada. Queda pendiente hasta que Anturi la confirme.');
           this.modalEstado = false;
           this.cargarPendientes();
+          if (res.aplicadaDirecto) this.cargar();
           setTimeout(() => { this.mensajeExito = ''; }, 5000);
         }
       });

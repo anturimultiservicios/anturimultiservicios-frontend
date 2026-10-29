@@ -7,7 +7,7 @@ import { HttpEventType } from '@angular/common/http';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
 import { EmpresasServicio } from '../../../nucleo/servicios/empresas.servicio';
 import { DocumentosServicio, Documento, TipoDocumento, TipoDocumentoRequerido } from '../../../nucleo/servicios/documentos.servicio';
-import { SolicitudesServicio, SolicitudCambio } from '../../../nucleo/servicios/solicitudes.servicio';
+import { SolicitudesServicio, SolicitudCambio, mensajeSolicitud } from '../../../nucleo/servicios/solicitudes.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
@@ -1230,9 +1230,10 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         finalize(() => { this.guardandoEdicion = false; })
       ).subscribe(res => {
         if (res) {
-          this.mensajeExito = 'Cambio guardado. Queda pendiente hasta que Anturi lo confirme.';
+          this.mensajeExito = mensajeSolicitud(res, 'Cambio guardado. Queda pendiente hasta que Anturi lo confirme.');
           this.modoEdicion = false;
           this.cargarPendientes();
+          if (res.aplicadaDirecto) this.cargarAfiliado();
         }
       });
     } else {
@@ -1313,9 +1314,10 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
         finalize(() => { this.eliminando = false; this.modalEliminar = false; })
       ).subscribe(res => {
         if (res) {
-          this.mensajeExito = 'Marcado para eliminar. Se elimina cuando Anturi lo confirme.';
+          this.mensajeExito = mensajeSolicitud(res, 'Marcado para eliminar. Se elimina cuando Anturi lo confirme.');
           this.motivoEliminacion = '';
           this.cargarPendientes();
+          if (res.aplicadaDirecto) this.cargarAfiliado();
         }
       });
     } else {

@@ -13,6 +13,24 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
 // y empresas. Las carpetas tienen nombre único en todo el sistema: si alguien
 // crea "CC" y ya existe "Cédula", se usa la misma. Se pueden subir varios
 // archivos a la vez. La vista previa pide el archivo con la sesión.
+// 2026-10-29 (Anturi no podía subir nada): celulares, WhatsApp, Drive y algunos
+// escáneres entregan el archivo con un nombre SIN extensión ("IMG-20261027-WA0003")
+// aunque sea un PDF o una foto. Si el nombre no la trae, se completa con el tipo
+// del archivo; si tampoco se sabe el tipo, no se sube.
+const EXTENSION_POR_TIPO: Record<string, string> = {
+  'application/pdf': '.pdf', 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+  'image/heic': '.heic', 'image/heif': '.heif', 'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+};
+
+function conExtension(a: File): File | null {
+  if (/\.(pdf|jpe?g|png|webp|heic|heif|docx?|xlsx?)$/i.test(a.name)) return a;
+  const ext = EXTENSION_POR_TIPO[a.type.toLowerCase()];
+  return ext ? new File([a], (a.name || 'documento') + ext, { type: a.type }) : null;
+}
+
 @Component({
   selector: 'anturi-documentos-titular',
   standalone: true,
@@ -32,8 +50,8 @@ interface Carpeta { clave: string; nombre: string; tipo: string; carpetaId: numb
       </form>
       <div *ngIf="avisoCarpeta" class="dt__aviso">{{ avisoCarpeta }}</div>
 
-      <input type="file" #selector multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx" style="display:none" (change)="archivosElegidos($event)">
-      <input type="file" #selectorReemplazo accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx" style="display:none" (change)="reemplazoElegido($event)">
+      <input type="file" #selector multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,application/pdf,image/*" style="display:none" (change)="archivosElegidos($event)">
+      <input type="file" #selectorReemplazo accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,application/pdf,image/*" style="display:none" (change)="reemplazoElegido($event)">
       <div *ngIf="esAsistente" class="sub">Lo que elimine, reemplace o mueva se aplica de una vez y le llega a Anturi para que lo confirme.</div>
 
       <div *ngIf="cargando" class="sub">Cargando documentos...</div>
@@ -227,9 +245,11 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
   }
 
   reemplazoElegido(ev: Event): void {
-    const archivo = (ev.target as HTMLInputElement).files?.[0];
-    if (!archivo || !this.docAReemplazar) return;
-    if (archivo.size > 20 * 1024 * 1024) { this.errores = [`"${archivo.name}" pesa más de 20 MB.`]; return; }
+    const elegido = (ev.target as HTMLInputElement).files?.[0];
+    if (!elegido || !this.docAReemplazar) return;
+    if (elegido.size > 20 * 1024 * 1024) { this.errores = [`"${elegido.name}" pesa más de 20 MB.`]; return; }
+    const archivo = conExtension(elegido);
+    if (!archivo) { this.errores = [`"${elegido.name}" no se puede subir. Se aceptan PDF, fotos (JPG, PNG, HEIC, WEBP), Word y Excel.`]; return; }
     this.accion = { tipo: 'reemplazar', doc: this.docAReemplazar, archivo, opcion: '', texto: `Se reemplaza por "${archivo.name}"` };
   }
 
@@ -341,12 +361,13 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
     this.subiendoTotal = archivos.length;
     let bien = 0;
     for (let i = 0; i < archivos.length; i++) {
-      const a = archivos[i];
+      const elegido = archivos[i];
       this.subiendoN = i + 1;
-      this.subiendoNombre = a.name;
+      this.subiendoNombre = elegido.name;
       this.progreso = 0;
-      if (a.size > 20 * 1024 * 1024) { this.errores.push(`"${a.name}" pesa más de 20 MB.`); continue; }
-      if (!/\.(pdf|jpe?g|png|webp|heic|heif|docx?|xlsx?)$/i.test(a.name)) { this.errores.push(`"${a.name}" no se puede subir. Se aceptan PDF, fotos (JPG, PNG, HEIC, WEBP), Word y Excel.`); continue; }
+      if (elegido.size > 20 * 1024 * 1024) { this.errores.push(`"${elegido.name}" pesa más de 20 MB.`); continue; }
+      const a = conExtension(elegido);
+      if (!a) { this.errores.push(`"${elegido.name}" no se puede subir. Se aceptan PDF, fotos (JPG, PNG, HEIC, WEBP), Word y Excel.`); continue; }
       const ok = await new Promise<boolean>((resolve) => {
         this.docs.subirA({
           ...(this.titularTipo === 'EMPRESA' ? { empresaId: this.titularId } : this.titularTipo === 'PERSONA' ? { personaId: this.titularId } : { afiliadoId: this.titularId }),

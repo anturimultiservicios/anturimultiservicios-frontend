@@ -40,4 +40,6 @@ export interface PermisoSecretaria {
   puedeEditarHallazgosReconciliacion: boolean;
   puedeEliminarEvidenciasHallazgo: boolean;
   puedeCalcularLiquidacion: boolean;
+  // 2026-10-29: Asistente de confianza (sus cambios se aplican sin esperar aprobación)
+  aprobacionDirecta?: boolean;
 }

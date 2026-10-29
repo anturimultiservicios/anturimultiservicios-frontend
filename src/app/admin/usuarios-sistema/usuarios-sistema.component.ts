@@ -314,6 +314,12 @@ import { PresenciaServicio, EstadoPresencia, PresenciaUsuario } from '../../nucl
             <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.puedeCalcularLiquidacion"> Puede calcular/registrar cuánto paga un afiliado</label>
             <p style="font-size: var(--tamano-xs); color: var(--texto-terciario); margin: var(--espacio-1) 0 0;">Las tasas/porcentajes legales en sí solo las cambia Admin/Super Admin - esto es solo calcular con las tasas ya vigentes.</p>
           </div>
+          <!-- 2026-10-29 (Anturi, para Anyi): Asistente de confianza -->
+          <div class="permisos-grupo">
+            <h4 class="permisos-grupo__titulo">Confianza</h4>
+            <label class="permiso-check"><input type="checkbox" [(ngModel)]="formPermisos.aprobacionDirecta"> Sus cambios se aplican de una vez, sin esperar aprobación</label>
+            <p style="font-size: var(--tamano-xs); color: var(--texto-terciario); margin: var(--espacio-1) 0 0;">Editar, desactivar, eliminar o restaurar afiliados y empresas queda hecho al momento y a los administradores les llega el aviso. Si en un día elimina más de 3 o desactiva más de 20, esas sí esperan aprobación. No le da acceso a la contabilidad ni la vuelve administradora.</p>
+          </div>
           <div class="campo-grupo" style="margin-top: var(--espacio-2);">
             <label class="campo-etiqueta">Motivo del cambio <span class="requerido">*</span></label>
             <input type="text" class="campo-input" [(ngModel)]="motivoPermisos" placeholder="Ej: empieza a encargarse también de las solicitudes de afiliados">
@@ -864,6 +870,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeEditarHallazgosReconciliacion: this.formPermisos.puedeEditarHallazgosReconciliacion,
       puedeEliminarEvidenciasHallazgo: this.formPermisos.puedeEliminarEvidenciasHallazgo,
       puedeCalcularLiquidacion: this.formPermisos.puedeCalcularLiquidacion,
+      aprobacionDirecta: this.formPermisos.aprobacionDirecta,
     };
     this.usuariosServicio.actualizarPermisos(this.usuarioEditando.id, payload).pipe(
       catchError(err => {
@@ -1061,6 +1068,7 @@ export class UsuariosSistemaComponent implements OnInit, OnDestroy {
       puedeEditarHallazgosReconciliacion: false,
       puedeEliminarEvidenciasHallazgo: false,
       puedeCalcularLiquidacion: false,
+      aprobacionDirecta: false,
     };
   }
 }
