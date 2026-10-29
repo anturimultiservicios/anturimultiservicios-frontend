@@ -115,11 +115,12 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
           <div class="fila-persona fila-cuenta">
             <label class="permiso-check">
               <input type="checkbox" [checked]="seleccionCuentas.has(c.empresaId)" (change)="toggleCuenta(c)"
-                [disabled]="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId) || !c.cuota">
+                [disabled]="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)">
               <strong>{{ c.razonSocial }}</strong>
               <span class="dato-secundario">{{ etiqueta }}<ng-container *ngIf="c.descripcion"> · {{ c.descripcion }}</ng-container> · {{ c.usuarioPortal || ('NIT/CC ' + c.nit) }}</span>
               <span *ngIf="c.mesesAdeudados > 1" class="badge-mora">Debe {{ c.mesesAdeudados }} meses</span>
-              <span *ngIf="!c.cuota" class="dato-secundario">(sin valor registrado)</span>
+              <!-- 2026-10-29 (Grethel Niño): antes la casilla quedaba bloqueada y no se podía registrar -->
+              <span *ngIf="!c.cuota" class="dato-secundario">(sin valor registrado: márquela y escriba el valor que pagó)</span>
             </label>
             <span class="monto-persona">{{ c.montoAdeudado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)" class="badge-pagado">Pagado ✓</span>
@@ -185,9 +186,9 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
                si no coincide con lo calculado, se pide el motivo y le llega
                nota a Anturi y a Cristopher para revisar dónde está el problema. -->
           <div class="items-pago">
-            <div *ngFor="let it of itemsSeleccionados; trackBy: porClave" class="item-pago" [class.item-pago--ajustado]="montoDe(it.clave, it.esperado) !== it.esperado">
+            <div *ngFor="let it of itemsSeleccionados; trackBy: porClave" class="item-pago" [class.item-pago--ajustado]="it.esperado > 0 && montoDe(it.clave, it.esperado) !== it.esperado">
               <span class="item-pago__nombre">{{ it.nombre }}</span>
-              <span *ngIf="montoDe(it.clave, it.esperado) !== it.esperado" class="item-pago__esperado">calculado {{ it.esperado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+              <span *ngIf="it.esperado > 0 && montoDe(it.clave, it.esperado) !== it.esperado" class="item-pago__esperado">calculado {{ it.esperado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
               <input type="number" class="campo-input item-pago__monto" min="0" step="100"
                 [ngModel]="montoDe(it.clave, it.esperado)" (ngModelChange)="cambiarMonto(it.clave, $event)" [name]="'monto-' + it.clave">
               <!-- 2026-10-22 (Anyi): qué mes paga y de qué se compone -->
@@ -699,8 +700,10 @@ export class RegistrarPagoComponent implements OnDestroy {
     this.montos.set(clave, isFinite(n) ? n : 0);
   }
 
+  // Una cuenta sin valor registrado (esperado 0) no es un "ajuste": no hay
+  // nada calculado con qué comparar, solo se escribe lo que pagó.
   get hayAjustes(): boolean {
-    return this.itemsSeleccionados.some((it) => this.montoDe(it.clave, it.esperado) !== it.esperado);
+    return this.itemsSeleccionados.some((it) => it.esperado > 0 && this.montoDe(it.clave, it.esperado) !== it.esperado);
   }
 
   get hayMontoInvalido(): boolean {
@@ -772,7 +775,7 @@ export class RegistrarPagoComponent implements OnDestroy {
       ),
       ...cuentas.map((c) =>
         this.pagosServicio.registrarEmpresa(c.empresaId, this.montoDe('e' + c.empresaId, c.montoAdeudado), this.canalSeleccionado!, Math.max(1, c.mesesAdeudados),
-          c.montoAdeudado, this.motivoAjuste.trim() || undefined, this.fechaPagoEnviar).pipe(
+          c.montoAdeudado || undefined, this.motivoAjuste.trim() || undefined, this.fechaPagoEnviar).pipe(
           catchError((err) => of({ error: true, cuenta: c, mensaje: err?.error?.message })),
         ),
       ),
