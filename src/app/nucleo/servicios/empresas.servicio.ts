@@ -27,6 +27,10 @@ export interface Empresa {
   representanteLegal?: string | null;
   representanteDocumento?: string | null;
   conocidoComo?: string | null;
+  // 2026-10-29: EPS, fondo de pensión y caja de la cuenta (independientes y empleadores)
+  eps?: string | null;
+  afp?: string | null;
+  cajaCom?: string | null;
   contactoNombre?: string | null;
   contactoTelefono?: string | null;
   activa: boolean;

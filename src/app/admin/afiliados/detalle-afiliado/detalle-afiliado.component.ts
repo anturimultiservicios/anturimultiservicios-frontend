@@ -8,6 +8,7 @@ import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados
 import { EmpresasServicio } from '../../../nucleo/servicios/empresas.servicio';
 import { DocumentosServicio, Documento, TipoDocumento, TipoDocumentoRequerido } from '../../../nucleo/servicios/documentos.servicio';
 import { SolicitudesServicio, SolicitudCambio, mensajeSolicitud } from '../../../nucleo/servicios/solicitudes.servicio';
+import { EntidadesServicio } from '../../../nucleo/servicios/entidades.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 import { PagosServicio, Pago } from '../../../nucleo/servicios/pagos.servicio';
 import { TIPOS_DOCUMENTO, siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
@@ -501,6 +502,12 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             </select>
             <small *ngIf="edicionForm.estado !== 'ACTIVO'" style="color: var(--texto-terciario);">Retirado o suspendido: ya no le llegan correos de cobro.</small>
           </div>
+          <!-- 2026-10-29 (Anyi: un independiente salía con Salud Total y está en Sura): antes no se podía cambiar -->
+          <div class="campo-grupo" *ngFor="let t of tiposEntidad">
+            <label class="campo-etiqueta" [for]="'edit-ent-' + t.tipo">{{ t.nombre }}</label>
+            <input [id]="'edit-ent-' + t.tipo" type="text" class="campo-input" [(ngModel)]="$any(edicionForm).entidades[t.tipo]" [name]="'edit-ent-' + t.tipo" [attr.list]="'lista-ent-' + t.tipo" autocomplete="off" placeholder="Escriba o elija">
+            <datalist [id]="'lista-ent-' + t.tipo"><option *ngFor="let n of entidadesSugeridas[t.tipo] || []" [value]="n"></option></datalist>
+          </div>
           <!-- 2026-10-16 (Anyi): no había dónde poner la fecha de nacimiento ni la de expedición -->
           <div class="campo-grupo">
             <span class="campo-etiqueta">Fecha de nacimiento</span>
@@ -869,6 +876,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     private auth: AutenticacionServicio,
     private pagosServicio: PagosServicio,
     private empresasServicio: EmpresasServicio,
+    private entidadesServicio: EntidadesServicio,
   ) {}
 
   protected get prefijo(): string {
@@ -1181,6 +1189,12 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     if (estado === 'RETIRADO' && !this.edicionForm.fechaRetiro) this.edicionForm.fechaRetiro = new Date().toISOString().slice(0, 10);
   }
 
+  readonly tiposEntidad = [
+    { tipo: 'EPS', nombre: 'EPS' }, { tipo: 'PENSION', nombre: 'Fondo de pensión' },
+    { tipo: 'ARL', nombre: 'ARL' }, { tipo: 'CAJA_COMPENSACION', nombre: 'Caja de compensación' },
+  ];
+  entidadesSugeridas: Record<string, string[]> = {};
+
   activarEdicion(): void {
     if (!this.afiliado) return;
     const a: any = this.afiliado;
@@ -1190,7 +1204,9 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
       tipoDocumento: a.persona?.tipoDocumento ?? 'CC',
       fechaIngreso: fecha(a.fechaIngreso), fechaRetiro: fecha(a.fechaRetiro), fechaNacimiento: fecha(a.fechaNacimiento), fechaExpedicion: fecha(a.fechaExpedicion),
       telefonosAdicionales: this.lista(a.telefonosAdicionales), correosAdicionales: this.lista(a.correosAdicionales),
+      entidades: Object.fromEntries(this.tiposEntidad.map((t) => [t.tipo, a.seguros?.find((x: any) => x.tipo === t.tipo)?.entidad ?? ''])),
     };
+    this.entidadesServicio.porTipo().subscribe((r) => (this.entidadesSugeridas = r));
     this.verTrabajo = false;
     this.motivoEdicion = '';
     this.modoEdicion = true;
@@ -1287,6 +1303,11 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     if (f.sucursalId) p['sucursalId'] = Number(f.sucursalId);
     p['telefonosAdicionales'] = limpiarContactos(f.telefonosAdicionales);
     p['correosAdicionales'] = limpiarContactos(f.correosAdicionales);
+    // 2026-10-29: EPS, pensión, ARL y caja (solo las escritas; vacío no borra)
+    if (f.entidades) {
+      const ent = Object.fromEntries(Object.entries(f.entidades).map(([k, v]) => [k, String(v ?? '').trim()]).filter(([, v]) => v));
+      if (Object.keys(ent).length) p['entidades'] = ent;
+    }
     return p;
   }
 

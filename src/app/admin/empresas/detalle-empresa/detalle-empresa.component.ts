@@ -9,6 +9,7 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 import { CredencialesTitularComponent } from '../../../compartido/credenciales-titular/credenciales-titular.component';
 import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
 import { SolicitudesServicio, SolicitudCambio, mensajeSolicitud } from '../../../nucleo/servicios/solicitudes.servicio';
+import { EntidadesServicio } from '../../../nucleo/servicios/entidades.servicio';
 import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.servicio';
 
 // 2026-10-07: dejó de ser de solo lectura - editar/activar/desactivar
@@ -136,6 +137,12 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
           <div class="campo-grupo">
             <label class="campo-etiqueta" for="edit-repDoc">Documento del representante</label>
             <input id="edit-repDoc" type="text" class="campo-input" [(ngModel)]="edicionForm.representanteDocumento" name="edit-repDoc" inputmode="numeric">
+          </div>
+          <!-- 2026-10-29 (Anyi): EPS, pensión y caja de la cuenta - antes no se podían cambiar -->
+          <div class="campo-grupo" *ngFor="let t of tiposEntidad">
+            <label class="campo-etiqueta" [for]="'edit-ent-' + t.campo">{{ t.nombre }}</label>
+            <input [id]="'edit-ent-' + t.campo" type="text" class="campo-input" [(ngModel)]="$any(edicionForm)[t.campo]" [name]="'edit-ent-' + t.campo" [attr.list]="'lista-ent-' + t.campo" autocomplete="off" placeholder="Escriba o elija">
+            <datalist [id]="'lista-ent-' + t.campo"><option *ngFor="let n of entidadesSugeridas[t.tipo] || []" [value]="n"></option></datalist>
           </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta" for="edit-conocido">Conocido como / negocio</label>
@@ -758,6 +765,7 @@ export class DetalleEmpresaComponent implements OnInit {
     private solicitudesServicio: SolicitudesServicio,
     private auth: AutenticacionServicio,
     private trabajadoresServicio: TrabajadoresServicio,
+    private entidadesServicio: EntidadesServicio,
   ) {}
 
   get esSecretaria(): boolean {
@@ -818,9 +826,17 @@ export class DetalleEmpresaComponent implements OnInit {
   fechaRetiroEdicion = '';
   lista(v: unknown): string[] { return Array.isArray(v) ? v.filter((x) => !!x) : []; }
 
+  readonly tiposEntidad = [
+    { campo: 'eps', tipo: 'EPS', nombre: 'EPS' },
+    { campo: 'afp', tipo: 'PENSION', nombre: 'Fondo de pensión' },
+    { campo: 'cajaCom', tipo: 'CAJA_COMPENSACION', nombre: 'Caja de compensación' },
+  ];
+  entidadesSugeridas: Record<string, string[]> = {};
+
   activarEdicion(): void {
     if (!this.empresa) return;
     this.edicionForm = { ...this.empresa };
+    this.entidadesServicio.porTipo().subscribe((r) => (this.entidadesSugeridas = r));
     this.telefonosAdicionales = this.lista(this.empresa.telefonosAdicionales);
     this.correosAdicionales = this.lista(this.empresa.correosAdicionales);
     this.fechaIngresoEdicion = this.empresa.fechaIngreso ? String(this.empresa.fechaIngreso).slice(0, 10) : '';
@@ -859,6 +875,9 @@ export class DetalleEmpresaComponent implements OnInit {
       representanteLegal: (this.edicionForm.representanteLegal ?? '').trim() || undefined,
       representanteDocumento: (this.edicionForm.representanteDocumento ?? '').trim() || undefined,
       conocidoComo: (this.edicionForm.conocidoComo ?? '').trim() || undefined,
+      eps: (this.edicionForm.eps ?? '').trim() || undefined,
+      afp: (this.edicionForm.afp ?? '').trim() || undefined,
+      cajaCom: (this.edicionForm.cajaCom ?? '').trim() || undefined,
       contactoNombre: (this.edicionForm.contactoNombre ?? '').trim() || undefined,
       contactoTelefono: (this.edicionForm.contactoTelefono ?? '').trim() || undefined,
       diasPago: this.edicionForm.diasPago == null || (this.edicionForm.diasPago as any) === '' ? undefined : Number(this.edicionForm.diasPago),
