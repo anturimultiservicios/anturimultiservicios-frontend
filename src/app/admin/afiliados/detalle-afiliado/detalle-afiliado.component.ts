@@ -337,6 +337,8 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
           <div class="datos-grid">
             <div class="dato-item">
               <span class="dato-etiqueta">Salario / base de cotización (IBC)</span>
+              <!-- 2026-10-30: contrato (contratistas) -->
+              <span *ngIf="$any(afiliado).valorContrato" class="dato-secundario-contrato">Contrato {{ +$any(afiliado).valorContrato | currency:'COP':'symbol-narrow':'1.0-0' }}/mes{{ $any(afiliado).fechaInicioContrato ? ' · del ' + ($any(afiliado).fechaInicioContrato | date:'dd/MM/yyyy':'UTC') : '' }}{{ $any(afiliado).fechaFinContrato ? ' al ' + ($any(afiliado).fechaFinContrato | date:'dd/MM/yyyy':'UTC') : '' }}</span>
               <span class="dato-valor">{{ $any(afiliado).ibc != null ? ('$' + ($any(afiliado).ibc | number)) : 'Sin registrar' }}</span>
             </div>
             <div class="dato-item">
@@ -540,6 +542,20 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             <label class="campo-etiqueta">Fecha de retiro</label>
             <input type="date" class="campo-input" [(ngModel)]="edicionForm.fechaRetiro" name="edit-fechaRetiro">
           </div>
+          <!-- 2026-10-30 (Anturi): contrato o salario; el IBC (40%) se llena solo -->
+          <div class="campo-grupo" *ngIf="esIndependienteEdicion">
+            <label class="campo-etiqueta" for="edit-contrato">Valor mensual del contrato / salario</label>
+            <input id="edit-contrato" type="number" class="campo-input" min="0" step="1000" [(ngModel)]="$any(edicionForm).valorContrato" name="edit-contrato" (ngModelChange)="alCambiarContratoEdicion($event)">
+            <span class="campo-ayuda" *ngIf="$any(edicionForm).valorContrato">IBC para pago (40%): <strong>{{ (+$any(edicionForm).valorContrato * 0.4) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong> - se pasa solo a la base de cotización.</span>
+          </div>
+          <div class="campo-grupo" *ngIf="esIndependienteEdicion">
+            <label class="campo-etiqueta" for="edit-inicioContrato">Fecha de inicio del contrato</label>
+            <input id="edit-inicioContrato" type="date" class="campo-input" [(ngModel)]="$any(edicionForm).fechaInicioContrato" name="edit-inicioContrato">
+          </div>
+          <div class="campo-grupo" *ngIf="esIndependienteEdicion">
+            <label class="campo-etiqueta" for="edit-finContrato">Fecha de fin del contrato</label>
+            <input id="edit-finContrato" type="date" class="campo-input" [(ngModel)]="$any(edicionForm).fechaFinContrato" name="edit-finContrato">
+          </div>
           <!-- 2026-10-30 (Anyi): salario de independientes/dependientes -->
           <div class="campo-grupo">
             <label class="campo-etiqueta" for="edit-ibc">Salario / base de cotización (IBC)</label>
@@ -690,6 +706,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
     </div>
   `,
   styles: [`
+    .dato-secundario-contrato { display: block; font-size: var(--tamano-sm); color: var(--texto-terciario); }
     .fila-trabaja { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .enlace-cruzado { font-size: var(--tamano-sm); font-weight: 600; color: var(--color-secundario, #E8570C); display: block; }
     .detalle-contenedor { display: flex; flex-direction: column; gap: var(--espacio-5); }
@@ -1219,7 +1236,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     this.edicionForm = {
       ...a,
       tipoDocumento: a.persona?.tipoDocumento ?? 'CC',
-      fechaIngreso: fecha(a.fechaIngreso), fechaRetiro: fecha(a.fechaRetiro), fechaNacimiento: fecha(a.fechaNacimiento), fechaExpedicion: fecha(a.fechaExpedicion),
+      fechaIngreso: fecha(a.fechaIngreso), fechaRetiro: fecha(a.fechaRetiro), fechaNacimiento: fecha(a.fechaNacimiento), fechaExpedicion: fecha(a.fechaExpedicion), fechaInicioContrato: fecha((a as any).fechaInicioContrato), fechaFinContrato: fecha((a as any).fechaFinContrato),
       telefonosAdicionales: this.lista(a.telefonosAdicionales), correosAdicionales: this.lista(a.correosAdicionales),
       entidades: Object.fromEntries(this.tiposEntidad.map((t) => [t.tipo, a.seguros?.find((x: any) => x.tipo === t.tipo)?.entidad ?? ''])),
     };
@@ -1302,10 +1319,21 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     }
   }
 
+  // 2026-10-30 (Anturi): contrato o salario de independientes; el IBC es el 40%
+  get esIndependienteEdicion(): boolean {
+    const t = (this.edicionForm as any)?.tipoAfiliacion ?? this.afiliado?.tipoAfiliacion;
+    return !!t && String(t).startsWith('INDEPENDIENTE') && t !== 'INDEPENDIENTE_PARCIAL';
+  }
+
+  alCambiarContratoEdicion(v: unknown): void {
+    const n = Number(v);
+    if (n > 0) (this.edicionForm as any).ibc = Math.round(n * 0.4);
+  }
+
   private payloadEdicion(f: any): Record<string, any> {
     const texto = ['nombres', 'apellidos', 'cedula', 'telefono', 'cargo', 'claseAportante', 'asopagos', 'actividadEconomica', 'direccion', 'municipio', 'direccionTrabajo', 'municipioTrabajo', 'observaciones', 'conocidoComo', 'contactoNombre', 'contactoTelefono'];
-    const numeros = ['valorAfiliacion', 'ibc', 'porcentajeArl', 'valor', 'comision', 'totalPago', 'cuatroXMil', 'cesantias', 'porcentajeSalud', 'porcentajePension', 'porcentajeSaludEmpleador', 'porcentajePensionEmpleador', 'porcentajeCaja', 'porcentajeSena', 'porcentajeIcbf'];
-    const fechas = ['fechaNacimiento', 'fechaExpedicion', 'fechaIngreso', 'fechaRetiro'];
+    const numeros = ['valorAfiliacion', 'ibc', 'valorContrato', 'porcentajeArl', 'valor', 'comision', 'totalPago', 'cuatroXMil', 'cesantias', 'porcentajeSalud', 'porcentajePension', 'porcentajeSaludEmpleador', 'porcentajePensionEmpleador', 'porcentajeCaja', 'porcentajeSena', 'porcentajeIcbf'];
+    const fechas = ['fechaNacimiento', 'fechaExpedicion', 'fechaIngreso', 'fechaRetiro', 'fechaInicioContrato', 'fechaFinContrato'];
     const otros = ['tipoAfiliacion', 'claseRiesgoArl', 'genero', 'estado'];
     const booleanos = ['notificarCorreo', 'notificarSms', 'notificarLlamada'];
     const p: Record<string, any> = {};

@@ -749,6 +749,31 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             <span class="seccion-numero">4</span>
             Valores económicos
           </h3>
+          <!-- 2026-10-30 (Anturi): contratistas - valor del contrato o salario y
+               al lado el IBC del 40%, que llena solo la base de cotización. Para
+               los demás independientes queda como opción (a veces toca). -->
+          <label *ngIf="esIndependienteNoContratista" class="permiso-check contrato-opcion">
+            <input type="checkbox" [(ngModel)]="conContrato" name="conContrato"> Tiene contrato o salario (calcular el IBC del 40%)
+          </label>
+          <div class="campos-grid contrato-grid" *ngIf="tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA' || (esIndependienteNoContratista && conContrato)">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="valorContrato">{{ tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA' ? 'Valor mensual del contrato' : 'Salario / valor mensual del contrato' }}</label>
+              <input id="valorContrato" type="number" class="campo-input" min="0" step="1000" [(ngModel)]="valorContrato" name="valorContrato" (ngModelChange)="alCambiarContrato()">
+            </div>
+            <div class="campo-grupo">
+              <span class="campo-etiqueta">IBC para pago (40%)</span>
+              <span class="ibc-40">{{ ibc40 | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+              <span class="campo-ayuda">Se pasa solo a la base de cotización. El IBC no puede ser menor a 1 salario mínimo.</span>
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="inicioContrato">Fecha de inicio del contrato</label>
+              <input id="inicioContrato" type="date" class="campo-input" [(ngModel)]="fechaInicioContrato" name="fechaInicioContrato">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="finContrato">Fecha de fin del contrato</label>
+              <input id="finContrato" type="date" class="campo-input" [(ngModel)]="fechaFinContrato" name="fechaFinContrato" [min]="fechaInicioContrato">
+            </div>
+          </div>
           <div class="campos-grid">
             <div class="campo-grupo">
               <label class="campo-etiqueta">Salario / base de cotización (IBC)</label>
@@ -896,6 +921,9 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
     </div>
   `,
   styles: [`
+    .contrato-opcion { margin-bottom: 10px; }
+    .contrato-grid { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px dashed var(--borde-color, #e5e7eb); }
+    .ibc-40 { font-size: 20px; font-weight: 700; color: var(--color-secundario, #E8570C); padding: 4px 0; }
     .pagina-formulario { display: flex; flex-direction: column; gap: var(--espacio-5); max-width: 900px; }
     .form-encabezado { display: flex; align-items: center; gap: var(--espacio-4); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
@@ -1471,6 +1499,30 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
     this.form.totalPago = this.totalPago;
   }
 
+  // ── 2026-10-30 (Anturi): contrato / salario y su IBC del 40% ──
+  conContrato = false;
+  valorContrato: number | null = null;
+  fechaInicioContrato = '';
+  fechaFinContrato = '';
+
+  get esIndependienteNoContratista(): boolean {
+    return !!this.tipoSeleccionado && this.tipoSeleccionado.startsWith('INDEPENDIENTE') && this.tipoSeleccionado !== 'INDEPENDIENTE_CONTRATISTA' && !this.esParcial;
+  }
+
+  get usaContrato(): boolean {
+    return this.tipoSeleccionado === 'INDEPENDIENTE_CONTRATISTA' || (this.esIndependienteNoContratista && this.conContrato);
+  }
+
+  get ibc40(): number {
+    return Math.round((Number(this.valorContrato) || 0) * 0.4);
+  }
+
+  alCambiarContrato(): void {
+    if (!this.ibc40) return;
+    this.form.valor = this.ibc40;
+    this.alCambiarValorOComision();
+  }
+
   alCambiarValorOComision(): void {
     this.simular$.next();
   }
@@ -1577,6 +1629,11 @@ export class FormularioAfiliadoComponent implements OnInit, OnDestroy {
       // el valor mensual de la seguridad social (mismo sentido que en el
       // Excel: ej. 499.100 = salud + pensión sobre el mínimo).
       ibc: this.esParcial ? undefined : (Number(this.form.valor) || undefined),
+      ...(this.usaContrato ? {
+        valorContrato: Number(this.valorContrato) || undefined,
+        fechaInicioContrato: this.fechaInicioContrato || undefined,
+        fechaFinContrato: this.fechaFinContrato || undefined,
+      } : {}),
       valor: this.resultadoMensual ? this.resultadoMensual.valorSeguridadSocial : undefined,
       comision: this.form.comision || undefined,
       totalPago: this.totalPago || undefined,
