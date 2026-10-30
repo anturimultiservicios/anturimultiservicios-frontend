@@ -23,7 +23,9 @@ import { BuscarClienteComponent } from '../buscar-cliente/buscar-cliente.compone
     <ul *ngIf="vinculos.length" class="vc-lista">
       <li *ngFor="let v of vinculos">
         <span>{{ v.etiqueta }}{{ v.relacion === 'RECOMENDADO_POR' || v.relacion === 'RECOMENDO' ? ' ' : ' de ' }}<a [routerLink]="[prefijo, v.otro.tipo === 'EMPRESA' ? 'empresas' : 'afiliados', v.otro.id]">{{ v.otro.nombre }}</a>
-          <small> · {{ v.otro.tipo === 'EMPRESA' ? 'cuenta empleador' : 'afiliado' }}{{ v.nota ? ' · ' + v.nota : '' }}</small></span>
+          <small> · {{ v.otro.tipo === 'EMPRESA' ? 'cuenta empleador' : 'afiliado' }}{{ v.nota ? ' · ' + v.nota : '' }}</small>
+          <!-- 2026-10-30 (Anyi) -->
+          <small *ngIf="v.telefono || v.correo || v.direccion" class="vc-contacto">{{ [v.telefono, v.correo, v.direccion].filter(esTexto).join(' · ') }}</small></span>
         <button type="button" class="boton boton-texto boton-sm" (click)="quitar(v)" [attr.aria-label]="'Quitar vínculo con ' + v.otro.nombre">Quitar</button>
       </li>
     </ul>
@@ -34,6 +36,12 @@ import { BuscarClienteComponent } from '../buscar-cliente/buscar-cliente.compone
       </select>
       <span class="campo-etiqueta">…de quién</span>
       <anturi-buscar-cliente [excluir]="{ tipo: tipo, id: id }" (elegido)="destino = $event"></anturi-buscar-cliente>
+      <label class="campo-etiqueta" for="vcTel">Teléfono (opcional)</label>
+      <input id="vcTel" class="campo-input" [(ngModel)]="telefono" inputmode="tel">
+      <label class="campo-etiqueta" for="vcCorreo">Correo electrónico (opcional)</label>
+      <input id="vcCorreo" type="email" class="campo-input" [(ngModel)]="correo">
+      <label class="campo-etiqueta" for="vcDir">Dirección (opcional)</label>
+      <input id="vcDir" class="campo-input" [(ngModel)]="direccion">
       <label class="campo-etiqueta" for="vcNota">Nota (opcional)</label>
       <input id="vcNota" class="campo-input" [(ngModel)]="nota" placeholder="Ej. el ingeniero">
       <div class="vc-acciones">
@@ -51,6 +59,7 @@ import { BuscarClienteComponent } from '../buscar-cliente/buscar-cliente.compone
     .vc-lista li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--borde-color, #e5e7eb); border-radius: 8px; }
     .vc-lista a { font-weight: 700; color: var(--color-primario, #1B3270); }
     .vc-lista small { color: var(--texto-terciario); }
+    .vc-contacto { display: block; }
     .vc-form { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--borde-color, #e5e7eb); border-radius: 10px; max-width: 560px; }
     .vc-acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
   `],
@@ -65,6 +74,9 @@ export class VinculosClienteComponent implements OnChanges {
   relacion = 'CONYUGE';
   destino: ClienteRef | null = null;
   nota = '';
+  telefono = '';
+  correo = '';
+  direccion = '';
   mensaje = '';
   error = '';
 
@@ -85,9 +97,10 @@ export class VinculosClienteComponent implements OnChanges {
   guardar(): void {
     if (!this.destino) return;
     this.guardando = true;
-    this.servicio.crearVinculo({ origenTipo: this.tipo, origenId: this.id, destinoTipo: this.destino.tipo, destinoId: this.destino.id, relacion: this.relacion, nota: this.nota.trim() || undefined }).subscribe({
+    this.servicio.crearVinculo({ origenTipo: this.tipo, origenId: this.id, destinoTipo: this.destino.tipo, destinoId: this.destino.id, relacion: this.relacion, nota: this.nota.trim() || undefined,
+      telefono: this.telefono.trim() || undefined, correo: this.correo.trim() || undefined, direccion: this.direccion.trim() || undefined }).subscribe({
       next: () => {
-        this.guardando = false; this.creando = false; this.nota = ''; this.destino = null; this.error = '';
+        this.guardando = false; this.creando = false; this.nota = ''; this.telefono = ''; this.correo = ''; this.direccion = ''; this.destino = null; this.error = '';
         this.mensaje = 'Vínculo guardado. También se ve en la ficha del otro cliente.';
         setTimeout(() => (this.mensaje = ''), 5000);
         this.cargar();
@@ -95,6 +108,8 @@ export class VinculosClienteComponent implements OnChanges {
       error: (e) => { this.guardando = false; this.error = e?.error?.message || 'No se pudo guardar.'; },
     });
   }
+
+  esTexto(v: unknown): boolean { return !!v; }
 
   quitar(v: Vinculo): void {
     if (!confirm(`¿Quitar el vínculo "${v.frase}"?`)) return;

@@ -80,6 +80,12 @@ export class HallazgosReconciliacionServicio {
     return `${this.URL_EVIDENCIAS}/${id}/ver`;
   }
 
+  // 2026-10-30: el archivo se pide CON la sesión (abrir la dirección sola
+  // en otra ventana no la lleva y el servidor lo rechazaba)
+  archivoEvidencia(id: number): Observable<Blob> {
+    return this.http.get(`${this.URL_EVIDENCIAS}/${id}/ver`, { responseType: 'blob' });
+  }
+
   // 2026-10-06 (permisos Secretaria): ADMIN/SUPER_ADMIN únicamente, directo
   // - Secretaria usa SolicitudesServicio.crear() (tabla='evidencias_hallazgo')
   // en vez de llamar estos 2 métodos.

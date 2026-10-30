@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, finalize } from 'rxjs';
 import { EmpresasServicio, Empresa, PersonalEmpresa } from '../../../nucleo/servicios/empresas.servicio';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
-import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
+import { siglaDocumento, TIPOS_DOCUMENTO } from '../../../nucleo/utilidades/tipos-documento';
 import { CredencialesTitularComponent } from '../../../compartido/credenciales-titular/credenciales-titular.component';
 import { SucursalesServicio, Sucursal } from '../../../nucleo/servicios/sucursales.servicio';
 import { SolicitudesServicio, SolicitudCambio, mensajeSolicitud } from '../../../nucleo/servicios/solicitudes.servicio';
@@ -19,6 +19,8 @@ import { AutenticacionServicio } from '../../../nucleo/servicios/autenticacion.s
 // granular - sucursales no pasa por SolicitudCambio, a diferencia de
 // Empresa, ver empresas.controlador.ts/sucursales.controlador.ts reales).
 import { TrabajadoresServicio, PersonaEncontrada } from '../../../nucleo/servicios/trabajadores.servicio';
+import { ConfirmarEliminarComponent } from '../../../compartido/confirmar-eliminar/confirmar-eliminar.component';
+import { GrupoClienteComponent } from '../../../compartido/grupo-cliente/grupo-cliente.component';
 import { VinculosClienteComponent } from '../../../compartido/vinculos-cliente/vinculos-cliente.component';
 import { DocumentosTitularComponent } from '../../../compartido/documentos-titular/documentos-titular.component';
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
@@ -26,7 +28,7 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
 @Component({
   selector: 'anturi-detalle-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, VinculosClienteComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, VinculosClienteComponent, GrupoClienteComponent, ConfirmarEliminarComponent],
   template: `
     <div class="detalle-contenedor">
       <div class="detalle-encabezado">
@@ -49,6 +51,8 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
           <button class="boton" [class.boton-peligro-suave]="empresa.activa" [class.boton-exito-suave]="!empresa.activa" (click)="abrirCambiarEstado()">
             {{ empresa.activa ? (esSecretaria ? 'Pedir desactivar' : 'Desactivar') : (esSecretaria ? 'Pedir activar' : 'Activar') }}
           </button>
+          <!-- 2026-10-30: eliminar de verdad (duplicadas) - solo Anturi y el Super Admin -->
+          <button *ngIf="!esSecretaria" class="boton boton-peligro" (click)="errorEliminar = ''; confirmandoEliminar = true">Eliminar</button>
         </div>
       </div>
 
@@ -239,6 +243,9 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
           </div>
         </div>
 
+        <!-- 2026-10-30: grupo de quien paga por varios (solo aparece si hace parte de uno) -->
+        <anturi-grupo-cliente tipo="EMPRESA" [id]="empresa.id" [tarjeta]="true"></anturi-grupo-cliente>
+
         <!-- 2026-10-08: usuarios y claves de portales de la empresa -->
         <div class="tarjeta seccion-datos">
           <h3 class="seccion-titulo">Usuarios y claves de portales</h3>
@@ -247,7 +254,7 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
 
         <!-- 2026-10-15: documentos de la empresa, por carpetas -->
         <div class="tarjeta seccion-datos">
-          <anturi-documentos-titular titularTipo="EMPRESA" [titularId]="empresa.id"></anturi-documentos-titular>
+          <anturi-documentos-titular titularTipo="EMPRESA" [titularId]="empresa.id" [titulo]="empresa.razonSocial + ' (la cuenta, no los trabajadores)'"></anturi-documentos-titular>
         </div>
 
         <!-- 2026-10-22: familia o relación con otros clientes -->
@@ -277,13 +284,21 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
           <div class="tabla-contenedor" *ngIf="personal.length > 0">
             <table class="tabla">
               <thead>
-                <tr><th>Persona</th><th>Documento</th><th>Cargo</th><th *ngIf="sucursales.length > 0">Sucursal</th><th>Desde</th><th>Estado</th><th></th></tr>
+                <tr><th>Persona</th><th>Documento</th><th>Cargo</th><th>Salario</th><th *ngIf="sucursales.length > 0">Sucursal</th><th>Desde</th><th>Estado</th><th></th></tr>
               </thead>
               <tbody>
                 <tr *ngFor="let p of personalFiltrado" [class.fila-retirada]="p.estadoRelacion !== 'ACTIVA'">
                   <td>{{ p.nombre }}</td>
                   <td>{{ sigla(p.tipoDocumento) }} {{ p.documento }}</td>
-                  <td>{{ p.cargo || '—' }}</td>
+                  <!-- 2026-10-30 (Anyi): editar cargo y salario aquí mismo -->
+                  <ng-container *ngIf="editandoRel?.relacionId !== p.relacionId; else celdasEdicion">
+                    <td>{{ p.cargo || '—' }}</td>
+                    <td class="celda-salario">{{ tieneValor(p.salario) ? (+p.salario! | currency:'COP':'symbol-narrow':'1.0-0') : '—' }}</td>
+                  </ng-container>
+                  <ng-template #celdasEdicion>
+                    <td><input class="campo-input campo-input--sm" [(ngModel)]="editandoRel!.cargo" [attr.aria-label]="'Cargo de ' + p.nombre" placeholder="Cargo"></td>
+                    <td><input class="campo-input campo-input--sm" type="number" min="0" step="1000" [(ngModel)]="editandoRel!.salario" [attr.aria-label]="'Salario de ' + p.nombre" placeholder="Salario"></td>
+                  </ng-template>
                   <td *ngIf="sucursales.length > 0">
                     <select *ngIf="p.estadoRelacion === 'ACTIVA'; else sedeFija" class="campo-input campo-input--sm"
                             [ngModel]="p.sucursalId" (ngModelChange)="cambiarSucursal(p, $event)" [disabled]="asignandoSucursal === p.relacionId"
@@ -300,6 +315,11 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
                     </span>
                   </td>
                   <td class="acciones-personal">
+                    <ng-container *ngIf="editandoRel?.relacionId === p.relacionId">
+                      <button type="button" class="boton boton-primario boton-sm" [disabled]="guardandoRel" (click)="guardarRel()">{{ guardandoRel ? 'Guardando…' : 'Guardar' }}</button>
+                      <button type="button" class="boton boton-texto boton-sm" (click)="editandoRel = null">Cancelar</button>
+                    </ng-container>
+                    <button *ngIf="editandoRel?.relacionId !== p.relacionId && p.estadoRelacion === 'ACTIVA'" type="button" class="boton boton-texto boton-sm" (click)="editarRel(p)">Editar</button>
                     <a *ngIf="p.afiliado" [routerLink]="[prefijo, 'afiliados', p.afiliado.id]" class="boton boton-texto boton-sm">Ver ficha</a>
                     <a *ngIf="!p.afiliado && p.cuentaEmpresaId" [routerLink]="[prefijo, 'empresas', p.cuentaEmpresaId]" class="boton boton-texto boton-sm" title="Esta persona tiene su propia cuenta">Ver su cuenta</a>
                     <a [routerLink]="[prefijo, 'trabajadores', p.personaId]" class="boton boton-texto boton-sm" title="Cargo, salario, documentos y familia del trabajador">Ficha del trabajador</a>
@@ -337,6 +357,10 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
       </ng-container>
 
     </div>
+
+    <anturi-confirmar-eliminar *ngIf="confirmandoEliminar && empresa" [nombre]="empresa.razonSocial"
+      detalle="Se borra la cuenta, su personal y sus sedes. Si tiene pagos o documentos no se deja eliminar: en ese caso desactívela. Queda anotado en el historial."
+      [trabajando]="eliminandoEmpresa" [error]="errorEliminar" (cancelar)="confirmandoEliminar = false" (confirmar)="eliminarEmpresa($event)"></anturi-confirmar-eliminar>
 
     <!-- MODAL: cambiar estado (activar/desactivar) -->
     <div *ngIf="modalEstado" class="modal-overlay" (click)="modalEstado = false">
@@ -397,9 +421,7 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
             <div class="campo-grupo">
               <label class="campo-etiqueta" for="tnTipo">Tipo de documento</label>
               <select id="tnTipo" class="campo-input" [(ngModel)]="nuevoTrabajador.tipoDocumento" name="tnTipo">
-                <option value="CC">CC - Cédula</option><option value="CE">CE - Cédula de extranjería</option>
-                <option value="PPT">PPT - Permiso de protección temporal</option><option value="PE">PE - Permiso especial</option>
-                <option value="TI">TI - Tarjeta de identidad</option><option value="PP">Pasaporte</option>
+                <option *ngFor="let t of tiposDocumento" [value]="t.valor">{{ t.nombre }}</option>
               </select>
             </div>
             <div class="campo-grupo">
@@ -417,9 +439,36 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
               <input id="tnApellidos" class="campo-input" [(ngModel)]="nuevoTrabajador.apellidos" name="tnApellidos">
             </div>
           </div>
-          <div class="campo-grupo">
-            <label class="campo-etiqueta" for="tnTel">Celular</label>
-            <input id="tnTel" class="campo-input" [(ngModel)]="nuevoTrabajador.telefono" name="tnTel" inputmode="tel">
+          <!-- 2026-10-30 (Anyi): todo desde el registro, sin tener que volver a editar -->
+          <div class="fila-doc-personal">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnTel">Celular</label>
+              <input id="tnTel" class="campo-input" [(ngModel)]="nuevoTrabajador.telefono" name="tnTel" inputmode="tel">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnCorreo">Correo electrónico</label>
+              <input id="tnCorreo" type="email" class="campo-input" [(ngModel)]="nuevoTrabajador.correo" name="tnCorreo">
+            </div>
+          </div>
+          <div class="fila-doc-personal">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnDir">Dirección</label>
+              <input id="tnDir" class="campo-input" [(ngModel)]="nuevoTrabajador.direccion" name="tnDir">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnMun">Municipio</label>
+              <input id="tnMun" class="campo-input" [(ngModel)]="nuevoTrabajador.municipio" name="tnMun">
+            </div>
+          </div>
+          <div class="fila-doc-personal">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnNac">Fecha de nacimiento</label>
+              <input id="tnNac" type="date" class="campo-input" [(ngModel)]="nuevoTrabajador.fechaNacimiento" name="tnNac" [max]="hoy">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tnExp">Fecha de expedición del documento</label>
+              <input id="tnExp" type="date" class="campo-input" [(ngModel)]="nuevoTrabajador.fechaExpedicion" name="tnExp" [max]="hoy">
+            </div>
           </div>
           <button type="button" class="boton boton-texto boton-sm" style="align-self: flex-start;" (click)="modoNuevoTrabajador = false">← Volver a buscar</button>
         </ng-container>
@@ -433,6 +482,16 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
         <div class="campo-grupo" *ngIf="puedeGuardarPersonal">
           <label class="campo-etiqueta">Cargo (opcional)</label>
           <input type="text" class="campo-input" [(ngModel)]="cargoPersonal" name="cargoPersonal" placeholder="Ej. Auxiliar de bodega">
+        </div>
+        <div class="fila-doc-personal" *ngIf="puedeGuardarPersonal">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="salPersonal">Salario</label>
+            <input id="salPersonal" type="number" class="campo-input" min="0" step="1000" [(ngModel)]="salarioPersonal" name="salarioPersonal" placeholder="Ej. 1423500">
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="auxPersonal">Auxilio de transporte</label>
+            <input id="auxPersonal" type="number" class="campo-input" min="0" step="100" [(ngModel)]="auxilioPersonal" name="auxilioPersonal">
+          </div>
         </div>
         <div class="campo-grupo" *ngIf="puedeGuardarPersonal">
           <label class="campo-etiqueta">Fecha de ingreso a la empresa</label>
@@ -492,6 +551,8 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
     </div>
   `,
   styles: [`
+    .celda-salario { white-space: nowrap; font-weight: 600; }
+    td .campo-input--sm { min-width: 110px; }
     .enlace-cruzado { font-size: var(--tamano-sm); font-weight: 600; color: var(--color-secundario, #E8570C); }
     .ayuda-personal { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 4px 0 0; display: block; }
     .fila-doc-personal { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -595,7 +656,42 @@ export class DetalleEmpresaComponent implements OnInit {
   seleccionPersonal: PersonaEncontrada | null = null;
   // 2026-10-22: crear el trabajador aquí mismo (sin ficha de afiliado)
   modoNuevoTrabajador = false;
-  nuevoTrabajador = { tipoDocumento: 'CC', numeroDocumento: '', nombres: '', apellidos: '', telefono: '' };
+  nuevoTrabajador = this.trabajadorVacio();
+  salarioPersonal: number | null = null;
+  auxilioPersonal: number | null = null;
+  readonly hoy = new Date().toISOString().slice(0, 10);
+
+  private trabajadorVacio(numeroDocumento = '', nombres = '') {
+    return { tipoDocumento: 'CC', numeroDocumento, nombres, apellidos: '', telefono: '', correo: '', direccion: '', municipio: '', fechaNacimiento: '', fechaExpedicion: '' };
+  }
+
+  // ── 2026-10-30 (Anyi): editar cargo y salario en la lista del personal ──
+  editandoRel: { relacionId: number; cargo: string; salario: number | null } | null = null;
+  guardandoRel = false;
+
+  tieneValor(v: unknown): boolean {
+    return v !== null && v !== undefined && v !== '';
+  }
+
+  editarRel(p: PersonalEmpresa): void {
+    this.editandoRel = { relacionId: p.relacionId, cargo: p.cargo ?? '', salario: this.tieneValor(p.salario) ? Number(p.salario) : null };
+  }
+
+  guardarRel(): void {
+    const e = this.editandoRel;
+    if (!e) return;
+    this.guardandoRel = true;
+    const salario = this.tieneValor(e.salario) ? Number(e.salario) : null;
+    this.trabajadoresServicio.actualizarRelacion(e.relacionId, { cargo: e.cargo.trim(), salario }).pipe(finalize(() => (this.guardandoRel = false))).subscribe({
+      next: () => {
+        this.editandoRel = null;
+        this.mensajeExito = 'Cargo y salario guardados.';
+        setTimeout(() => (this.mensajeExito = ''), 4000);
+        this.cargarPersonal();
+      },
+      error: (err) => (this.mensajeError = err?.error?.message || 'No se pudo guardar el salario.'),
+    });
+  }
   // casos como Tatiana: la misma persona es independiente y empleadora
   fichaIndependiente: { id: number; estado: string } | null = null;
 
@@ -621,7 +717,7 @@ export class DetalleEmpresaComponent implements OnInit {
   iniciarTrabajadorNuevo(): void {
     const t = this.busquedaPersonal.trim();
     const digitos = t.replace(/\D/g, '');
-    this.nuevoTrabajador = { tipoDocumento: 'CC', numeroDocumento: digitos.length >= 4 ? digitos : '', nombres: digitos.length >= 4 ? '' : t, apellidos: '', telefono: '' };
+    this.nuevoTrabajador = this.trabajadorVacio(digitos.length >= 4 ? digitos : '', digitos.length >= 4 ? '' : t);
     this.seleccionPersonal = null;
     this.modoNuevoTrabajador = true;
   }
@@ -631,6 +727,7 @@ export class DetalleEmpresaComponent implements OnInit {
   errorPersonal = '';
   private temporizadorBusqueda: ReturnType<typeof setTimeout> | null = null;
   readonly sigla = siglaDocumento;
+  readonly tiposDocumento = TIPOS_DOCUMENTO;
 
   sucursalPersonal: number | null = null;
   filtroSucursal: string = 'todas';
@@ -688,6 +785,8 @@ export class DetalleEmpresaComponent implements OnInit {
     this.seleccionPersonal = null;
     this.modoNuevoTrabajador = false;
     this.cargoPersonal = '';
+    this.salarioPersonal = null;
+    this.auxilioPersonal = null;
     this.sucursalPersonal = null;
     this.errorPersonal = '';
     this.fechaIngresoPersonal = new Date().toISOString().slice(0, 10);
@@ -717,17 +816,23 @@ export class DetalleEmpresaComponent implements OnInit {
     const sel = this.seleccionPersonal;
     const n = this.nuevoTrabajador;
     const quien = this.modoNuevoTrabajador
-      ? { nuevo: { tipoDocumento: n.tipoDocumento, numeroDocumento: n.numeroDocumento.trim(), nombres: n.nombres.trim(), apellidos: n.apellidos.trim() || undefined, telefono: n.telefono.trim() || undefined } }
+      ? { nuevo: {
+          tipoDocumento: n.tipoDocumento, numeroDocumento: n.numeroDocumento.trim(), nombres: n.nombres.trim(), apellidos: n.apellidos.trim() || undefined, telefono: n.telefono.trim() || undefined,
+          correo: n.correo.trim() || undefined, direccion: n.direccion.trim() || undefined, municipio: n.municipio.trim() || undefined,
+          fechaNacimiento: n.fechaNacimiento || undefined, fechaExpedicion: n.fechaExpedicion || undefined,
+        } }
       : sel!.afiliado ? { afiliadoId: sel!.afiliado.id } : { personaId: sel!.personaId };
     this.empresasServicio.agregarPersonal(this.id, {
       ...quien,
       cargo: this.cargoPersonal.trim() || undefined,
       fechaIngreso: this.fechaIngresoPersonal || undefined,
       sucursalId: this.sucursalPersonal,
+      salario: this.tieneValor(this.salarioPersonal) ? Number(this.salarioPersonal) : undefined,
+      auxilioTransporte: this.tieneValor(this.auxilioPersonal) ? Number(this.auxilioPersonal) : undefined,
     }).pipe(finalize(() => (this.guardandoPersonal = false))).subscribe({
       next: () => {
         this.modalPersonal = false;
-        this.mensajeExito = this.modoNuevoTrabajador ? 'Trabajador creado y agregado a la empresa. En "Ficha del trabajador" puede completar sus datos, documentos y familia.' : 'Persona vinculada a la empresa.';
+        this.mensajeExito = this.modoNuevoTrabajador ? 'Trabajador creado y agregado a la empresa. Sus documentos y familia están en "Ficha del trabajador".' : 'Persona vinculada a la empresa.';
         setTimeout(() => (this.mensajeExito = ''), 4000);
         this.cargarPersonal();
       },
@@ -832,6 +937,23 @@ export class DetalleEmpresaComponent implements OnInit {
     { campo: 'cajaCom', tipo: 'CAJA_COMPENSACION', nombre: 'Caja de compensación' },
   ];
   entidadesSugeridas: Record<string, string[]> = {};
+
+  // ── 2026-10-30: eliminar la cuenta (solo Anturi y el Super Admin) ──
+  confirmandoEliminar = false;
+  eliminandoEmpresa = false;
+  errorEliminar = '';
+
+  eliminarEmpresa(motivo: string): void {
+    this.eliminandoEmpresa = true;
+    this.errorEliminar = '';
+    this.empresasServicio.eliminar(this.id, motivo).pipe(finalize(() => (this.eliminandoEmpresa = false))).subscribe({
+      next: () => this.router.navigate([this.prefijo, 'empresas']),
+      error: (err) => {
+        const m = err?.error?.message;
+        this.errorEliminar = (Array.isArray(m) ? m[0] : m) || 'No se pudo eliminar.';
+      },
+    });
+  }
 
   activarEdicion(): void {
     if (!this.empresa) return;

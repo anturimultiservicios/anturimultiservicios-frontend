@@ -442,6 +442,14 @@ export class DetalleHallazgoComponent implements OnInit {
   }
 
   abrirDocumento(ev: EvidenciaHallazgo): void {
-    window.open(this.servicio.obtenerUrlVisualizacionEvidencia(ev.id), '_blank');
+    // 2026-10-30: se abre la ventana primero (si no, el navegador la bloquea) y se llena al llegar el archivo
+    const ventana = window.open('', '_blank');
+    this.servicio.archivoEvidencia(ev.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        if (ventana) ventana.location.href = url; else window.location.href = url;
+      },
+      error: () => { ventana?.close(); alert('No se pudo abrir el archivo.'); },
+    });
   }
 }

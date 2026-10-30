@@ -88,8 +88,9 @@ export class EmpresasServicio {
   // 2026-10-22: afiliado, persona ya conocida o trabajador nuevo (sin ficha de afiliado)
   agregarPersonal(id: number, datos: {
     afiliadoId?: number; personaId?: number;
-    nuevo?: { tipoDocumento: string; numeroDocumento: string; nombres: string; apellidos?: string; telefono?: string };
+    nuevo?: { tipoDocumento: string; numeroDocumento: string; nombres: string; apellidos?: string; telefono?: string; correo?: string; direccion?: string; municipio?: string; fechaNacimiento?: string; fechaExpedicion?: string };
     cargo?: string; fechaIngreso?: string; sucursalId?: number | null;
+    salario?: number | null; otrosIngresos?: number | null; auxilioTransporte?: number | null;
   }): Observable<{ personaId?: number }> {
     return this.http.post<{ personaId?: number }>(`${this.URL}/${id}/personal`, datos);
   }
@@ -97,6 +98,11 @@ export class EmpresasServicio {
   // 2026-10-09: null = sede principal
   asignarSucursal(id: number, relacionId: number, sucursalId: number | null): Observable<unknown> {
     return this.http.patch(`${this.URL}/${id}/personal/${relacionId}/sucursal`, { sucursalId });
+  }
+
+  // 2026-10-30: solo Anturi y el Super Admin; si tiene pagos o documentos, el servidor no deja
+  eliminar(id: number, motivo: string): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.URL}/${id}`, { body: { motivo } });
   }
 
   retirarPersonal(id: number, relacionId: number, datos: { motivo: string; fechaRetiro?: string }): Observable<unknown> {
@@ -109,6 +115,10 @@ export interface PersonalEmpresa {
   personaId: number;
   estadoRelacion: 'ACTIVA' | 'FINALIZADA' | string;
   cargo: string | null;
+  // 2026-10-30 (Anyi): lo que gana
+  salario?: number | string | null;
+  otrosIngresos?: number | string | null;
+  auxilioTransporte?: number | string | null;
   // null = sede principal (sin sucursal)
   sucursalId: number | null;
   sucursalNombre: string | null;

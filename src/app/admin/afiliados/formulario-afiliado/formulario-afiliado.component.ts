@@ -751,7 +751,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
           </h3>
           <div class="campos-grid">
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Base de cotización - IBC</label>
+              <label class="campo-etiqueta">Salario / base de cotización (IBC)</label>
               <input type="number" class="campo-input" [class.campo-input--readonly]="esParcial" [(ngModel)]="form.valor" name="valor"
                 placeholder="0" min="0" [readonly]="esParcial" (ngModelChange)="alCambiarValorOComision()">
               <span class="campo-ayuda" *ngIf="!esParcial">Sobre este valor se calculan los aportes reales (salud/pensión/ARL/caja).</span>

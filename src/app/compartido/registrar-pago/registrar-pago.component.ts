@@ -6,6 +6,8 @@ import { AfiliadosServicio, Afiliado } from '../../nucleo/servicios/afiliados.se
 import { EmpresasServicio, Empresa } from '../../nucleo/servicios/empresas.servicio';
 import { PagosServicio, EstadoPagoAfiliado, CanalPago, ResumenPagos, ResumenMensual, CobroEmpresa, CuentaCobro } from '../../nucleo/servicios/pagos.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
+import { GrupoClienteComponent } from '../grupo-cliente/grupo-cliente.component';
+import { CuentaGrupo, NodoGrupo } from '../../nucleo/servicios/clientes.servicio';
 
 // 2026-10-07 (decisión de Cristopher): "no tenemos esa parte" - marcar que
 // una persona ya pagó, de una sola vez cubre todos sus seguros (EPS/
@@ -15,10 +17,12 @@ import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.serv
 // (empresa, con varios empleados a cargo - cada uno con SU PROPIO monto,
 // no uno a repartir).
 import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/utilidades/desglose-pago';
+interface LineaTramite { fecha: string; descripcion: string; valorTramite: number | null; seguridadSocial: number | null; comision: number | null }
+
 @Component({
   selector: 'anturi-registrar-pago',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, GrupoClienteComponent],
   template: `
     <div class="pagina-lista">
       <div class="pagina-encabezado">
@@ -42,7 +46,7 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
         <div *ngIf="!buscando && terminoBusqueda && resultadosPersonas.length === 0 && resultadosEmpresas.length === 0" class="estado-vacio-inline">
           Sin resultados para "{{ terminoBusqueda }}".
           <button *ngIf="pareceDocumento" type="button" class="boton-no-aporta" (click)="abrirNoAportaLibre()">
-            Registrar "No aporta" para el documento {{ terminoBusqueda.trim() }}
+            Registrar trámites para el documento {{ terminoBusqueda.trim() }}
           </button>
         </div>
 
@@ -62,7 +66,11 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
             </label>
             <span *ngIf="a.estado === 'ACTIVO'" class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="yaPagados.has(a.id)" class="badge-pagado">Pagado ✓</span>
-            <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ afiliadoId: a.id, nombre: a.nombres + ' ' + a.apellidos, documento: a.cedula })" title="No paga seguridad social, solo el trámite">No aporta</button>
+            <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ afiliadoId: a.id, nombre: a.nombres + ' ' + a.apellidos, documento: a.cedula })" title="Trámites o diligencias (o solo el trámite, si no aporta)">Trámites / No aporta</button>
+            <button type="button" class="boton-grupo" (click)="alternarGrupo('a:' + a.id)" [attr.aria-expanded]="grupoAbierto === 'a:' + a.id" title="Quién le paga y a quiénes les paga">Grupo</button>
+            <div *ngIf="grupoAbierto === 'a:' + a.id" class="grupo-en-pago">
+              <anturi-grupo-cliente tipo="AFILIADO" [id]="a.id" [siempre]="true" [modoElegir]="true" (elegir)="cobrarDelGrupo($event)"></anturi-grupo-cliente>
+            </div>
           </div>
         </div>
 
@@ -75,6 +83,11 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
               <span class="dato-secundario">NIT {{ emp.nit }}</span>
               <span class="empresa-flecha">{{ empresaExpandidaId === emp.id ? '▲' : '▼' }}</span>
             </button>
+            <!-- 2026-10-30: el grupo completo (quién paga arriba y los demás debajo) -->
+            <button type="button" class="boton-grupo" (click)="alternarGrupo('e:' + emp.id)" [attr.aria-expanded]="grupoAbierto === 'e:' + emp.id">Ver grupo</button>
+            <div *ngIf="grupoAbierto === 'e:' + emp.id" class="grupo-en-pago">
+              <anturi-grupo-cliente tipo="EMPRESA" [id]="emp.id" [siempre]="true" [modoElegir]="true" (elegir)="cobrarDelGrupo($event)"></anturi-grupo-cliente>
+            </div>
             <div *ngIf="empresaExpandidaId === emp.id" class="empresa-empleados">
               <div *ngIf="cargandoEmpleados" class="estado-carga-inline">Cargando...</div>
               <!-- 2026-10-09: la cuenta de la empresa misma (su valor del Excel), las
@@ -124,54 +137,89 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
             </label>
             <span class="monto-persona">{{ c.montoAdeudado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)" class="badge-pagado">Pagado ✓</span>
-            <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ empresaId: c.empresaId, nombre: c.razonSocial, documento: c.nit })" title="No paga seguridad social, solo el trámite">No aporta</button>
+            <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ empresaId: c.empresaId, nombre: c.razonSocial, documento: c.nit })" title="Trámites o diligencias (o solo el trámite, si no aporta)">Trámites / No aporta</button>
           </div>
         </ng-template>
 
-        <!-- 2026-10-09: "No aporta" - solo el trámite, sin seguridad social. No
-             cuenta como mes al día ni activa a nadie: queda el registro de
-             por qué entró esa plata (lo ve Anturi en Recaudo). -->
-        <div *ngIf="noAporta" class="panel-confirmar panel-no-aporta">
+        <!-- 2026-10-09: "No aporta" - solo el trámite, sin seguridad social.
+             2026-10-30 (Anturi): ahora son TRÁMITES - se van agregando las
+             diligencias (cada una con su fecha, valor del trámite, seguridad
+             social, 4x1000 de esa seguridad social y comisión opcional) y al
+             final el total. No cuenta como mes al día; entra al Recaudo. -->
+        <div *ngIf="noAporta" id="panel-tramites" class="panel-confirmar panel-no-aporta">
           <p class="panel-confirmar__resumen">
-            <strong>No aporta</strong> - {{ noAporta.libre ? 'persona o empresa no registrada' : noAporta.nombre }}
+            <strong>Trámites</strong> - {{ noAporta.libre ? 'persona o empresa no registrada' : noAporta.nombre }}
             <span class="dato-secundario" *ngIf="!noAporta.libre"> · {{ noAporta.documento }}</span>
           </p>
-          <p class="nota-no-aporta">No paga EPS, pensión ni nada de seguridad social: solo el trámite. No se le envían correos ni cambia su estado.</p>
+          <p class="nota-no-aporta">Agregue una fila por cada diligencia. El 4x1000 sale solo y es únicamente sobre la seguridad social. Si no aporta (solo el trámite), deje la seguridad social en blanco.</p>
+          <div class="campos-no-aporta" *ngIf="noAporta.libre">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tramDoc">Documento <span class="requerido">*</span></label>
+              <input id="tramDoc" type="text" class="campo-input" [(ngModel)]="noAporta.documento" maxlength="30">
+            </div>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="tramNombre">Nombre completo <span class="requerido">*</span></label>
+              <input id="tramNombre" type="text" class="campo-input" [(ngModel)]="noAporta.nombre" maxlength="150">
+            </div>
+          </div>
+          <div class="tramites">
+            <div *ngFor="let l of noAporta.lineas; let i = index" class="tramite">
+              <div class="tramite__cab">
+                <strong>Diligencia {{ i + 1 }}</strong>
+                <button *ngIf="noAporta.lineas.length > 1" type="button" class="boton boton-texto boton-sm" (click)="quitarLinea(i)" [attr.aria-label]="'Quitar diligencia ' + (i + 1)">Quitar</button>
+              </div>
+              <div class="tramite__campos">
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" [for]="'tramFecha' + i">Fecha</label>
+                  <input [id]="'tramFecha' + i" type="date" class="campo-input" [(ngModel)]="l.fecha" [max]="hoyIso" [min]="minFechaPago">
+                </div>
+                <div class="campo-grupo tramite__ancho">
+                  <label class="campo-etiqueta" [for]="'tramDesc' + i">Qué se hizo</label>
+                  <input [id]="'tramDesc' + i" type="text" class="campo-input" [(ngModel)]="l.descripcion" maxlength="150" placeholder="Ej. planilla de octubre, certificado...">
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" [for]="'tramValor' + i">Valor del trámite</label>
+                  <input [id]="'tramValor' + i" type="number" class="campo-input" min="0" step="1000" [(ngModel)]="l.valorTramite">
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" [for]="'tramSS' + i">Pago seguridad social</label>
+                  <input [id]="'tramSS' + i" type="number" class="campo-input" min="0" step="100" [(ngModel)]="l.seguridadSocial">
+                </div>
+                <div class="campo-grupo">
+                  <span class="campo-etiqueta">4x1000 (sale solo)</span>
+                  <span class="tramite__auto">{{ cuatroXMil(l) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" [for]="'tramCom' + i">Comisión (opcional)</label>
+                  <input [id]="'tramCom' + i" type="number" class="campo-input" min="0" step="1000" [(ngModel)]="l.comision">
+                </div>
+                <div class="campo-grupo">
+                  <span class="campo-etiqueta">Subtotal</span>
+                  <span class="tramite__auto tramite__subtotal">{{ subtotalLinea(l) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="boton boton-secundario boton-sm" (click)="agregarLinea()">+ Agregar otra diligencia</button>
+          </div>
           <div class="campos-no-aporta">
-            <div class="campo-grupo" *ngIf="noAporta.libre">
-              <label class="campo-etiqueta">Documento <span class="requerido">*</span></label>
-              <input type="text" class="campo-input" [(ngModel)]="noAporta.documento" maxlength="30">
-            </div>
-            <div class="campo-grupo" *ngIf="noAporta.libre">
-              <label class="campo-etiqueta">Nombre completo <span class="requerido">*</span></label>
-              <input type="text" class="campo-input" [(ngModel)]="noAporta.nombre" maxlength="150">
-            </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta">Valor del trámite <span class="requerido">*</span></label>
-              <input type="number" class="campo-input" min="0" step="1000" [(ngModel)]="noAporta.monto">
-            </div>
-            <div class="campo-grupo">
-              <label class="campo-etiqueta">¿Cómo se recibió? <span class="requerido">*</span></label>
-              <select class="campo-input" [(ngModel)]="noAporta.canal">
+              <label class="campo-etiqueta" for="tramCanal">¿Cómo se recibió? <span class="requerido">*</span></label>
+              <select id="tramCanal" class="campo-input" [(ngModel)]="noAporta.canal">
                 <option [ngValue]="null">Seleccione...</option>
                 <option value="EFECTIVO">Efectivo</option>
                 <option value="TRANSFERENCIA">Transferencia</option>
               </select>
             </div>
-            <div class="campo-grupo">
-              <label class="campo-etiqueta" for="fechaPagoNoAporta">Fecha en que pagó o consignó</label>
-              <input id="fechaPagoNoAporta" type="date" class="campo-input" [(ngModel)]="fechaPago" [max]="hoyIso" [min]="minFechaPago">
-            </div>
-            <div class="campo-grupo campo-grupo--ancho">
-              <label class="campo-etiqueta">Motivo (opcional)</label>
-              <input type="text" class="campo-input" [(ngModel)]="noAporta.motivo" maxlength="300" placeholder="Ej: solo paga la planilla">
+            <div class="campo-grupo tramite__total">
+              <span class="campo-etiqueta">Total</span>
+              <strong>{{ totalTramites | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
             </div>
           </div>
           <div *ngIf="errorNoAporta" class="alerta-error">{{ errorNoAporta }}</div>
           <div class="panel-confirmar__acciones">
             <button class="boton boton-secundario" (click)="noAporta = null" [disabled]="registrandoNoAporta">Cancelar</button>
             <button class="boton boton-primario" (click)="confirmarNoAporta()" [disabled]="registrandoNoAporta || !noAportaValido">
-              {{ registrandoNoAporta ? 'Registrando...' : 'Registrar No aporta' }}
+              {{ registrandoNoAporta ? 'Registrando...' : 'Registrar ' + (noAporta.lineas.length === 1 ? 'trámite' : noAporta.lineas.length + ' trámites') }}
             </button>
           </div>
         </div>
@@ -372,8 +420,19 @@ import { desglosar, Desglose, mesesCercanos, nombreMes } from '../../nucleo/util
     .estado-vacio-inline .boton-no-aporta { display: block; margin: var(--espacio-2) 0 0; }
     .fila-persona--inactiva { opacity: 0.85; }
     .badge-estado-pago { font-size: var(--tamano-xs); font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(100,116,139,0.15); color: var(--texto-secundario); }
+    .boton-grupo { border: 1px solid var(--color-primario, #1B3270); color: var(--color-primario, #1B3270); background: transparent; border-radius: 999px; padding: 2px 10px; font-size: var(--tamano-xs); cursor: pointer; margin-left: 6px; }
+    .grupo-en-pago { flex-basis: 100%; margin: 6px 0 4px; padding: 8px; border-radius: 10px; background: var(--fondo-secundario, #f8fafc); }
     .panel-no-aporta { border-color: var(--color-secundario); }
     .nota-no-aporta { margin: 0 0 var(--espacio-3); font-size: var(--tamano-xs); color: var(--texto-terciario); }
+    .tramites { display: flex; flex-direction: column; gap: var(--espacio-3); margin-bottom: var(--espacio-3); }
+    .tramite { border: 1px solid var(--borde-color, #e5e7eb); border-radius: 10px; padding: 10px; }
+    .tramite__cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .tramite__campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--espacio-2) var(--espacio-3); }
+    .tramite__ancho { grid-column: span 2; }
+    .tramite__auto { padding: 8px 0; color: var(--texto-secundario); }
+    .tramite__subtotal { font-weight: 700; color: var(--texto-principal); }
+    .tramite__total strong { font-size: var(--tamano-lg); color: var(--color-secundario, #E8570C); padding-top: 6px; }
+    @media (max-width: 520px) { .tramite__ancho { grid-column: auto; } }
     .campos-no-aporta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--espacio-3); margin-bottom: var(--espacio-3); }
     .campo-grupo--ancho { grid-column: 1 / -1; }
     .items-pago { display: flex; flex-direction: column; gap: 6px; margin: var(--espacio-2) 0 var(--espacio-3); }
@@ -492,6 +551,10 @@ export class RegistrarPagoComponent implements OnDestroy {
       if (res) {
         this.resultadosPersonas = res.personas.datos;
         this.resultadosEmpresas = res.empresas;
+        // 2026-10-30: viene de "Cobrar esta cuenta" en el grupo
+        const abrir = this.resultadosEmpresas.find((e) => e.id === this.abrirCuentaAlLlegar);
+        this.abrirCuentaAlLlegar = null;
+        if (abrir && this.empresaExpandidaId !== abrir.id) this.toggleEmpresa(abrir);
         this.cargarEstados(this.resultadosPersonas.map((a) => a.id));
       }
     });
@@ -562,8 +625,8 @@ export class RegistrarPagoComponent implements OnDestroy {
     else this.seleccionCuentas.set(c.empresaId, c);
   }
 
-  // ── "No aporta" (solo el trámite) ──
-  noAporta: { afiliadoId?: number; empresaId?: number; nombre: string; documento: string; libre: boolean; monto: number; canal: CanalPago | null; motivo: string } | null = null;
+  // ── "No aporta" (solo el trámite) → 2026-10-30: Trámites con varias diligencias ──
+  noAporta: { afiliadoId?: number; empresaId?: number; nombre: string; documento: string; libre: boolean; canal: CanalPago | null; lineas: LineaTramite[] } | null = null;
   registrandoNoAporta = false;
   errorNoAporta = '';
   readonly VALOR_NO_APORTA = 10000;
@@ -572,19 +635,57 @@ export class RegistrarPagoComponent implements OnDestroy {
     return /^[A-Za-z]{0,3}\s?\d{5,}$/.test(this.terminoBusqueda.trim());
   }
 
+  private lineaNueva(): LineaTramite {
+    return { fecha: this.hoyIso, descripcion: '', valorTramite: this.VALOR_NO_APORTA, seguridadSocial: null, comision: null };
+  }
+
   abrirNoAporta(quien: { afiliadoId?: number; empresaId?: number; nombre: string; documento: string }): void {
     this.errorNoAporta = '';
-    this.noAporta = { ...quien, libre: false, monto: this.VALOR_NO_APORTA, canal: null, motivo: '' };
+    this.noAporta = { ...quien, libre: false, canal: null, lineas: [this.lineaNueva()] };
+    this.mostrarPanelTramites();
   }
 
   abrirNoAportaLibre(): void {
     this.errorNoAporta = '';
-    this.noAporta = { nombre: '', documento: this.terminoBusqueda.trim(), libre: true, monto: this.VALOR_NO_APORTA, canal: null, motivo: '' };
+    this.noAporta = { nombre: '', documento: this.terminoBusqueda.trim(), libre: true, canal: null, lineas: [this.lineaNueva()] };
+    this.mostrarPanelTramites();
+  }
+
+  // 2026-10-30 (Anturi: "no aporta no funciona o no marca nada"): el panel se
+  // abría al final de la página, fuera de la vista. Ahora se lleva hasta él.
+  private mostrarPanelTramites(): void {
+    setTimeout(() => document.getElementById('panel-tramites')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  agregarLinea(): void {
+    this.noAporta?.lineas.push(this.lineaNueva());
+  }
+
+  quitarLinea(i: number): void {
+    this.noAporta?.lineas.splice(i, 1);
+  }
+
+  private valor(v: unknown): number {
+    const n = Number(v ?? 0);
+    return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+  }
+
+  cuatroXMil(l: LineaTramite): number {
+    return Math.round(this.valor(l.seguridadSocial) * 0.004);
+  }
+
+  subtotalLinea(l: LineaTramite): number {
+    return this.valor(l.valorTramite) + this.valor(l.seguridadSocial) + this.cuatroXMil(l) + this.valor(l.comision);
+  }
+
+  get totalTramites(): number {
+    return (this.noAporta?.lineas ?? []).reduce((t, l) => t + this.subtotalLinea(l), 0);
   }
 
   get noAportaValido(): boolean {
     const n = this.noAporta;
-    return !!n && Number(n.monto) > 0 && !!n.canal && (!n.libre || (!!n.documento.trim() && !!n.nombre.trim()));
+    return !!n && !!n.canal && n.lineas.length > 0 && n.lineas.every((l) => this.subtotalLinea(l) > 0 && !!l.fecha)
+      && (!n.libre || (!!n.documento.trim() && !!n.nombre.trim()));
   }
 
   confirmarNoAporta(): void {
@@ -592,22 +693,27 @@ export class RegistrarPagoComponent implements OnDestroy {
     if (!n || !this.noAportaValido) return;
     this.registrandoNoAporta = true;
     this.errorNoAporta = '';
-    this.pagosServicio.registrarNoAporta({
+    const total = this.totalTramites;
+    this.pagosServicio.registrarTramites({
       afiliadoId: n.afiliadoId,
       empresaId: n.empresaId,
       documento: n.libre ? n.documento.trim() : undefined,
       nombre: n.libre ? n.nombre.trim() : undefined,
-      monto: Number(n.monto),
       canal: n.canal!,
-      motivo: n.motivo.trim() || undefined,
-      fechaPago: this.fechaPagoEnviar,
+      lineas: n.lineas.map((l) => ({
+        fecha: l.fecha !== this.hoyIso ? l.fecha : undefined,
+        descripcion: l.descripcion.trim() || undefined,
+        valorTramite: this.valor(l.valorTramite),
+        seguridadSocial: this.valor(l.seguridadSocial),
+        comision: this.valor(l.comision),
+      })),
     }).pipe(
       finalize(() => { this.registrandoNoAporta = false; }),
       takeUntil(this.destruir$),
     ).subscribe({
       next: () => {
-        this.mensajeExito = `"No aporta" de ${n.nombre || n.documento} registrado: $${Number(n.monto).toLocaleString('es-CO')}.`;
-        setTimeout(() => { this.mensajeExito = ''; }, 5000);
+        this.mensajeExito = `Trámites de ${n.nombre || n.documento} registrados: total $${total.toLocaleString('es-CO')}.`;
+        setTimeout(() => { this.mensajeExito = ''; }, 6000);
         this.noAporta = null;
         if (this.esAdmin) { this.cargarResumen(); this.cargarResumenMensual(); }
       },
@@ -617,6 +723,22 @@ export class RegistrarPagoComponent implements OnDestroy {
       },
     });
   }
+
+  // ── 2026-10-30: grupo de quien paga por varios ──
+  grupoAbierto: string | null = null;
+
+  alternarGrupo(clave: string): void {
+    this.grupoAbierto = this.grupoAbierto === clave ? null : clave;
+  }
+
+  // "Cobrar esta cuenta" desde el grupo: se busca por su documento y se abre
+  cobrarDelGrupo(e: { cuenta?: CuentaGrupo; nodo: NodoGrupo }): void {
+    this.grupoAbierto = null;
+    this.terminoBusqueda = e.nodo.documento;
+    this.buscar$.next(e.nodo.documento);
+    if (e.cuenta) this.abrirCuentaAlLlegar = e.cuenta.id;
+  }
+  abrirCuentaAlLlegar: number | null = null;
 
   // ── Valor editable por pago ──
   private montos = new Map<string, number>();

@@ -4,15 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { Familiar, PARENTESCOS, TrabajadoresServicio } from '../../nucleo/servicios/trabajadores.servicio';
 import { AutenticacionServicio } from '../../nucleo/servicios/autenticacion.servicio';
 import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
+import { DocumentosTitularComponent } from '../documentos-titular/documentos-titular.component';
+import { TIPOS_DOCUMENTO, siglaDocumento } from '../../nucleo/utilidades/tipos-documento';
 
 // 2026-10-16 (pedido de Anyi): la familia (beneficiarios) de un afiliado o
 // de un trabajador. Hijos, hijastros, cónyuge, hermanos y padres que
-// dependen económicamente de él. Los documentos de la familia (registro
-// civil, etc.) se suben en los documentos del titular.
+// dependen económicamente de él.
+// 2026-10-30 (Anyi): cada familiar tiene sus propios documentos (registro
+// civil del hijo, cédula del cónyuge...), aparte de los del titular.
 @Component({
   selector: 'anturi-familia',
   standalone: true,
-  imports: [CommonModule, FormsModule, FechaDmyComponent],
+  imports: [CommonModule, FormsModule, FechaDmyComponent, DocumentosTitularComponent],
   template: `
     <div class="seccion-titulo-fila">
       <h3 class="seccion-titulo">Familia / beneficiarios ({{ familia.length }})</h3>
@@ -41,8 +44,9 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
         <label class="campo-etiqueta" for="famTipo">Documento</label>
         <div class="fam-doc">
           <select id="famTipo" class="campo-input" [(ngModel)]="form.tipoDocumento" name="tipoDocumento" aria-label="Tipo de documento">
-            <option value="CC">CC</option><option value="TI">TI</option><option value="RC">Registro civil</option>
-            <option value="CE">CE</option><option value="PPT">PPT</option><option value="PA">Pasaporte</option>
+            <!-- 2026-10-30: la misma lista completa de todo el sistema -->
+            <option *ngFor="let t of tiposDocumento" [value]="t.valor">{{ t.nombre }}</option>
+            <option *ngIf="form.tipoDocumento === 'PA'" value="PA">Pasaporte</option>
           </select>
           <input class="campo-input" [(ngModel)]="form.numeroDocumento" name="numeroDocumento" inputmode="numeric" aria-label="Número de documento">
         </div>
@@ -79,17 +83,25 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
       <table class="tabla">
         <thead><tr><th>Parentesco</th><th>Nombre</th><th>Documento</th><th>Nacimiento</th><th>Contacto</th><th></th></tr></thead>
         <tbody>
-          <tr *ngFor="let f of familia">
+          <ng-container *ngFor="let f of familia">
+          <tr>
             <td>{{ nombreParentesco(f.parentesco) }}</td>
             <td>{{ f.nombres }} {{ f.apellidos }}<div *ngIf="f.observaciones" class="nota">{{ f.observaciones }}</div></td>
-            <td>{{ f.numeroDocumento ? f.tipoDocumento + ' ' + f.numeroDocumento : '—' }}</td>
+            <td>{{ f.numeroDocumento ? sigla(f.tipoDocumento) + ' ' + f.numeroDocumento : '—' }}</td>
             <td>{{ f.fechaNacimiento ? (f.fechaNacimiento | date:'dd/MM/yyyy':'UTC') : '—' }}{{ edad(f) }}</td>
             <td>{{ f.telefono || '' }}<div *ngIf="f.correo" class="nota">{{ f.correo }}</div><div *ngIf="f.direccion" class="nota">{{ f.direccion }}</div><span *ngIf="!f.telefono && !f.correo && !f.direccion">—</span></td>
             <td class="acciones">
+              <button type="button" class="boton boton-texto boton-sm" (click)="docsAbierto = docsAbierto === f.id ? null : f.id" [attr.aria-expanded]="docsAbierto === f.id">📁 Documentos</button>
               <button type="button" class="boton boton-texto boton-sm" (click)="editar(f)">Editar</button>
-              <button type="button" class="boton boton-texto boton-sm" (click)="pedirQuitar(f)">Quitar</button>
+              <button *ngIf="!esAsistente" type="button" class="boton boton-texto boton-sm" (click)="pedirQuitar(f)">Quitar</button>
             </td>
           </tr>
+          <tr *ngIf="docsAbierto === f.id" class="fam-docs">
+            <td colspan="6">
+              <anturi-documentos-titular titularTipo="FAMILIAR" [titularId]="f.id" [titulo]="f.nombres + ' ' + f.apellidos + ' (' + nombreParentesco(f.parentesco).toLowerCase() + ')'"></anturi-documentos-titular>
+            </td>
+          </tr>
+          </ng-container>
         </tbody>
       </table>
     </div>
@@ -115,6 +127,7 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
     .fam-acciones { display: flex; justify-content: flex-end; gap: 8px; }
     .vacio, .nota { color: var(--texto-terciario); font-size: var(--tamano-sm); margin: 4px 0; }
     .acciones { white-space: nowrap; }
+    .fam-docs td { background: var(--fondo-secundario, #f8fafc); padding: 12px; }
     .aviso-ok { color: #1f7a3d; font-size: var(--tamano-sm); }
     .aviso-error { color: #b42318; font-size: var(--tamano-sm); }
     .fam-modal { background: var(--fondo-tarjeta, #fff); border-radius: 14px; width: min(460px, 100%); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
@@ -126,11 +139,14 @@ export class FamiliaComponent implements OnChanges {
   @Input() personaId?: number;
 
   readonly parentescos = PARENTESCOS;
+  readonly tiposDocumento = TIPOS_DOCUMENTO;
+  readonly sigla = siglaDocumento;
   familia: Familiar[] = [];
   cargando = false;
   guardando = false;
   form: (Partial<Familiar> & { fechaNacimiento?: string | null }) | null = null;
   quitando: Familiar | null = null;
+  docsAbierto: number | null = null;
   motivoQuitar = '';
   mensaje = '';
   error = '';

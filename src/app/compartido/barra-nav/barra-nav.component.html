@@ -8,8 +8,12 @@
          del todo, al cargar la página. Al bajar (desplazado=true) se
          esconde, porque se asume que quien ya está navegando el sitio es
          un cliente buscando algo, no la empresa entrando a trabajar -
-         vuelve a aparecer solo si sube de nuevo al tope. -->
-    <a routerLink="/ingresar" class="barra-nav__enlace barra-nav__enlace-ingresar" *ngIf="!desplazado" (click)="cerrarMenus()">
+         vuelve a aparecer solo si sube de nuevo al tope.
+         2026-10-30 (Cristopher, igual que en TecniHogar): ahora está OCULTO.
+         Solo aparece si, recién abierta la página, se intenta subir estando
+         arriba del todo (rueda, dedo o flecha arriba). Si primero baja, ya no
+         aparece aunque vuelva a subir (hasta recargar). -->
+    <a routerLink="/ingresar" class="barra-nav__enlace barra-nav__enlace-ingresar" *ngIf="accesoVisible && !desplazado" (click)="cerrarMenus()">
       {{ 'nav.ingresar' | translate }}
     </a>
 
@@ -84,8 +88,8 @@
       <li><a (click)="irASeccion('servicios')">{{ 'nav.servicios' | translate }}</a></li>
       <li><a (click)="irASeccion('nosotros')">{{ 'nav.nosotros' | translate }}</a></li>
       <li><a (click)="irASeccion('contacto')">{{ 'nav.contacto' | translate }}</a></li>
-      <li class="barra-nav__menu-movil-separador"></li>
-      <li>
+      <li *ngIf="accesoVisible" class="barra-nav__menu-movil-separador"></li>
+      <li *ngIf="accesoVisible">
         <a routerLink="/ingresar" class="boton boton-primario barra-nav__btn-ingresar-movil" (click)="cerrarMenus()">
           {{ 'nav.ingresar' | translate }}
         </a>

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { GrupoClienteComponent } from '../../../compartido/grupo-cliente/grupo-cliente.component';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of, forkJoin } from 'rxjs';
 import { EmpresasServicio, Empresa } from '../../../nucleo/servicios/empresas.servicio';
@@ -12,7 +13,7 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
 @Component({
   selector: 'anturi-lista-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesNuevasComponent, ContactosAdicionalesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, GrupoClienteComponent, CredencialesNuevasComponent, ContactosAdicionalesComponent],
   template: `
     <div class="pagina-lista">
       <div class="pagina-encabezado">
@@ -90,9 +91,9 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
             </tr>
           </thead>
           <tbody>
+            <ng-container *ngFor="let emp of empresasVisibles">
             <tr
-              *ngFor="let emp of empresasVisibles"
-              class="fila-tabla"
+                            class="fila-tabla"
               (click)="irADetalle(emp.id)"
               [title]="'Ver detalle de ' + emp.razonSocial"
             >
@@ -116,8 +117,14 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </button>
+                <!-- 2026-10-30: el grupo (quién le paga y a quiénes les paga) -->
+                <button class="boton boton-texto boton-sm" [attr.aria-expanded]="grupoAbierto === emp.id" (click)="grupoAbierto = grupoAbierto === emp.id ? null : emp.id" title="Quién le paga y a quiénes les paga">Grupo</button>
               </td>
             </tr>
+            <tr *ngIf="grupoAbierto === emp.id" class="fila-grupo">
+              <td colspan="5"><anturi-grupo-cliente tipo="EMPRESA" [id]="emp.id" [siempre]="true"></anturi-grupo-cliente></td>
+            </tr>
+            </ng-container>
           </tbody>
         </table>
         <div class="tabla-pie">
@@ -186,6 +193,7 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
     </div>
   `,
   styles: [`
+    .fila-grupo td { background: var(--fondo-secundario, #f8fafc); padding: 12px; cursor: default; }
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .pagina-encabezado { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--espacio-3); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
@@ -251,6 +259,9 @@ import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compar
   `]
 })
 export class ListaEmpresasComponent implements OnInit, OnDestroy {
+  // 2026-10-30: fila con el grupo abierto
+  grupoAbierto: number | null = null;
+
   empresas: Empresa[] = [];
   empresasVisibles: Empresa[] = [];
   terminoBusqueda = '';

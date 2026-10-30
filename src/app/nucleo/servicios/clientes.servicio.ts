@@ -15,8 +15,25 @@ export interface Vinculo {
   etiqueta: string;
   frase: string;
   nota: string | null;
+  telefono?: string | null;
+  correo?: string | null;
+  direccion?: string | null;
   otro: ClienteRef;
 }
+
+// 2026-10-30: el grupo de quien paga por varios (ver backend grupo-pago.ts)
+export interface CuentaGrupo { id: number; razonSocial: string; descripcion: string | null; activa: boolean }
+export interface NodoGrupo {
+  documento: string;
+  nombre: string;
+  afiliado: { id: number; estado: string } | null;
+  personaId: number | null;
+  cargo: string | null;
+  cuentas: CuentaGrupo[];
+  esConsultado: boolean;
+  miembros: NodoGrupo[];
+}
+export interface GrupoPago { raiz: NodoGrupo | null; total: number; pagadoPor: string[] }
 
 export const RELACIONES: { valor: string; nombre: string }[] = [
   { valor: 'CONYUGE', nombre: 'Cónyuge / compañero(a) de' },
@@ -56,8 +73,12 @@ export class ClientesServicio {
     return this.http.get<Vinculo[]>(`${this.URL}/vinculos`, { params: { tipo, id: String(id) } });
   }
 
-  crearVinculo(datos: { origenTipo: TipoCliente; origenId: number; destinoTipo: TipoCliente; destinoId: number; relacion: string; nota?: string }): Observable<unknown> {
+  crearVinculo(datos: { origenTipo: TipoCliente; origenId: number; destinoTipo: TipoCliente; destinoId: number; relacion: string; nota?: string; telefono?: string; correo?: string; direccion?: string }): Observable<unknown> {
     return this.http.post(`${this.URL}/vinculos`, datos);
+  }
+
+  grupo(tipo: TipoCliente, id: number): Observable<GrupoPago> {
+    return this.http.get<GrupoPago>(`${this.URL}/grupo`, { params: { tipo, id: String(id) } });
   }
 
   quitarVinculo(id: number): Observable<unknown> {

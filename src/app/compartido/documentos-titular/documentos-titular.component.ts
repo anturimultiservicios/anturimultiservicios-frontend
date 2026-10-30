@@ -25,6 +25,10 @@ const EXTENSION_POR_TIPO: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
 };
 
+const TIPO_VISIBLE: Record<string, string> = {
+  '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
+};
+
 function conExtension(a: File): File | null {
   if (/\.(pdf|jpe?g|png|webp|heic|heif|docx?|xlsx?)$/i.test(a.name)) return a;
   const ext = EXTENSION_POR_TIPO[a.type.toLowerCase()];
@@ -38,7 +42,8 @@ function conExtension(a: File): File | null {
   template: `
     <div class="dt">
       <div class="dt__cab">
-        <h3 class="seccion-titulo">Documentos</h3>
+        <!-- 2026-10-30 (Anyi): que se note de quién es cada documento -->
+        <h3 class="seccion-titulo">Documentos{{ titulo ? ' de ' + titulo : '' }}</h3>
         <button type="button" class="boton boton-secundario boton-sm" (click)="creando = !creando">+ Nueva carpeta</button>
       </div>
 
@@ -52,7 +57,7 @@ function conExtension(a: File): File | null {
 
       <input type="file" #selector multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,application/pdf,image/*" style="display:none" (change)="archivosElegidos($event)">
       <input type="file" #selectorReemplazo accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,application/pdf,image/*" style="display:none" (change)="reemplazoElegido($event)">
-      <div *ngIf="esAsistente" class="sub">Lo que elimine, reemplace o mueva se aplica de una vez y le llega a Anturi para que lo confirme.</div>
+      <div *ngIf="esAsistente" class="sub">Lo que reemplace o mueva se aplica de una vez y le llega a Anturi para que lo confirme. Eliminar documentos es solo de Anturi.</div>
 
       <div *ngIf="cargando" class="sub">Cargando documentos...</div>
       <div class="dt__carpetas" *ngIf="!cargando">
@@ -76,7 +81,7 @@ function conExtension(a: File): File | null {
                 <option *ngFor="let o of carpetasDestino(c)" [value]="o.clave">{{ o.nombre }}</option>
               </select>
               <button type="button" class="doc__borrar" (click)="pedirReemplazo(d, selectorReemplazo)" title="Reemplazar por otro archivo">🔄</button>
-              <button type="button" class="doc__borrar" (click)="pedirEliminar(d)" title="Eliminar">🗑</button>
+              <button *ngIf="!esAsistente" type="button" class="doc__borrar" (click)="pedirEliminar(d)" title="Eliminar">🗑</button>
             </div>
           </div>
         </div>
@@ -115,11 +120,16 @@ function conExtension(a: File): File | null {
           <iframe *ngIf="vista.pdf" [src]="vista.url" title="Documento"></iframe>
           <img *ngIf="!vista.pdf" [src]="vista.url" [alt]="vista.nombre">
         </div>
-        <a class="boton boton-secundario boton-sm" [href]="vista.crudo" [download]="vista.nombre">⬇ Descargar</a>
+        <div class="visor__acciones">
+          <!-- 2026-10-30 (Cristopher): si el visor no lo muestra (algunos celulares), se abre en otra ventana -->
+          <button type="button" class="boton boton-primario boton-sm" (click)="abrirEnVentana()">↗ Abrir en otra ventana</button>
+          <a class="boton boton-secundario boton-sm" [href]="vista.crudo" [download]="vista.nombre">⬇ Descargar</a>
+        </div>
       </div>
     </div>
   `,
   styles: [`
+    .visor__acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .dt { display: flex; flex-direction: column; gap: 10px; }
     .dt__cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .dt__cab .seccion-titulo { margin: 0; }
@@ -161,7 +171,9 @@ function conExtension(a: File): File | null {
   `],
 })
 export class DocumentosTitularComponent implements OnChanges, OnDestroy {
-  @Input() titularTipo: 'AFILIADO' | 'EMPRESA' | 'PERSONA' = 'AFILIADO';
+  @Input() titularTipo: 'AFILIADO' | 'EMPRESA' | 'PERSONA' | 'FAMILIAR' = 'AFILIADO';
+  // 2026-10-30: nombre de quién son los documentos (se muestra en el título)
+  @Input() titulo = '';
   @Input() titularId!: number;
 
   catalogo: CatalogoCarpetas = { fijas: [], propias: [] };
@@ -281,7 +293,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
 
   cargar(): void {
     this.cargando = true;
-    const lista$ = this.titularTipo === 'EMPRESA' ? this.docs.listarDeEmpresa(this.titularId) : this.titularTipo === 'PERSONA' ? this.docs.listarDePersona(this.titularId) : this.docs.listarDeAfiliado(this.titularId);
+    const lista$ = this.titularTipo === 'EMPRESA' ? this.docs.listarDeEmpresa(this.titularId) : this.titularTipo === 'PERSONA' ? this.docs.listarDePersona(this.titularId) : this.titularTipo === 'FAMILIAR' ? this.docs.listarDeFamiliar(this.titularId) : this.docs.listarDeAfiliado(this.titularId);
     forkJoin({
       catalogo: this.docs.carpetas().pipe(catchError(() => of({ fijas: [], propias: [] } as CatalogoCarpetas))),
       documentos: lista$.pipe(catchError(() => of([] as Documento[]))),
@@ -303,7 +315,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
     const ya = new Set<string>();
     const poner = (c: Carpeta) => { if (!ya.has(c.clave)) { ya.add(c.clave); lista.push(c); } };
     for (const f of this.catalogo.fijas) {
-      const c: Carpeta = { clave: 'tipo:' + f.tipo, nombre: f.nombre, tipo: f.tipo, carpetaId: null, obligatoria: this.titularTipo !== 'EMPRESA' && f.tipo === 'CEDULA' };
+      const c: Carpeta = { clave: 'tipo:' + f.tipo, nombre: f.nombre, tipo: f.tipo, carpetaId: null, obligatoria: (this.titularTipo === 'AFILIADO' || this.titularTipo === 'PERSONA') && f.tipo === 'CEDULA' };
       if (this.titularTipo !== 'EMPRESA' || this.docsDe(c).length) poner(c);
     }
     for (const d of this.documentos) if (d.carpeta) poner({ clave: 'c:' + d.carpeta.id, nombre: d.carpeta.nombre, tipo: 'OTRO', carpetaId: d.carpeta.id, obligatoria: false });
@@ -370,7 +382,7 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
       if (!a) { this.errores.push(`"${elegido.name}" no se puede subir. Se aceptan PDF, fotos (JPG, PNG, HEIC, WEBP), Word y Excel.`); continue; }
       const ok = await new Promise<boolean>((resolve) => {
         this.docs.subirA({
-          ...(this.titularTipo === 'EMPRESA' ? { empresaId: this.titularId } : this.titularTipo === 'PERSONA' ? { personaId: this.titularId } : { afiliadoId: this.titularId }),
+          ...(this.titularTipo === 'EMPRESA' ? { empresaId: this.titularId } : this.titularTipo === 'PERSONA' ? { personaId: this.titularId } : this.titularTipo === 'FAMILIAR' ? { familiarId: this.titularId } : { afiliadoId: this.titularId }),
           tipo: destino.carpetaId ? 'OTRO' : destino.tipo,
           carpetaId: destino.carpetaId,
         }, a).subscribe({
@@ -439,13 +451,27 @@ export class DocumentosTitularComponent implements OnChanges, OnDestroy {
   ver(d: Documento): void {
     if (!this.sePuedeVer(d)) { this.descargar(d); return; }
     this.docs.archivo(d.id).subscribe({
-      next: (blob) => {
+      next: (recibido) => {
         this.cerrarVista();
+        // 2026-10-30: si llega como "archivo desconocido" (se guardó sin
+        // terminación), el navegador no lo muestra - se le dice qué es.
+        const tipo = TIPO_VISIBLE[this.ext(d)];
+        const blob = tipo && recibido.type !== tipo ? new Blob([recibido], { type: tipo }) : recibido;
         const crudo = URL.createObjectURL(blob);
         this.vista = { nombre: d.nombre || d.nombreOriginal, crudo, url: this.sanitizer.bypassSecurityTrustResourceUrl(crudo), pdf: this.esPdf(d) };
       },
-      error: () => (this.errores = ['No se pudo abrir el documento.']),
+      error: (e) => (this.errores = [this.mensajeAbrir(e)]),
     });
+  }
+
+  abrirEnVentana(): void {
+    if (!this.vista) return;
+    const w = window.open(this.vista.crudo, '_blank');
+    if (!w) this.errores = ['El navegador bloqueó la ventana nueva. Use "Descargar".'];
+  }
+
+  private mensajeAbrir(e: any): string {
+    return e?.status === 404 ? 'Ese archivo no está en el servidor. Súbalo de nuevo, por favor.' : 'No se pudo abrir el documento. Intente de nuevo.';
   }
 
   cerrarVista(): void {

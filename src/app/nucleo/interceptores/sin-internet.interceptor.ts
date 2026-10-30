@@ -25,7 +25,7 @@ function estadoCuenta(pagos: { fechaPeriodo: string; mesesCubiertos: number | nu
   const actual = indiceMes(new Date());
   let hasta = -1;
   // un "No aporta" (solo el trámite) no pone al día el mes
-  for (const p of pagos.filter((x) => x.concepto !== 'NO_APORTA')) hasta = Math.max(hasta, indiceMes(new Date(p.fechaPeriodo)) + Math.max(1, p.mesesCubiertos ?? 1) - 1);
+  for (const p of pagos.filter((x) => x.concepto !== 'NO_APORTA' && x.concepto !== 'TRAMITE')) hasta = Math.max(hasta, indiceMes(new Date(p.fechaPeriodo)) + Math.max(1, p.mesesCubiertos ?? 1) - 1);
   if (hasta >= actual) return { mesesAdeudados: 0, pagadoEsteMes: true };
   const desde = hasta < 0 ? actual : hasta + 1;
   return { mesesAdeudados: Math.max(1, actual - desde + 1), pagadoEsteMes: false };
@@ -62,7 +62,7 @@ function calendario(c: CopiaLocal, desdeTxt: string | null, hastaTxt: string | n
   hasta.setHours(23, 59, 59, 999);
   const cobertura = new Map<number, [number, number][]>();
   for (const p of c.pagos) {
-    if (!p.afiliadoId || p.concepto === 'NO_APORTA') continue;
+    if (!p.afiliadoId || p.concepto === 'NO_APORTA' || p.concepto === 'TRAMITE') continue;
     const ini = indiceMes(new Date(p.fechaPeriodo));
     if (!cobertura.has(p.afiliadoId)) cobertura.set(p.afiliadoId, []);
     cobertura.get(p.afiliadoId)!.push([ini, ini + Math.max(1, p.mesesCubiertos ?? 1)]);

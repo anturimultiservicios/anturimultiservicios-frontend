@@ -90,6 +90,11 @@ export class DocumentosServicio {
     return this.http.get<Documento[]>(`${this.URL}/persona/${personaId}`);
   }
 
+  // 2026-10-30 (Anyi): documentos de un familiar/beneficiario
+  listarDeFamiliar(familiarId: number): Observable<Documento[]> {
+    return this.http.get<Documento[]>(`${this.URL}/familiar/${familiarId}`);
+  }
+
   listarDeEmpresa(empresaId: number): Observable<Documento[]> {
     return this.http.get<Documento[]>(`${this.URL}/empresa/${empresaId}`);
   }
@@ -102,12 +107,13 @@ export class DocumentosServicio {
     return this.http.post<ResultadoCarpeta>(`${this.URL}/carpetas`, { nombre });
   }
 
-  subirA(destino: { afiliadoId?: number; empresaId?: number; personaId?: number; tipo?: string; carpetaId?: number | null }, archivo: File): Observable<HttpEvent<any>> {
+  subirA(destino: { afiliadoId?: number; empresaId?: number; personaId?: number; familiarId?: number; tipo?: string; carpetaId?: number | null }, archivo: File): Observable<HttpEvent<any>> {
     const form = new FormData();
     form.append('archivo', archivo, archivo.name);
     if (destino.afiliadoId) form.append('afiliadoId', String(destino.afiliadoId));
     if (destino.empresaId) form.append('empresaId', String(destino.empresaId));
     if (destino.personaId) form.append('personaId', String(destino.personaId));
+    if (destino.familiarId) form.append('familiarId', String(destino.familiarId));
     form.append('tipo', destino.tipo || 'OTRO');
     if (destino.carpetaId) form.append('carpetaId', String(destino.carpetaId));
     return this.http.request(new HttpRequest('POST', `${this.URL}/subir`, form, { reportProgress: true }));

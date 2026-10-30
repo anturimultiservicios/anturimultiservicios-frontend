@@ -105,7 +105,7 @@ import { FechaDmyComponent } from '../fecha-dmy/fecha-dmy.component';
         </div>
 
         <div class="tarjeta seccion-datos">
-          <anturi-documentos-titular titularTipo="PERSONA" [titularId]="t.id"></anturi-documentos-titular>
+          <anturi-documentos-titular titularTipo="PERSONA" [titularId]="t.id" [titulo]="t.nombres + ' ' + t.apellidos + ' (trabajador)'"></anturi-documentos-titular>
         </div>
       </ng-container>
     </div>

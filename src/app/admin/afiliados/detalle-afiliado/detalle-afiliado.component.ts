@@ -19,13 +19,14 @@ import { DocumentosTitularComponent } from '../../../compartido/documentos-titul
 import { ContactosAdicionalesComponent, limpiarContactos } from '../../../compartido/contactos-adicionales/contactos-adicionales.component';
 import { opcionesClaseAportante } from '../../../nucleo/utilidades/clases-aportante';
 import { FamiliaComponent } from '../../../compartido/familia/familia.component';
+import { GrupoClienteComponent } from '../../../compartido/grupo-cliente/grupo-cliente.component';
 import { VinculosClienteComponent } from '../../../compartido/vinculos-cliente/vinculos-cliente.component';
 import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.component';
 
 @Component({
   selector: 'anturi-detalle-afiliado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, FamiliaComponent, FechaDmyComponent, VinculosClienteComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CredencialesTitularComponent, DocumentosTitularComponent, ContactosAdicionalesComponent, FamiliaComponent, FechaDmyComponent, VinculosClienteComponent, GrupoClienteComponent],
   template: `
     <div class="detalle-contenedor">
 
@@ -59,7 +60,8 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             </svg>
             Editar
           </button>
-          <button *ngIf="!eliminacionPendiente" class="boton boton-peligro" (click)="modalEliminar = true">
+          <!-- 2026-10-30: eliminar es solo de Anturi o del Super Admin -->
+          <button *ngIf="!eliminacionPendiente && !esSecretaria" class="boton boton-peligro" (click)="modalEliminar = true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
@@ -334,7 +336,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
           <h3 class="seccion-titulo">Valores económicos</h3>
           <div class="datos-grid">
             <div class="dato-item">
-              <span class="dato-etiqueta">Base de cotización (IBC)</span>
+              <span class="dato-etiqueta">Salario / base de cotización (IBC)</span>
               <span class="dato-valor">{{ $any(afiliado).ibc != null ? ('$' + ($any(afiliado).ibc | number)) : 'Sin registrar' }}</span>
             </div>
             <div class="dato-item">
@@ -538,6 +540,11 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
             <label class="campo-etiqueta">Fecha de retiro</label>
             <input type="date" class="campo-input" [(ngModel)]="edicionForm.fechaRetiro" name="edit-fechaRetiro">
           </div>
+          <!-- 2026-10-30 (Anyi): salario de independientes/dependientes -->
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="edit-ibc">Salario / base de cotización (IBC)</label>
+            <input id="edit-ibc" type="number" class="campo-input" min="0" step="1000" [(ngModel)]="$any(edicionForm).ibc" name="edit-ibc">
+          </div>
           <div class="campo-grupo">
             <label class="campo-etiqueta">Seguridad social (mes)</label>
             <input type="number" class="campo-input" [(ngModel)]="edicionForm.valor" name="edit-valor">
@@ -567,6 +574,15 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
       <!-- SECCIÓN DOCUMENTOS -->
       <!-- 2026-10-15: documentos por carpetas (nombre único en todo el sistema) -->
       <!-- 2026-10-22: familia o relación con otros clientes -->
+      <!-- 2026-10-30: grupo de quien paga por varios (solo aparece si hace parte de uno) -->
+      <anturi-grupo-cliente *ngIf="afiliado && !cargando" tipo="AFILIADO" [id]="afiliadoId" [tarjeta]="true"></anturi-grupo-cliente>
+
+      <!-- 2026-10-30 (Anyi): dónde trabaja y cuánto gana (si es personal de alguna cuenta) -->
+      <div *ngIf="afiliado && !cargando && $any(afiliado).personaId" class="tarjeta seccion-datos fila-trabaja">
+        <span>Si trabaja para una cuenta (empleador), el <strong>salario</strong> y el cargo se ponen en su ficha de trabajador.</span>
+        <a [routerLink]="[prefijo, 'trabajadores', $any(afiliado).personaId]" class="boton boton-secundario boton-sm">Dónde trabaja y salario</a>
+      </div>
+
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
         <anturi-vinculos-cliente tipo="AFILIADO" [id]="afiliadoId"></anturi-vinculos-cliente>
       </div>
@@ -577,7 +593,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
       </div>
 
       <div *ngIf="afiliado && !cargando" class="tarjeta seccion-datos">
-        <anturi-documentos-titular titularTipo="AFILIADO" [titularId]="afiliadoId"></anturi-documentos-titular>
+        <anturi-documentos-titular titularTipo="AFILIADO" [titularId]="afiliadoId" [titulo]="afiliado ? afiliado.nombres + ' ' + afiliado.apellidos : ''"></anturi-documentos-titular>
       </div>
 
       <!-- MODAL: Visualizar documento -->
@@ -674,6 +690,7 @@ import { FechaDmyComponent } from '../../../compartido/fecha-dmy/fecha-dmy.compo
     </div>
   `,
   styles: [`
+    .fila-trabaja { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .enlace-cruzado { font-size: var(--tamano-sm); font-weight: 600; color: var(--color-secundario, #E8570C); display: block; }
     .detalle-contenedor { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .detalle-encabezado { display: flex; align-items: center; gap: var(--espacio-4); flex-wrap: wrap; }
@@ -968,7 +985,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
           ['Pensión', '', (af) => seguro(af, 'PENSION')],
           ['ARL', '', (af) => seguro(af, 'ARL')],
           ['Caja', '', (af) => seguro(af, 'CAJA_COMPENSACION')],
-          ['Base de cotización (IBC)', 'ibc', (af) => af.ibc],
+          ['Salario / base de cotización (IBC)', 'ibc', (af) => af.ibc],
           ['Total mensual', 'totalPago', (af) => af.totalPago],
           ['Documentos subidos', '', (af) => (af.documentos?.length ?? 0) + ''],
         ];
@@ -1019,7 +1036,7 @@ export class DetalleAfiliadoComponent implements OnInit, OnDestroy {
     nombres: 'Nombres', apellidos: 'Apellidos', cedula: 'Número de documento', correo: 'Correo', telefono: 'Teléfono',
     fechaNacimiento: 'Fecha de nacimiento', genero: 'Género', cargo: 'Cargo', claseAportante: 'Clase aportante',
     asopagos: 'Asopagos', diasPago: 'Días de pago', tipoAfiliacion: 'Tipo de afiliación', claseRiesgoArl: 'Clase de riesgo ARL',
-    valor: 'Seguridad social (mes)', ibc: 'Base de cotización (IBC)', comision: 'Comisión', totalPago: 'Total a pagar', eps: 'EPS', afp: 'AFP', arl: 'ARL',
+    valor: 'Seguridad social (mes)', ibc: 'Salario / base de cotización (IBC)', comision: 'Comisión', totalPago: 'Total a pagar', eps: 'EPS', afp: 'AFP', arl: 'ARL',
     estado: 'Estado', fechaIngreso: 'Fecha de ingreso', fechaRetiro: 'Fecha de retiro', direccion: 'Dirección',
     municipio: 'Municipio', actividadEconomica: 'Actividad económica', tipoDocumento: 'Tipo de documento',
   };

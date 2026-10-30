@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { GrupoClienteComponent } from '../../../compartido/grupo-cliente/grupo-cliente.component';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil, switchMap, catchError, of } from 'rxjs';
 import { AfiliadosServicio, Afiliado } from '../../../nucleo/servicios/afiliados.servicio';
@@ -10,7 +11,7 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
 @Component({
   selector: 'anturi-lista-afiliados',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, GrupoClienteComponent],
   template: `
     <div class="pagina-lista">
       <!-- Encabezado -->
@@ -130,9 +131,9 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
             </tr>
           </thead>
           <tbody>
+            <ng-container *ngFor="let af of afiliados">
             <tr
-              *ngFor="let af of afiliados"
-              class="fila-tabla"
+                            class="fila-tabla"
               (click)="irADetalle(af.id)"
               [title]="'Ver detalle de ' + af.nombres + ' ' + af.apellidos"
             >
@@ -174,8 +175,14 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 </button>
+                <!-- 2026-10-30: el grupo (quién le paga y a quiénes les paga) -->
+                <button class="boton boton-texto boton-sm" [attr.aria-expanded]="grupoAbierto === af.id" (click)="grupoAbierto = grupoAbierto === af.id ? null : af.id" title="Quién le paga y a quiénes les paga">Grupo</button>
               </td>
             </tr>
+            <tr *ngIf="grupoAbierto === af.id" class="fila-grupo">
+              <td colspan="6"><anturi-grupo-cliente tipo="AFILIADO" [id]="af.id" [siempre]="true"></anturi-grupo-cliente></td>
+            </tr>
+            </ng-container>
           </tbody>
         </table>
         <div class="tabla-pie">
@@ -195,6 +202,7 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
     </div>
   `,
   styles: [`
+    .fila-grupo td { background: var(--fondo-secundario, #f8fafc); padding: 12px; cursor: default; }
     .pagina-lista { display: flex; flex-direction: column; gap: var(--espacio-5); }
     .pagina-encabezado { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--espacio-3); }
     .pagina-titulo { font-size: var(--tamano-2xl); font-weight: 700; color: var(--texto-principal); margin: 0; }
@@ -263,6 +271,9 @@ import { siglaDocumento } from '../../../nucleo/utilidades/tipos-documento';
   `]
 })
 export class ListaAfiliadosComponent implements OnInit, OnDestroy {
+  // 2026-10-30: fila con el grupo abierto
+  grupoAbierto: number | null = null;
+
   afiliados: Afiliado[] = [];
   terminoBusqueda = '';
   estadoSeleccionado = '';

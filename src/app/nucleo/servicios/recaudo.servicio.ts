@@ -10,6 +10,8 @@ export interface TotalesRecaudo {
   comision: number;
   afiliacion: number;
   noAporta: number;
+  // 2026-10-30: valor de los trámites/diligencias
+  tramites?: number;
   paraAnturi: number;
   efectivo: number;
   transferencia: number;
@@ -23,7 +25,7 @@ export interface PagoRecaudo {
   nombre: string;
   documento: string;
   tipoDocumento: string;
-  tipo: 'AFILIADO' | 'COOPERATIVA' | 'EMPRESA' | 'NO_APORTA' | 'OTRO';
+  tipo: 'AFILIADO' | 'COOPERATIVA' | 'EMPRESA' | 'NO_APORTA' | 'TRAMITE' | 'OTRO';
   cuenta: string | null;
   canal: 'EFECTIVO' | 'TRANSFERENCIA' | null;
   meses: number | null;

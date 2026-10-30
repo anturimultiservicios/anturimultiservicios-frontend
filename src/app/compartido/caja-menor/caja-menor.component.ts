@@ -39,6 +39,9 @@ const hoyIso = () => { const d = new Date(); return `${d.getFullYear()}-${String
       </div>
 
       <div class="tarjeta caja__filtros">
+        <!-- 2026-10-30: la Asistente ve solo lo del día (puede buscar un recibo viejo para verlo) -->
+        <span *ngIf="soloHoy" class="caja__hoy">Recibos de hoy</span>
+        <ng-container *ngIf="!soloHoy">
         <select class="campo-input" [(ngModel)]="anio" (ngModelChange)="cargar()" aria-label="Año">
           <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
         </select>
@@ -46,9 +49,10 @@ const hoyIso = () => { const d = new Date(); return `${d.getFullYear()}-${String
           <option [ngValue]="0">Todo el año</option>
           <option *ngFor="let m of meses; let i = index" [ngValue]="i + 1">{{ m }}</option>
         </select>
+        </ng-container>
         <input type="search" class="campo-input caja__buscar" placeholder="Buscar por nombre, cédula, concepto o número" [(ngModel)]="buscar" (ngModelChange)="buscarConPausa()">
         <div class="caja__total" *ngIf="!cargando">
-          <span>{{ cantidad }} recibo{{ cantidad !== 1 ? 's' : '' }}</span>
+          <span>{{ soloHoy ? 'Hoy: ' : '' }}{{ cantidad }} recibo{{ cantidad !== 1 ? 's' : '' }}</span>
           <strong>{{ total | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
         </div>
       </div>
@@ -188,6 +192,7 @@ const hoyIso = () => { const d = new Date(); return `${d.getFullYear()}-${String
     .caja__filtros { display: flex; gap: var(--espacio-3); align-items: center; flex-wrap: wrap; padding: var(--espacio-3); }
     .caja__filtros select { width: auto; }
     .caja__buscar { flex: 1; min-width: 220px; }
+    .caja__hoy { font-weight: 700; color: var(--texto-principal); align-self: center; }
     .caja__total { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; font-size: var(--tamano-sm); color: var(--texto-secundario); }
     .caja__total strong { font-size: var(--tamano-lg); color: var(--texto-principal); }
     .num { text-align: right; white-space: nowrap; }
@@ -227,6 +232,7 @@ export class CajaMenorComponent implements OnInit, OnDestroy {
   recibos: Recibo[] = [];
   total = 0;
   cantidad = 0;
+  soloHoy = false;
   pagadores: Pagador[] = [];
   cargando = false;
   error = '';
@@ -268,12 +274,13 @@ export class CajaMenorComponent implements OnInit, OnDestroy {
     const q: Record<string, string> = { anio: String(this.anio) };
     if (this.mes) q['mes'] = String(this.mes);
     if (this.buscar.trim()) q['buscar'] = this.buscar.trim();
-    this.http.get<{ recibos: Recibo[]; total: number; cantidad: number }>(this.URL, { params: q }).pipe(
+    this.http.get<{ recibos: Recibo[]; total: number; cantidad: number; soloHoy?: boolean }>(this.URL, { params: q }).pipe(
       catchError(() => { this.error = 'No se pudieron cargar los recibos.'; return of(null); }),
       finalize(() => (this.cargando = false)),
     ).subscribe((r) => {
       if (!r) return;
       this.recibos = r.recibos;
+      this.soloHoy = !!r.soloHoy;
       this.total = r.total;
       this.cantidad = r.cantidad;
     });

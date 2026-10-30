@@ -10,10 +10,14 @@ export const TIPOS_DOCUMENTO: { valor: string; nombre: string }[] = [
   { valor: 'PP', nombre: 'Pasaporte' },
   { valor: 'RC', nombre: 'Registro civil' },
   { valor: 'CD', nombre: 'Carné diplomático' },
+  // 2026-10-30 (Cristopher): los que faltaban para extranjeros (venezolanos...)
+  { valor: 'SC', nombre: 'Salvoconducto de permanencia (SC)' },
+  { valor: 'DE', nombre: 'Documento de identidad extranjero (ej. cédula venezolana)' },
+  { valor: 'NUIP', nombre: 'NUIP (número único de identificación personal)' },
 ];
 
 // Sigla corta para mostrar junto al número (ej. "PPT 12345678").
 export function siglaDocumento(tipo?: string | null): string {
   if (!tipo) return 'CC';
-  return tipo === 'PP' ? 'Pasaporte' : tipo === 'PE' ? 'PEP' : tipo;
+  return tipo === 'PP' || tipo === 'PA' ? 'Pasaporte' : tipo === 'PE' ? 'PEP' : tipo;
 }

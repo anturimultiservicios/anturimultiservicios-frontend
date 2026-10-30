@@ -135,6 +135,14 @@ export class PagosServicio {
     return this.http.post(`${this.URL}/no-aporta`, datos);
   }
 
+  // 2026-10-30 (Anturi): trámites/diligencias, una línea por diligencia
+  registrarTramites(datos: {
+    afiliadoId?: number; empresaId?: number; documento?: string; nombre?: string; canal: CanalPago;
+    lineas: { fecha?: string; descripcion?: string; valorTramite?: number; seguridadSocial?: number; comision?: number }[];
+  }): Observable<{ total: number }> {
+    return this.http.post<{ total: number }>(`${this.URL}/tramites`, datos);
+  }
+
   registrarCompleto(afiliadoId: number, monto: number, canal: CanalPago, mesesCubiertos: number, referencia?: string, montoEsperado?: number, motivoAjuste?: string, fechaPago?: string, periodo?: string): Observable<any> {
     return this.http.post(`${this.URL}/completo`, { afiliadoId, monto, canal, mesesCubiertos, referencia, montoEsperado, motivoAjuste, fechaPago, periodo });
   }

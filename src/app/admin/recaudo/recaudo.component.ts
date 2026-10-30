@@ -76,13 +76,19 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
             <span class="dato__nota">Se va en pagos</span>
           </div>
           <div class="tarjeta dato">
-            <span class="dato__etiqueta">No aporta (trámites)</span>
+            <span class="dato__etiqueta">No aporta</span>
             <span class="dato__valor">{{ datos.totales.noAporta | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+          <!-- 2026-10-30 (Anturi): trámites/diligencias -->
+          <div class="tarjeta dato">
+            <span class="dato__etiqueta">Trámites</span>
+            <span class="dato__valor">{{ (datos.totales.tramites ?? 0) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            <span class="dato__nota">Valor del trámite</span>
           </div>
           <div class="tarjeta dato dato--anturi">
             <span class="dato__etiqueta">Ganancia de Anturi</span>
             <span class="dato__valor">{{ datos.totales.paraAnturi | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-            <span class="dato__nota">Comisiones + No aporta</span>
+            <span class="dato__nota">Comisiones + No aporta + Trámites</span>
           </div>
           <div class="tarjeta dato">
             <span class="dato__etiqueta">Efectivo / Transferencia</span>
@@ -164,6 +170,7 @@ type Periodo = 'DIA' | 'SEMANA' | 'MES' | 'ANIO';
     .historico__switch { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 600; color: var(--texto-principal); cursor: pointer; }
     .marca-excel { display: inline-block; padding: 0 6px; border-radius: 4px; background: #e2e8f0; color: #334155; font-size: 11px; font-weight: 700; margin-right: 4px; }
     .etiqueta-tipo { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--tamano-xs); font-weight: 700; white-space: nowrap; background: rgba(27,50,112,0.08); color: var(--color-primario); }
+    .tipo-TRAMITE { background: rgba(27,50,112,0.1); color: var(--color-primario); }
     .tipo-NO_APORTA { background: rgba(232,87,12,0.12); color: var(--color-secundario); }
     .tipo-COOPERATIVA { background: rgba(34,197,94,0.12); color: #15803d; }
     .tipo-EMPRESA { background: rgba(100,116,139,0.15); color: var(--texto-secundario); }
@@ -284,6 +291,6 @@ export class RecaudoComponent implements OnInit, OnDestroy {
   }
 
   textoTipo(p: PagoRecaudo): string {
-    return { AFILIADO: 'Afiliado', COOPERATIVA: 'Cooperativa', EMPRESA: 'Empresa', NO_APORTA: 'No aporta', OTRO: 'Otro' }[p.tipo] ?? p.tipo;
+    return { AFILIADO: 'Afiliado', COOPERATIVA: 'Cooperativa', EMPRESA: 'Empresa', NO_APORTA: 'No aporta', TRAMITE: 'Trámite', OTRO: 'Otro' }[p.tipo] ?? p.tipo;
   }
 }
