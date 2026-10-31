@@ -23,7 +23,8 @@
 <div class="calc-ventana"
   #ventana
   *ngIf="estado === 'abierta'"
-  [class.cientifica]="modo === 'cientifica'"
+  [class.cientifica]="modo === 'cientifica' && !verUgpp"
+  [class.ugpp]="verUgpp"
   [style.left.px]="posX"
   [style.top.px]="posY">
 
@@ -38,8 +39,11 @@
         <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
       </svg>
     </button>
+    <!-- 2026-10-31 (Anturi): presunción de costos UGPP -->
+    <button class="calc-barra__modo calc-barra__ugpp" [class.activo]="verUgpp" (pointerdown)="$event.stopPropagation()" (click)="alternarUgpp()"
+      [title]="verUgpp ? 'Volver a la calculadora' : 'Presunción de costos UGPP'">{{ verUgpp ? 'Calculadora' : 'UGPP' }}</button>
     <div class="calc-barra__controles">
-      <button class="calc-barra__btn historial" [class.activo]="verHistorial" (pointerdown)="$event.stopPropagation()" (click)="verHistorial = !verHistorial" title="Historial">
+      <button *ngIf="!verUgpp" class="calc-barra__btn historial" [class.activo]="verHistorial" (pointerdown)="$event.stopPropagation()" (click)="verHistorial = !verHistorial" title="Historial">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline>
         </svg>
@@ -59,7 +63,12 @@
   </div>
 
   <!-- Cuerpo calculadora -->
-  <div class="calc-cuerpo">
+  <div class="calc-ugpp" *ngIf="verUgpp">
+    <div class="calc-ugpp__titulo">Presunción de costos UGPP</div>
+    <anturi-presuncion-costos></anturi-presuncion-costos>
+  </div>
+
+  <div class="calc-cuerpo" *ngIf="!verUgpp">
 
     <!-- Pantalla -->
     <div class="calc-pantalla">

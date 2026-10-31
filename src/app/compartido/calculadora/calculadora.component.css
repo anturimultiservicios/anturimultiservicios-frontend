@@ -305,3 +305,11 @@
 .calc-historial__item:hover { background: rgba(27,50,112,0.06); }
 .calc-historial__expr { font-size: var(--tamano-xs); color: var(--texto-terciario); word-break: break-all; }
 .calc-historial__res { font-size: var(--tamano-sm); font-weight: 700; color: var(--texto-principal); }
+
+/* 2026-10-31: presunción de costos UGPP */
+.calc-ventana.ugpp { width: 360px; }
+.calc-ugpp { max-height: min(70vh, 560px); overflow-y: auto; }
+.calc-ugpp__titulo { padding: 10px 12px 0; font-weight: 700; font-size: 14px; color: var(--texto-principal, #0f172a); }
+.calc-barra__ugpp { margin-left: 6px; }
+.calc-barra__ugpp.activo { background: var(--color-secundario, #E8570C); color: #fff; }
+@media (max-width: 400px) { .calc-ventana.ugpp { width: calc(100vw - 16px); } }

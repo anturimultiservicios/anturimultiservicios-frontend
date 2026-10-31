@@ -6,6 +6,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PresuncionCostosComponent } from '../presuncion-costos/presuncion-costos.component';
 
 type ModoCalc = 'normal' | 'cientifica';
 type EstadoVentana = 'abierta' | 'minimizada' | 'cerrada';
@@ -19,7 +20,7 @@ const MAX_HISTORIAL = 30;
 @Component({
   selector: 'anturi-calculadora',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PresuncionCostosComponent],
   templateUrl: './calculadora.component.html',
   styleUrls: ['./calculadora.component.css'],
 })
@@ -29,6 +30,8 @@ export class CalculadoraComponent implements OnInit {
   modo: ModoCalc = 'normal';
   estado: EstadoVentana = 'abierta';
   verHistorial = false;
+  // 2026-10-31: presunción de costos UGPP en la misma ventana
+  verUgpp = false;
   historial: OperacionHistorial[] = [];
 
   pantalla = '0';
@@ -51,6 +54,7 @@ export class CalculadoraComponent implements OnInit {
         if (typeof g.posX === 'number') this.posX = g.posX;
         if (typeof g.posY === 'number') this.posY = g.posY;
         if (g.modo === 'normal' || g.modo === 'cientifica') this.modo = g.modo;
+        if (typeof g.verUgpp === 'boolean') this.verUgpp = g.verUgpp;
         if (g.estado === 'abierta' || g.estado === 'minimizada' || g.estado === 'cerrada') this.estado = g.estado;
         if (Array.isArray(g.historial)) this.historial = g.historial.slice(0, MAX_HISTORIAL);
         // 2026-10-09: el último número queda guardado (aunque se cierre sesión)
@@ -63,7 +67,7 @@ export class CalculadoraComponent implements OnInit {
 
   // Si la pantalla es más pequeña que donde quedó, la trae a la vista.
   private ajustarALaPantalla(): void {
-    const ancho = this.modo === 'cientifica' ? 360 : 290;
+    const ancho = this.verUgpp || this.modo === 'cientifica' ? 360 : 290;
     this.posX = Math.max(0, Math.min(this.posX, window.innerWidth - ancho));
     this.posY = Math.max(0, Math.min(this.posY, window.innerHeight - 60));
   }
@@ -71,7 +75,7 @@ export class CalculadoraComponent implements OnInit {
   private guardar(): void {
     try {
       localStorage.setItem(CLAVE_CALC, JSON.stringify({
-        posX: this.posX, posY: this.posY, modo: this.modo, estado: this.estado, historial: this.historial,
+        posX: this.posX, posY: this.posY, modo: this.modo, verUgpp: this.verUgpp, estado: this.estado, historial: this.historial,
         pantalla: this.pantalla, expresion: this.expresion,
       }));
     } catch { /* sin almacenamiento */ }
@@ -253,6 +257,13 @@ export class CalculadoraComponent implements OnInit {
   // Control de ventana - el modo se cambia con un clic en la barra
   alternarModo(): void {
     this.modo = this.modo === 'normal' ? 'cientifica' : 'normal';
+    this.verHistorial = false;
+    this.ajustarALaPantalla();
+    this.guardar();
+  }
+
+  alternarUgpp(): void {
+    this.verUgpp = !this.verUgpp;
     this.verHistorial = false;
     this.ajustarALaPantalla();
     this.guardar();
