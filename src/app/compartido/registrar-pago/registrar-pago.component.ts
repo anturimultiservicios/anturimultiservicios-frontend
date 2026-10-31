@@ -64,6 +64,8 @@ interface LineaTramite { fecha: string; descripcion: string; valorTramite: numbe
               <span *ngIf="estados.get(a.id)?.pagadoEsteMes" class="badge-pagado" [title]="'El próximo pago quedaría para ' + mesTexto(estados.get(a.id)?.periodoSiguiente)">Pagado ✓ hasta {{ mesTexto(estados.get(a.id)?.cubiertoHasta) }}</span>
               <span *ngIf="estados.get(a.id) && !estados.get(a.id)?.pagadoEsteMes && estados.get(a.id)?.cubiertoHasta" class="dato-secundario">pagado hasta {{ mesTexto(estados.get(a.id)?.cubiertoHasta) }}</span>
             </label>
+            <!-- 2026-10-31 (Anyi): si el sistema dice un mes que no es, se corrige aquí -->
+            <button *ngIf="a.estado === 'ACTIVO'" type="button" class="boton-corregir" (click)="abrirCorreccion({ afiliadoId: a.id, nombre: a.nombres + ' ' + a.apellidos, decia: estados.get(a.id)?.cubiertoHasta ?? null })" title="Corregir hasta qué mes está pagado">Corregir pagado hasta</button>
             <span *ngIf="a.estado === 'ACTIVO'" class="monto-persona">{{ montoAdeudado(a) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
             <span *ngIf="yaPagados.has(a.id)" class="badge-pagado">Pagado ✓</span>
             <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ afiliadoId: a.id, nombre: a.nombres + ' ' + a.apellidos, documento: a.cedula })" title="Trámites o diligencias (o solo el trámite, si no aporta)">Trámites / No aporta</button>
@@ -136,10 +138,39 @@ interface LineaTramite { fecha: string; descripcion: string; valorTramite: numbe
               <span *ngIf="!c.cuota" class="dato-secundario">(sin valor registrado: márquela y escriba el valor que pagó)</span>
             </label>
             <span class="monto-persona">{{ c.montoAdeudado | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-            <span *ngIf="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)" class="badge-pagado">Pagado ✓</span>
+            <span *ngIf="c.pagadoEsteMes || yaPagadasCuentas.has(c.empresaId)" class="badge-pagado">Pagado ✓{{ c.cubiertoHasta ? ' hasta ' + mesTexto(c.cubiertoHasta) : '' }}</span>
+            <button type="button" class="boton-corregir" (click)="abrirCorreccion({ empresaId: c.empresaId, nombre: c.razonSocial, decia: c.cubiertoHasta ?? null })" title="Corregir hasta qué mes está pagada">Corregir pagado hasta</button>
             <button type="button" class="boton-no-aporta" (click)="abrirNoAporta({ empresaId: c.empresaId, nombre: c.razonSocial, documento: c.nit })" title="Trámites o diligencias (o solo el trámite, si no aporta)">Trámites / No aporta</button>
           </div>
         </ng-template>
+
+        <!-- 2026-10-31 (Anyi: "¿cómo se modifica que debe dos meses o un mes?"):
+             corregir hasta qué mes está pagado. No borra pagos: desde ahora el
+             sistema toma este mes, y los pagos que se registren después cuentan normal. -->
+        <div *ngIf="correccion" id="panel-correccion" class="panel-confirmar panel-correccion">
+          <p class="panel-confirmar__resumen"><strong>Corregir hasta qué mes está pagado</strong> - {{ correccion.nombre }}</p>
+          <p class="nota-no-aporta">Hoy el sistema dice: <strong>{{ correccion.decia ? 'pagado hasta ' + mesTexto(correccion.decia) : 'sin pagos registrados' }}</strong>. Si no es así, escoja el último mes que de verdad pagó.</p>
+          <div class="campos-no-aporta">
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="corrMes">De verdad está pagado hasta <span class="requerido">*</span></label>
+              <select id="corrMes" class="campo-input" [(ngModel)]="correccion.mes">
+                <option *ngFor="let m of mesesCorreccion" [value]="m.valor">{{ m.nombre }}{{ debeCon(m.valor) }}</option>
+              </select>
+            </div>
+            <div class="campo-grupo campo-grupo--ancho">
+              <label class="campo-etiqueta" for="corrMotivo">¿Por qué se corrige? <span class="requerido">*</span></label>
+              <input id="corrMotivo" type="text" class="campo-input" [(ngModel)]="correccion.motivo" maxlength="300" placeholder="Ej. debe septiembre y octubre, el pago de octubre se registró por error">
+            </div>
+          </div>
+          <p class="nota-no-aporta">Queda en el historial y a Anturi le llega el aviso. No se borra ningún pago.</p>
+          <div *ngIf="errorCorreccion" class="alerta-error">{{ errorCorreccion }}</div>
+          <div class="panel-confirmar__acciones">
+            <button class="boton boton-secundario" (click)="correccion = null" [disabled]="corrigiendo">Cancelar</button>
+            <button class="boton boton-primario" (click)="confirmarCorreccion()" [disabled]="corrigiendo || !correccion.mes || correccion.motivo.trim().length < 3">
+              {{ corrigiendo ? 'Guardando...' : 'Guardar corrección' }}
+            </button>
+          </div>
+        </div>
 
         <!-- 2026-10-09: "No aporta" - solo el trámite, sin seguridad social.
              2026-10-30 (Anturi): ahora son TRÁMITES - se van agregando las
@@ -245,7 +276,9 @@ interface LineaTramite { fecha: string; descripcion: string; valorTramite: numbe
                   <option *ngFor="let m of mesesPara(it.clave)" [value]="m.valor">{{ m.nombre }}</option>
                 </select>
               </label>
-              <span *ngIf="avisoAdelantado(it.clave) as aviso" class="item-pago__aviso">{{ aviso }}</span>
+              <span *ngIf="avisoAdelantado(it.clave) as aviso" class="item-pago__aviso">{{ aviso }}
+                <button *ngIf="it.clave.startsWith('a') && aviso.startsWith('Ojo')" type="button" class="boton-corregir" (click)="corregirDesdeItem(it)">¿No es así? Corregir</button>
+              </span>
               <div *ngIf="desgloseDe(it.clave, montoDe(it.clave, it.esperado)) as d" class="item-pago__desglose">
                 <span>Trámite <b>{{ d.comision | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
                 <span>Seguridad social <b>{{ d.seguridadSocial | currency:'COP':'symbol-narrow':'1.0-0' }}</b></span>
@@ -420,6 +453,9 @@ interface LineaTramite { fecha: string; descripcion: string; valorTramite: numbe
     .estado-vacio-inline .boton-no-aporta { display: block; margin: var(--espacio-2) 0 0; }
     .fila-persona--inactiva { opacity: 0.85; }
     .badge-estado-pago { font-size: var(--tamano-xs); font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(100,116,139,0.15); color: var(--texto-secundario); }
+    .boton-corregir { border: 1px dashed var(--texto-terciario, #94a3b8); color: var(--texto-secundario); background: transparent; border-radius: 999px; padding: 2px 10px; font-size: var(--tamano-xs); cursor: pointer; margin-left: 6px; }
+    .boton-corregir:hover { border-style: solid; color: var(--texto-principal); }
+    .panel-correccion { border-color: var(--color-primario, #1B3270); }
     .boton-grupo { border: 1px solid var(--color-primario, #1B3270); color: var(--color-primario, #1B3270); background: transparent; border-radius: 999px; padding: 2px 10px; font-size: var(--tamano-xs); cursor: pointer; margin-left: 6px; }
     .grupo-en-pago { flex-basis: 100%; margin: 6px 0 4px; padding: 8px; border-radius: 10px; background: var(--fondo-secundario, #f8fafc); }
     .panel-no-aporta { border-color: var(--color-secundario); }
@@ -720,6 +756,62 @@ export class RegistrarPagoComponent implements OnDestroy {
       error: (err) => {
         const m = err?.error?.message;
         this.errorNoAporta = (Array.isArray(m) ? m[0] : m) || 'No se pudo registrar.';
+      },
+    });
+  }
+
+  // ── 2026-10-31 (Anyi): corregir hasta qué mes está pagado ──
+  correccion: { afiliadoId?: number; empresaId?: number; nombre: string; decia: string | null; mes: string; motivo: string } | null = null;
+  corrigiendo = false;
+  errorCorreccion = '';
+  private readonly mesActual = this.hoyIso.slice(0, 7);
+  readonly mesesCorreccion = mesesCercanos(this.mesActual, 18, 2).reverse();
+
+  abrirCorreccion(quien: { afiliadoId?: number; empresaId?: number; nombre: string; decia: string | null }): void {
+    this.errorCorreccion = '';
+    // por defecto: el mes anterior al actual (debe 1 mes)
+    this.correccion = { ...quien, mes: mesesCercanos(this.mesActual, 1, 0)[0].valor, motivo: '' };
+    setTimeout(() => document.getElementById('panel-correccion')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  corregirDesdeItem(it: { clave: string; nombre: string }): void {
+    const id = Number(it.clave.slice(1));
+    this.abrirCorreccion({ afiliadoId: id, nombre: it.nombre, decia: this.estados.get(id)?.cubiertoHasta ?? null });
+  }
+
+  // " - debe 2 meses" / " - al día" al lado de cada mes
+  debeCon(mes: string): string {
+    const n = (t: string) => { const m = /^(\d{4})-(\d{2})/.exec(t); return m ? Number(m[1]) * 12 + Number(m[2]) - 1 : 0; };
+    const debe = n(this.mesActual) - n(mes);
+    return debe <= 0 ? ' - al día' : ` - debe ${debe} mes${debe > 1 ? 'es' : ''}`;
+  }
+
+  confirmarCorreccion(): void {
+    const c = this.correccion;
+    if (!c) return;
+    this.corrigiendo = true;
+    this.errorCorreccion = '';
+    this.pagosServicio.corregirPagadoHasta({ afiliadoId: c.afiliadoId, empresaId: c.empresaId, pagadoHasta: c.mes, motivo: c.motivo.trim() }).pipe(
+      finalize(() => { this.corrigiendo = false; }),
+      takeUntil(this.destruir$),
+    ).subscribe({
+      next: (r) => {
+        this.correccion = null;
+        this.mensajeExito = `${c.nombre}: ahora queda pagado hasta ${nombreMes(r.pagadoHasta)}${r.mesesDebe ? ` (debe ${r.mesesDebe} mes${r.mesesDebe > 1 ? 'es' : ''})` : ''}.`;
+        setTimeout(() => { this.mensajeExito = ''; }, 6000);
+        if (c.afiliadoId) {
+          this.estados.delete(c.afiliadoId);
+          this.periodos.delete('a' + c.afiliadoId);
+          this.cargarEstados([c.afiliadoId]);
+        }
+        if (c.empresaId && this.empresaExpandidaId) {
+          const emp = this.resultadosEmpresas.find((e) => e.id === this.empresaExpandidaId);
+          if (emp) { this.empresaExpandidaId = null; this.toggleEmpresa(emp); }
+        }
+      },
+      error: (err) => {
+        const m = err?.error?.message;
+        this.errorCorreccion = (Array.isArray(m) ? m[0] : m) || 'No se pudo guardar la corrección.';
       },
     });
   }

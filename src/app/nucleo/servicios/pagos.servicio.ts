@@ -135,6 +135,11 @@ export class PagosServicio {
     return this.http.post(`${this.URL}/no-aporta`, datos);
   }
 
+  // 2026-10-31 (Anyi): corregir hasta qué mes está pagado (persona o cuenta)
+  corregirPagadoHasta(datos: { afiliadoId?: number; empresaId?: number; pagadoHasta: string; motivo: string }): Observable<{ pagadoHasta: string; decia: string | null; mesesDebe: number }> {
+    return this.http.post<{ pagadoHasta: string; decia: string | null; mesesDebe: number }>(`${this.URL}/corregir-pagado-hasta`, datos);
+  }
+
   // 2026-10-30 (Anturi): trámites/diligencias, una línea por diligencia
   registrarTramites(datos: {
     afiliadoId?: number; empresaId?: number; documento?: string; nombre?: string; canal: CanalPago;

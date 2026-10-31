@@ -21,6 +21,27 @@ const contiene = (campo: unknown, termino: string) => sinTildes(campo).includes(
 const digitos = (s: unknown) => String(s ?? '').replace(/\D/g, '');
 const indiceMes = (d: Date) => d.getFullYear() * 12 + d.getMonth();
 
+// 2026-10-31: misma regla que el servidor (backend src/comun/cobertura.ts): la
+// corrección de "pagado hasta" topa los pagos registrados antes de ella, deja
+// cubierto ese mes y los pagos de después cuentan normal.
+function pagosQueCubren(c: CopiaLocal, tipo: 'a' | 'e', id: number): { fechaPeriodo: string; mesesCubiertos: number | null }[] {
+  const propios = c.pagos.filter((p) => (tipo === 'a' ? p.afiliadoId === id : p.empresaId === id) && p.concepto !== 'NO_APORTA' && p.concepto !== 'TRAMITE');
+  const corte = (c.cortes ?? []).filter((k) => (tipo === 'a' ? k.afiliadoId === id : k.empresaId === id)).pop();
+  const m = corte && /^(\d{4})-(\d{2})$/.exec(corte.pagadoHasta);
+  if (!corte || !m) return propios;
+  const tope = Number(m[1]) * 12 + Number(m[2]) - 1;
+  const en = new Date(corte.creadoEn).getTime();
+  const salida: { fechaPeriodo: string; mesesCubiertos: number | null }[] = [];
+  for (const p of propios) {
+    if (p.creadoEn && new Date(p.creadoEn).getTime() > en) { salida.push(p); continue; }
+    const ini = indiceMes(new Date(p.fechaPeriodo));
+    if (ini > tope) continue;
+    salida.push({ fechaPeriodo: p.fechaPeriodo, mesesCubiertos: Math.min(ini + Math.max(1, p.mesesCubiertos ?? 1) - 1, tope) - ini + 1 });
+  }
+  salida.push({ fechaPeriodo: new Date(Math.floor(tope / 12), tope % 12, 1, 12).toISOString(), mesesCubiertos: 1 });
+  return salida;
+}
+
 function estadoCuenta(pagos: { fechaPeriodo: string; mesesCubiertos: number | null; concepto?: string }[]) {
   const actual = indiceMes(new Date());
   let hasta = -1;
@@ -32,7 +53,7 @@ function estadoCuenta(pagos: { fechaPeriodo: string; mesesCubiertos: number | nu
 }
 
 function cuenta(c: CopiaLocal, e: any) {
-  const est = estadoCuenta(c.pagos.filter((p) => p.empresaId === e.id));
+  const est = estadoCuenta(pagosQueCubren(c, 'e', e.id));
   const cuota = Number(e.totalPago ?? e.valor ?? 0);
   return {
     empresaId: e.id, razonSocial: e.razonSocial, nit: e.nit, activa: e.activa, cuota,
@@ -61,11 +82,12 @@ function calendario(c: CopiaLocal, desdeTxt: string | null, hastaTxt: string | n
   const hasta = local(hastaTxt);
   hasta.setHours(23, 59, 59, 999);
   const cobertura = new Map<number, [number, number][]>();
-  for (const p of c.pagos) {
-    if (!p.afiliadoId || p.concepto === 'NO_APORTA' || p.concepto === 'TRAMITE') continue;
-    const ini = indiceMes(new Date(p.fechaPeriodo));
-    if (!cobertura.has(p.afiliadoId)) cobertura.set(p.afiliadoId, []);
-    cobertura.get(p.afiliadoId)!.push([ini, ini + Math.max(1, p.mesesCubiertos ?? 1)]);
+  for (const a of c.afiliados) {
+    for (const p of pagosQueCubren(c, 'a', a.id)) {
+      const ini = indiceMes(new Date(p.fechaPeriodo));
+      if (!cobertura.has(a.id)) cobertura.set(a.id, []);
+      cobertura.get(a.id)!.push([ini, ini + Math.max(1, p.mesesCubiertos ?? 1)]);
+    }
   }
   const pagoElMes = (id: number, mes: number) => (cobertura.get(id) ?? []).some(([d, h]) => mes >= d && mes < h);
   const hoy = new Date();

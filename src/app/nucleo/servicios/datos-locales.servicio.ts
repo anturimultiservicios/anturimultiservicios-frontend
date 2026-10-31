@@ -24,6 +24,8 @@ export interface CopiaLocal {
   empresas: any[];
   personal: any[];
   pagos: any[];
+  // 2026-10-31: correcciones de "pagado hasta" (la más reciente vale)
+  cortes?: { afiliadoId: number | null; empresaId: number | null; pagadoHasta: string; creadoEn: string }[];
 }
 
 type EstadoCopia = 'sin-copia' | 'bloqueada' | 'lista';
