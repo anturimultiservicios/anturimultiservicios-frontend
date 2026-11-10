@@ -39,6 +39,9 @@ const RUTAS = [
   { metodo: 'POST', patron: /^\/pagos\/completo$/, que: 'Pago' },
   { metodo: 'POST', patron: /^\/pagos\/empresa$/, que: 'Pago de cuenta de empresa' },
   { metodo: 'POST', patron: /^\/pagos\/no-aporta$/, que: 'No aporta (trámite)' },
+  // 2026-11-10 (la oficina sin internet todo el día): también se guardan para subir después
+  { metodo: 'POST', patron: /^\/pagos\/tramites$/, que: 'Trámites' },
+  { metodo: 'POST', patron: /^\/pagos\/corregir-pagado-hasta$/, que: 'Corrección de pagado hasta' },
   { metodo: 'PATCH', patron: /^\/recordatorios-llamada\/\d+\/nota$/, que: 'Nota de llamada' },
   { metodo: 'PUT', patron: /^\/notificaciones\/\d+\/leida$/, que: 'Notificación leída' },
   { metodo: 'PUT', patron: /^\/notificaciones\/marcar-todas$/, que: 'Notificaciones leídas' },
@@ -218,6 +221,28 @@ export class ColaCambiosServicio {
       const e = c?.empresas.find((x) => x.id === Number(m![1]));
       if (e) Object.assign(e, cambio.cuerpo, { sinSubir: true });
       return { ...(e ?? {}), ...cambio.cuerpo };
+    }
+    if (r === '/pagos/tramites') {
+      const lineas: any[] = cambio.cuerpo.lineas ?? [];
+      const n = (v: unknown) => (Number(v) > 0 ? Math.round(Number(v)) : 0);
+      let total = 0;
+      for (const l of lineas) {
+        const ss = n(l.seguridadSocial);
+        const monto = n(l.valorTramite) + ss + Math.round(ss * 0.004) + n(l.comision);
+        total += monto;
+        c?.pagos.push({
+          id: this.nuevoIdTemporal(), afiliadoId: cambio.cuerpo.afiliadoId ?? null, empresaId: cambio.cuerpo.empresaId ?? null,
+          fechaPago: ahora, fechaPeriodo: ahora, mesesCubiertos: null, monto, canal: cambio.cuerpo.canal, concepto: 'TRAMITE', sinSubir: true,
+        });
+      }
+      return { total, sinInternet: true };
+    }
+    if (r === '/pagos/corregir-pagado-hasta') {
+      if (c) (c.cortes ??= []).push({ afiliadoId: cambio.cuerpo.afiliadoId ?? null, empresaId: cambio.cuerpo.empresaId ?? null, pagadoHasta: cambio.cuerpo.pagadoHasta, creadoEn: ahora });
+      const [a, m] = String(cambio.cuerpo.pagadoHasta).split('-').map(Number);
+      const hoy = new Date();
+      const mesesDebe = Math.max(0, hoy.getFullYear() * 12 + hoy.getMonth() - (a * 12 + m - 1));
+      return { pagadoHasta: cambio.cuerpo.pagadoHasta, decia: null, mesesDebe, sinInternet: true };
     }
     if (r === '/pagos/no-aporta') {
       c?.pagos.push({
