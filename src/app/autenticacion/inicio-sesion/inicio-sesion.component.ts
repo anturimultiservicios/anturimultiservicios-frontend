@@ -146,8 +146,14 @@ export class InicioSesionComponent {
           this.codigoTotp = '';
         } else if (err.status === 401) {
           this.error = 'Correo o contraseña incorrectos.';
+        } else if (err.status === 429) {
+          // 2026-11-12 (Anyi veía "error de conexión" y no sabía qué pasaba)
+          this.error = 'Demasiados intentos seguidos. Espere un minuto y vuelva a intentar.';
+        } else if (err.status && err.status !== 0 && typeof mensaje === 'string' && mensaje.trim()) {
+          // el servidor explicó qué pasa (ej. modo respaldo, equipo no autorizado)
+          this.error = mensaje;
         } else {
-          this.error = 'Error de conexión. Intente nuevamente.';
+          this.error = 'No hay conexión con el servidor. Revise el internet e intente nuevamente.';
         }
       },
     });
